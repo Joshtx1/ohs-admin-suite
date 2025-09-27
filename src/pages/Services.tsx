@@ -11,10 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Download, Filter } from 'lucide-react';
 import { z } from 'zod';
 
 const serviceSchema = z.object({
+  service_code: z.string().min(1, 'Service code is required').max(20),
   name: z.string().min(1, 'Service name is required').max(255),
   description: z.string().max(1000).optional(),
   category: z.string().min(1, 'Category is required').max(100),
@@ -24,6 +25,7 @@ const serviceSchema = z.object({
 
 interface Service {
   id: string;
+  service_code: string;
   name: string;
   description?: string;
   category: string;
@@ -35,16 +37,23 @@ interface Service {
 const Services = () => {
   const { user, userRole } = useAuth();
   const [services, setServices] = useState<Service[]>([]);
+  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [formData, setFormData] = useState({
+    service_code: '',
     name: '',
     description: '',
     category: '',
     duration_minutes: '60',
     is_active: true,
   });
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   const serviceCategories = [
     'Medical Examination',
@@ -61,6 +70,10 @@ const Services = () => {
     fetchServices();
   }, []);
 
+  useEffect(() => {
+    filterServices();
+  }, [services, searchTerm, statusFilter, categoryFilter]);
+
   const fetchServices = async () => {
     try {
       const { data, error } = await supabase
@@ -70,6 +83,7 @@ const Services = () => {
 
       if (error) throw error;
       setServices(data || []);
+      setFilteredServices(data || []);
     } catch (error) {
       console.error('Error fetching services:', error);
       toast({
@@ -82,8 +96,36 @@ const Services = () => {
     }
   };
 
+  const filterServices = () => {
+    let filtered = services;
+
+    // Filter by search term (service code, name, or description)
+    if (searchTerm) {
+      filtered = filtered.filter(service =>
+        service.service_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (service.description && service.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    // Filter by status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(service =>
+        statusFilter === 'active' ? service.is_active : !service.is_active
+      );
+    }
+
+    // Filter by category
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter(service => service.category === categoryFilter);
+    }
+
+    setFilteredServices(filtered);
+  };
+
   const resetForm = () => {
     setFormData({
+      service_code: '',
       name: '',
       description: '',
       category: '',
@@ -120,6 +162,7 @@ const Services = () => {
         const { error } = await supabase
           .from('services')
           .insert([{
+            service_code: validatedData.service_code,
             name: validatedData.name,
             description: validatedData.description,
             category: validatedData.category,
@@ -160,6 +203,7 @@ const Services = () => {
   const handleEdit = (service: Service) => {
     setEditingService(service);
     setFormData({
+      service_code: service.service_code,
       name: service.name,
       description: service.description || '',
       category: service.category,
@@ -167,6 +211,28 @@ const Services = () => {
       is_active: service.is_active,
     });
     setDialogOpen(true);
+  };
+
+  const handleExport = () => {
+    const csvContent = [
+      ['Code', 'Name', 'Description', 'Category', 'Duration (min)', 'Status'].join(','),
+      ...filteredServices.map(service => [
+        service.service_code,
+        `"${service.name}"`,
+        `"${service.description || ''}"`,
+        `"${service.category}"`,
+        service.duration_minutes,
+        service.is_active ? 'Active' : 'Inactive'
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'services.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const handleDelete = async (serviceId: string) => {
@@ -203,10 +269,7 @@ const Services = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Services</h1>
-          <p className="text-muted-foreground">
-            Manage your clinic services and offerings
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">SERVICE Manager</h1>
         </div>
         
         <Dialog open={dialogOpen} onOpenChange={(open) => {
@@ -216,7 +279,7 @@ const Services = () => {
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Add Service
+              Add New
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
@@ -230,6 +293,17 @@ const Services = () => {
             </DialogHeader>
             
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="service_code">Service Code *</Label>
+                <Input
+                  id="service_code"
+                  value={formData.service_code}
+                  onChange={(e) => setFormData({ ...formData, service_code: e.target.value })}
+                  placeholder="e.g., 03ACMGR"
+                  required
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="name">Service Name *</Label>
                 <Input
@@ -304,58 +378,132 @@ const Services = () => {
         </Dialog>
       </div>
 
+      {/* Filters Section */}
       <Card>
-        <CardHeader>
-          <CardTitle>Service List</CardTitle>
-          <CardDescription>
-            All available services ({services.length} total)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex-1 min-w-[200px]">
+              <Label htmlFor="search">Course</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="search"
+                  placeholder="Search services..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            <div className="min-w-[120px]">
+              <Label htmlFor="status">Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger id="status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="min-w-[200px]">
+              <Label htmlFor="category">Type</Label>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger id="category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">-- All Course Types --</SelectItem>
+                  {serviceCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button variant="default" onClick={() => filterServices()}>
+                <Search className="mr-2 h-4 w-4" />
+                Search
+              </Button>
+              <Button variant="outline" onClick={handleExport}>
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+            </div>
+            
+            <Button variant="link" className="text-cyan-600">
+              View Advanced Filters
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Services Table */}
+      <Card>
+        <CardContent className="p-0">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead>Service Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="font-semibold">Code</TableHead>
+                <TableHead className="font-semibold">Description</TableHead>
+                <TableHead className="font-semibold text-center">PRICE</TableHead>
+                <TableHead className="font-semibold text-center">Status</TableHead>
+                <TableHead className="font-semibold text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {services.map((service) => (
-                <TableRow key={service.id}>
+              {filteredServices.map((service) => (
+                <TableRow key={service.id} className="hover:bg-muted/30">
                   <TableCell className="font-medium">
+                    {service.service_code}
+                  </TableCell>
+                  <TableCell>
                     <div>
-                      <div>{service.name}</div>
+                      <div className="font-medium">{service.name}</div>
                       {service.description && (
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-muted-foreground mt-1">
                           {service.description}
                         </div>
                       )}
+                      <div className="text-sm text-muted-foreground">
+                        {service.category} • {service.duration_minutes} min
+                      </div>
                     </div>
                   </TableCell>
-                  <TableCell>{service.category}</TableCell>
-                  <TableCell>{service.duration_minutes} min</TableCell>
-                  <TableCell>
-                    <Badge variant={service.is_active ? 'default' : 'secondary'}>
-                      {service.is_active ? 'Active' : 'Inactive'}
+                  <TableCell className="text-center">
+                    <span className="text-muted-foreground">--</span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge 
+                      variant={service.is_active ? 'default' : 'secondary'}
+                      className={service.is_active ? 'bg-green-600 text-white' : ''}
+                    >
+                      {service.is_active ? 'ACTIVE' : 'INACTIVE'}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center space-x-1">
                       <Button
-                        variant="ghost"
+                        variant="link"
                         size="sm"
                         onClick={() => handleEdit(service)}
+                        className="text-cyan-600 h-auto p-0"
                       >
-                        <Edit className="h-4 w-4" />
+                        Edit
                       </Button>
                       {userRole === 'admin' && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(service.id)}
+                          className="text-destructive h-auto p-1"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -364,6 +512,13 @@ const Services = () => {
                   </TableCell>
                 </TableRow>
               ))}
+              {filteredServices.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    No services found matching your criteria
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
