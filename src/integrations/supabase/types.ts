@@ -280,6 +280,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          service_code: string
           updated_at: string
         }
         Insert: {
@@ -291,6 +292,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          service_code: string
           updated_at?: string
         }
         Update: {
@@ -302,6 +304,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          service_code?: string
           updated_at?: string
         }
         Relationships: []
@@ -332,6 +335,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_service_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
