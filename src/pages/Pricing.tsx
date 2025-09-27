@@ -117,7 +117,7 @@ const Pricing = () => {
   const resetForm = () => {
     setFormData({
       service_id: '',
-      client_id: '',
+      client_id: 'standard',
       price: '',
       currency: 'USD',
       pricing_type: 'standard',
@@ -135,7 +135,7 @@ const Pricing = () => {
       const processedData = {
         ...formData,
         price: parseFloat(formData.price),
-        client_id: formData.client_id || undefined,
+        client_id: formData.client_id === 'standard' ? undefined : formData.client_id || undefined,
         effective_to: formData.effective_to || undefined,
       };
 
@@ -201,7 +201,7 @@ const Pricing = () => {
     setEditingPricing(pricingRecord);
     setFormData({
       service_id: pricingRecord.service_id,
-      client_id: pricingRecord.client_id || '',
+      client_id: pricingRecord.client_id || 'standard',
       price: pricingRecord.price.toString(),
       currency: pricingRecord.currency,
       pricing_type: pricingRecord.pricing_type,
@@ -302,7 +302,7 @@ const Pricing = () => {
                     <SelectValue placeholder="Select a client (leave empty for standard pricing)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Standard Pricing</SelectItem>
+                    <SelectItem value="standard">Standard Pricing</SelectItem>
                     {clients.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.company_name}
