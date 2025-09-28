@@ -21,7 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   
   // Temporary bypass for testing
-  const bypassAuth = window.location.search.includes('bypass=true');
+  const bypassAuth = true; // Enable bypass to access users page
   
   if (bypassAuth) {
     // Create a mock user for bypass mode
