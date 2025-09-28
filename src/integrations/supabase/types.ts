@@ -464,40 +464,106 @@ export type Database = {
       }
       trainees: {
         Row: {
+          age: number | null
+          city: string | null
+          council_id: string | null
+          country: string | null
           created_at: string
           created_by: string | null
           date_of_birth: string | null
           email: string | null
+          eyes: string | null
+          first_name: string | null
+          gender: string | null
+          hair: string | null
+          height: string | null
           id: string
+          language: string | null
+          last_name: string | null
+          license_number: string | null
+          license_type: string | null
           medical_history: string | null
+          middle_name: string | null
+          mobile_number: string | null
           name: string
+          notes: string | null
+          occupation_craft: string | null
           phone: string | null
+          photo_url: string | null
+          signature_url: string | null
+          state: string | null
           status: string
+          street: string | null
           updated_at: string
+          zip: string | null
         }
         Insert: {
+          age?: number | null
+          city?: string | null
+          council_id?: string | null
+          country?: string | null
           created_at?: string
           created_by?: string | null
           date_of_birth?: string | null
           email?: string | null
+          eyes?: string | null
+          first_name?: string | null
+          gender?: string | null
+          hair?: string | null
+          height?: string | null
           id?: string
+          language?: string | null
+          last_name?: string | null
+          license_number?: string | null
+          license_type?: string | null
           medical_history?: string | null
+          middle_name?: string | null
+          mobile_number?: string | null
           name: string
+          notes?: string | null
+          occupation_craft?: string | null
           phone?: string | null
+          photo_url?: string | null
+          signature_url?: string | null
+          state?: string | null
           status?: string
+          street?: string | null
           updated_at?: string
+          zip?: string | null
         }
         Update: {
+          age?: number | null
+          city?: string | null
+          council_id?: string | null
+          country?: string | null
           created_at?: string
           created_by?: string | null
           date_of_birth?: string | null
           email?: string | null
+          eyes?: string | null
+          first_name?: string | null
+          gender?: string | null
+          hair?: string | null
+          height?: string | null
           id?: string
+          language?: string | null
+          last_name?: string | null
+          license_number?: string | null
+          license_type?: string | null
           medical_history?: string | null
+          middle_name?: string | null
+          mobile_number?: string | null
           name?: string
+          notes?: string | null
+          occupation_craft?: string | null
           phone?: string | null
+          photo_url?: string | null
+          signature_url?: string | null
+          state?: string | null
           status?: string
+          street?: string | null
           updated_at?: string
+          zip?: string | null
         }
         Relationships: []
       }
