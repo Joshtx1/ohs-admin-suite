@@ -54,8 +54,7 @@ const Auth = () => {
 
   // Check if user came from password reset
   useEffect(() => {
-    const resetParam = searchParams.get('reset');
-    if ((resetParam === 'true' || resetParam === '') && user) {
+    if (searchParams.get('reset') && user) {
       setShowPasswordChange(true);
     }
   }, [searchParams, user]);
@@ -407,7 +406,7 @@ const Auth = () => {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Sending Setup Email...' : 'Send Setup Email'}
+                  {loading ? 'Sending Setup Email...' : 'Send Account Setup Email'}
                 </Button>
                 <p className="text-sm text-muted-foreground text-center mt-2">
                   You'll receive an email to complete your account setup and create your password.

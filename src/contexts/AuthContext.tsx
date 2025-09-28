@@ -126,8 +126,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, firstName: string, lastName: string) => {
-    // Generate a temporary password for account creation
-    const tempPassword = 'temp_' + Math.random().toString(36).substring(2, 15);
+    // Generate a temporary password for initial signup
+    const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
     const redirectUrl = `${window.location.origin}/auth?reset=true`;
     
     const { error } = await supabase.auth.signUp({
@@ -141,8 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     });
-
-    // If signup successful, immediately send password reset email
+    
+    // Immediately send password reset email so user can set their own password
     if (!error) {
       await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
