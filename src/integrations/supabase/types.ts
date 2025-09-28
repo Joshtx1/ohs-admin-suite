@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_trainee_assignments: {
+        Row: {
+          assigned_date: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          status: string
+          trainee_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_date?: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          trainee_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_date?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          trainee_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_trainee_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_trainee_assignments_trainee_id_fkey"
+            columns: ["trainee_id"]
+            isOneToOne: false
+            referencedRelation: "trainees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -357,6 +411,93 @@ export type Database = {
           status?: string | null
           updated_at?: string
           valid_for_days?: number | null
+        }
+        Relationships: []
+      }
+      trainee_assignment_services: {
+        Row: {
+          assignment_id: string
+          authorized_by: string | null
+          authorized_date: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          service_id: string
+        }
+        Insert: {
+          assignment_id: string
+          authorized_by?: string | null
+          authorized_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          service_id: string
+        }
+        Update: {
+          assignment_id?: string
+          authorized_by?: string | null
+          authorized_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trainee_assignment_services_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "client_trainee_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trainee_assignment_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trainees: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date_of_birth: string | null
+          email: string | null
+          id: string
+          medical_history: string | null
+          name: string
+          phone: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          id?: string
+          medical_history?: string | null
+          name: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          id?: string
+          medical_history?: string | null
+          name?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
