@@ -53,61 +53,38 @@ const CreateUserDialog = ({ isOpen, onClose, onUserCreated }: CreateUserDialogPr
       // Validate form data
       const validatedData = createUserSchema.parse(formData);
 
-      // Create user through Supabase Admin API
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: validatedData.email,
-        password: validatedData.password,
-        email_confirm: true,
-        user_metadata: {
-          first_name: validatedData.first_name,
-          last_name: validatedData.last_name
-        }
+      // Call edge function to create user
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: validatedData
       });
 
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // Update profile with additional fields
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            username: validatedData.username,
-            phone: validatedData.phone || null,
-            status: 'active'
-          })
-          .eq('user_id', authData.user.id);
-
-        if (profileError) throw profileError;
-
-        // Set user role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .upsert({
-            user_id: authData.user.id,
-            role: validatedData.role
-          });
-
-        if (roleError) throw roleError;
-
-        toast({
-          title: 'Success',
-          description: `User ${validatedData.username} created successfully`,
-        });
-
-        // Reset form and close dialog
-        setFormData({
-          first_name: '',
-          last_name: '',
-          username: '',
-          email: '',
-          password: '',
-          phone: '',
-          role: 'user',
-        });
-
-        onUserCreated();
-        onClose();
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to create user');
       }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast({
+        title: 'Success',
+        description: `User ${validatedData.username} created successfully`,
+      });
+
+      // Reset form and close dialog
+      setFormData({
+        first_name: '',
+        last_name: '',
+        username: '',
+        email: '',
+        password: '',
+        phone: '',
+        role: 'user',
+      });
+
+      onUserCreated();
+      onClose();
     } catch (error) {
       console.error('Error creating user:', error);
       
@@ -118,9 +95,10 @@ const CreateUserDialog = ({ isOpen, onClose, onUserCreated }: CreateUserDialogPr
           variant: 'destructive',
         });
       } else {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to create user';
         toast({
           title: 'Error',
-          description: 'Failed to create user',
+          description: errorMessage,
           variant: 'destructive',
         });
       }
