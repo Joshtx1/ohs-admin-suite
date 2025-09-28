@@ -24,20 +24,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user role
+          // Fetch user role with a small delay to ensure data is ready
           setTimeout(async () => {
-            const { data: roleData } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .single();
-            
-            setUserRole(roleData?.role || 'user');
-          }, 0);
+            try {
+              const { data: roleData } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', session.user.id)
+                .single();
+              
+              console.log('User role fetched:', roleData?.role);
+              setUserRole(roleData?.role || 'user');
+            } catch (error) {
+              console.error('Error fetching role:', error);
+              setUserRole('user');
+            }
+          }, 100);
         } else {
           setUserRole(null);
         }
@@ -48,9 +55,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      console.log('Initial session check:', session?.user?.id);
+      if (!session) {
+        setSession(null);
+        setUser(null);
+        setUserRole(null);
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();

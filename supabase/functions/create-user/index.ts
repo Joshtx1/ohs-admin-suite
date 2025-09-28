@@ -157,10 +157,16 @@ const handler = async (req: Request): Promise<Response> => {
       // Don't fail completely, just log the error
     }
 
-    // Set user role
+    // Set user role (delete existing first to avoid conflicts)
+    const { error: deleteRoleError } = await supabaseAdmin
+      .from('user_roles')
+      .delete()
+      .eq('user_id', authData.user.id);
+
+    // Then insert the new role
     const { error: roleCreateError } = await supabaseAdmin
       .from('user_roles')
-      .upsert({
+      .insert({
         user_id: authData.user.id,
         role: role
       });
