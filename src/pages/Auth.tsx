@@ -10,7 +10,7 @@ import { Navigate } from 'react-router-dom';
 import { z } from 'zod';
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  username: z.string().min(1, 'Username is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
@@ -31,7 +31,7 @@ const Auth = () => {
 
   // Login form state
   const [loginForm, setLoginForm] = useState({
-    email: '',
+    username: '',
     password: '',
   });
 
@@ -55,7 +55,7 @@ const Auth = () => {
 
     try {
       const validatedData = loginSchema.parse(loginForm);
-      const { error } = await signIn(validatedData.email, validatedData.password);
+      const { error } = await signIn(validatedData.username, validatedData.password);
 
       if (error) {
         toast({
@@ -139,12 +139,13 @@ const Auth = () => {
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
+                  <Label htmlFor="login-username">Username</Label>
                   <Input
-                    id="login-email"
-                    type="email"
-                    value={loginForm.email}
-                    onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                    id="login-username"
+                    type="text"
+                    value={loginForm.username}
+                    onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                    placeholder="Enter your username"
                     required
                   />
                 </div>

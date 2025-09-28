@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import RoleManagement from '@/components/RoleManagement';
 import UserEditDialog from '@/components/UserEditDialog';
+import CreateUserDialog from '@/components/CreateUserDialog';
 import { 
   UserCog, 
   Shield, 
@@ -48,6 +49,7 @@ const Users = () => {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [showCreateUser, setShowCreateUser] = useState(false);
 
   // Map old roles to new Dash system roles for display
   const getRoleDisplayName = (role: string) => {
@@ -400,9 +402,9 @@ const Users = () => {
               Dash System Users
             </div>
             <div className="flex items-center gap-2">
-              <Button onClick={createMockUsers} variant="outline" size="sm">
+              <Button onClick={() => setShowCreateUser(true)} variant="outline" size="sm">
                 <UserPlus className="h-4 w-4 mr-2" />
-                Add Mock Users
+                Add User
               </Button>
               <div className="text-sm text-muted-foreground">
                 <Eye className="h-4 w-4 inline mr-1" />
@@ -585,6 +587,12 @@ const Users = () => {
         isOpen={isEditDialogOpen}
         onClose={handleEditDialogClose}
         onSave={handleUserSaved}
+      />
+
+      <CreateUserDialog
+        isOpen={showCreateUser}
+        onClose={() => setShowCreateUser(false)}
+        onUserCreated={handleUserSaved}
       />
     </div>
   );

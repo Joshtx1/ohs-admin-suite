@@ -7,7 +7,7 @@ interface AuthContextType {
   session: Session | null;
   userRole: string | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (username: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
@@ -56,12 +56,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+  const signIn = async (username: string, password: string) => {
+    try {
+      // First, find the user by username to get their email
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('username', username)
+        .single();
+
+      if (profileError || !profileData) {
+        return { error: { message: 'Invalid username or password' } };
+      }
+
+      // Now sign in with the email
+      const { error } = await supabase.auth.signInWithPassword({
+        email: profileData.email,
+        password,
+      });
+      
+      return { error };
+    } catch (error) {
+      return { error: { message: 'Invalid username or password' } };
+    }
   };
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
