@@ -29,9 +29,10 @@ const RoleManagement = () => {
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
 
   const roles = [
-    { value: 'admin', label: 'Master', icon: Crown },
-    { value: 'staff', label: 'Admin', icon: Shield },
-    { value: 'user', label: 'Clerk', icon: User },
+    { value: 'admin', label: 'Admin', icon: Crown },
+    { value: 'manager', label: 'Manager', icon: Shield },
+    { value: 'supervisor', label: 'Supervisor', icon: Settings },
+    { value: 'clerk', label: 'Clerk', icon: User },
   ];
 
   useEffect(() => {
@@ -119,7 +120,7 @@ const RoleManagement = () => {
       const { error: deleteError } = await supabase
         .from('role_permissions')
         .delete()
-        .eq('role', selectedRole as 'admin' | 'staff' | 'user' | 'master');
+        .eq('role', selectedRole as 'admin' | 'manager' | 'supervisor' | 'clerk');
 
       if (deleteError) throw deleteError;
 
@@ -129,7 +130,7 @@ const RoleManagement = () => {
           .from('role_permissions')
           .insert(
             selectedPermissions.map(permissionId => ({
-              role: selectedRole as 'admin' | 'staff' | 'user' | 'master',
+              role: selectedRole as 'admin' | 'manager' | 'supervisor' | 'clerk',
               permission_id: permissionId
             }))
           );

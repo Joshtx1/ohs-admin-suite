@@ -16,7 +16,7 @@ const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   phone: z.string().optional(),
-  role: z.enum(['admin', 'staff', 'user']),
+  role: z.enum(['admin', 'manager', 'supervisor', 'clerk']),
 });
 
 interface CreateUserDialogProps {
@@ -33,7 +33,7 @@ const CreateUserDialog = ({ isOpen, onClose, onUserCreated }: CreateUserDialogPr
     email: string;
     password: string;
     phone: string;
-    role: 'admin' | 'staff' | 'user';
+    role: 'admin' | 'manager' | 'supervisor' | 'clerk';
   }>({
     first_name: '',
     last_name: '',
@@ -41,7 +41,7 @@ const CreateUserDialog = ({ isOpen, onClose, onUserCreated }: CreateUserDialogPr
     email: '',
     password: '',
     phone: '',
-    role: 'user',
+    role: 'clerk',
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -81,7 +81,7 @@ const CreateUserDialog = ({ isOpen, onClose, onUserCreated }: CreateUserDialogPr
         email: '',
         password: '',
         phone: '',
-        role: 'user',
+        role: 'clerk',
       });
 
       onUserCreated();
@@ -223,7 +223,7 @@ const CreateUserDialog = ({ isOpen, onClose, onUserCreated }: CreateUserDialogPr
             <Label htmlFor="role">Role *</Label>
             <Select 
               value={formData.role} 
-              onValueChange={(value: 'admin' | 'staff' | 'user') => 
+              onValueChange={(value: 'admin' | 'manager' | 'supervisor' | 'clerk') => 
                 setFormData(prev => ({ ...prev, role: value }))
               }
             >
@@ -231,9 +231,10 @@ const CreateUserDialog = ({ isOpen, onClose, onUserCreated }: CreateUserDialogPr
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="user">Clerk - Operational Access</SelectItem>
-                <SelectItem value="staff">Admin - Administrative Access</SelectItem>
-                <SelectItem value="admin">Master - Full System Control</SelectItem>
+                <SelectItem value="clerk">Clerk - Operational Access</SelectItem>
+                <SelectItem value="supervisor">Supervisor - Supervisory Access</SelectItem>
+                <SelectItem value="manager">Manager - Administrative Access</SelectItem>
+                <SelectItem value="admin">Admin - Full System Control</SelectItem>
               </SelectContent>
             </Select>
           </div>

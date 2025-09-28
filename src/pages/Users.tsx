@@ -165,7 +165,7 @@ const Users = () => {
         .from('user_roles')
         .insert([{
           user_id: userId,
-          role: newRole as 'admin' | 'staff' | 'user',
+          role: newRole as 'admin' | 'manager' | 'supervisor' | 'clerk',
         }]);
 
       if (insertError) throw insertError;
@@ -234,7 +234,7 @@ const Users = () => {
           phone: '555-0102',
           username: 'sadmin',
           status: 'active',
-          role: 'staff'
+          role: 'manager'
         },
         {
           first_name: 'Mike',
@@ -243,7 +243,7 @@ const Users = () => {
           phone: '555-0103', 
           username: 'mmanager',
           status: 'active',
-          role: 'staff'
+          role: 'supervisor'
         },
         {
           first_name: 'Lisa',
@@ -290,7 +290,7 @@ const Users = () => {
             .from('user_roles')
             .upsert({
               user_id: authData.user.id,
-              role: mockUser.role as 'admin' | 'staff' | 'user'
+              role: mockUser.role as 'admin' | 'manager' | 'supervisor' | 'clerk'
             });
         }
       }
