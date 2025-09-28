@@ -65,11 +65,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       icon: Wrench,
     },
     {
-      name: 'Pricing',
-      href: '/dashboard/pricing',
-      icon: DollarSign,
-    },
-    {
       name: 'Users',
       href: '/dashboard/users',
       icon: Users,
@@ -142,7 +137,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
       <div className="flex">
         {/* Sidebar */}
-        <nav className="w-64 border-r border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <nav className="w-48 border-r border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="space-y-1 p-4">
             {filteredNavigation.map((item) => {
               const isActive = location.pathname === item.href;
@@ -150,7 +145,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
+                  className={`flex items-center space-x-2 rounded-lg px-2 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
                     isActive
                       ? 'bg-accent text-accent-foreground'
                       : 'text-foreground/70'

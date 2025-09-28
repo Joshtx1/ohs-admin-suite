@@ -4,10 +4,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { UserCog, Shield, User } from 'lucide-react';
+import { 
+  UserCog, 
+  Shield, 
+  User, 
+  Search, 
+  Crown, 
+  Settings,
+  Eye,
+  Plus,
+  Filter
+} from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -23,19 +34,46 @@ interface UserProfile {
 const Users = () => {
   const { userRole } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+
+  // Map old roles to new Dash system roles for display
+  const getRoleDisplayName = (role: string) => {
+    switch (role) {
+      case 'admin': return 'Master';
+      case 'staff': return 'Admin';
+      case 'user': return 'Clerk';
+      default: return role.charAt(0).toUpperCase() + role.slice(1);
+    }
+  };
+
+  const getRoleValue = (displayName: string) => {
+    switch (displayName) {
+      case 'Master': return 'admin';
+      case 'Admin': return 'staff';
+      case 'Manager': return 'staff'; // Map Manager to staff for now
+      case 'Clerk': return 'user';
+      default: return 'user';
+    }
+  };
 
   useEffect(() => {
     if (userRole !== 'admin') {
       toast({
         title: 'Access Denied',
-        description: 'You need admin privileges to view this page',
+        description: 'You need master or admin privileges to view this page',
         variant: 'destructive',
       });
       return;
     }
     fetchUsers();
   }, [userRole]);
+
+  useEffect(() => {
+    filterUsers();
+  }, [users, searchTerm, roleFilter]);
 
   const fetchUsers = async () => {
     try {
@@ -70,8 +108,33 @@ const Users = () => {
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const filterUsers = () => {
+    let filtered = users;
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(user => 
+        `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Role filter
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter(user => {
+        const currentRole = user.user_roles?.[0]?.role || 'user';
+        const displayRole = getRoleDisplayName(currentRole);
+        return displayRole.toLowerCase() === roleFilter.toLowerCase();
+      });
+    }
+
+    setFilteredUsers(filtered);
+  };
+
+  const handleRoleChange = async (userId: string, newDisplayRole: string) => {
     try {
+      const newRole = getRoleValue(newDisplayRole);
+      
       // First, delete existing roles for this user
       const { error: deleteError } = await supabase
         .from('user_roles')
@@ -92,7 +155,7 @@ const Users = () => {
 
       toast({
         title: 'Success',
-        description: 'User role updated successfully',
+        description: `User role updated to ${newDisplayRole}`,
       });
       
       fetchUsers();
@@ -107,22 +170,32 @@ const Users = () => {
   };
 
   const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'admin':
+    const displayRole = getRoleDisplayName(role);
+    switch (displayRole) {
+      case 'Master':
+        return <Crown className="h-4 w-4" />;
+      case 'Admin':
         return <Shield className="h-4 w-4" />;
-      case 'staff':
-        return <UserCog className="h-4 w-4" />;
+      case 'Manager':
+        return <Settings className="h-4 w-4" />;
+      case 'Clerk':
+        return <User className="h-4 w-4" />;
       default:
         return <User className="h-4 w-4" />;
     }
   };
 
   const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'admin':
+    const displayRole = getRoleDisplayName(role);
+    switch (displayRole) {
+      case 'Master':
         return 'default';
-      case 'staff':
+      case 'Admin':
         return 'secondary';
+      case 'Manager':
+        return 'outline';
+      case 'Clerk':
+        return 'outline';
       default:
         return 'outline';
     }
@@ -134,7 +207,7 @@ const Users = () => {
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight">Access Denied</h1>
           <p className="text-muted-foreground">
-            You need administrator privileges to access user management.
+            You need Master or Admin privileges to access Dash System User Management.
           </p>
         </div>
       </div>
@@ -142,23 +215,68 @@ const Users = () => {
   }
 
   if (loading) {
-    return <div>Loading users...</div>;
+    return <div>Loading Dash System users...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Dash System User Management</h1>
         <p className="text-muted-foreground">
-          Manage user accounts and permissions
+          Manage internal Dash System users, roles, and permissions
         </p>
       </div>
 
+      {/* Search and Filter Controls */}
       <Card>
         <CardHeader>
-          <CardTitle>System Users</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Search & Filter
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="master">Master</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="manager">Manager</SelectItem>
+                <SelectItem value="clerk">Clerk</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Users Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <UserCog className="h-5 w-5" />
+              Dash System Users
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Eye className="h-4 w-4" />
+              Showing {filteredUsers.length} of {users.length} users
+            </div>
+          </CardTitle>
           <CardDescription>
-            All registered users and their role assignments ({users.length} total)
+            Internal system users with administrative and operational access
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -169,13 +287,15 @@ const Users = () => {
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Access Level</TableHead>
                 <TableHead>Member Since</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => {
+              {filteredUsers.map((user) => {
                 const currentRole = user.user_roles?.[0]?.role || 'user';
+                const displayRole = getRoleDisplayName(currentRole);
                 return (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
@@ -189,24 +309,33 @@ const Users = () => {
                         className="flex items-center gap-1 w-fit"
                       >
                         {getRoleIcon(currentRole)}
-                        {currentRole.toUpperCase()}
+                        {displayRole}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-xs text-muted-foreground">
+                        {displayRole === 'Master' && 'Full System Control'}
+                        {displayRole === 'Admin' && 'Administrative Access'}
+                        {displayRole === 'Manager' && 'Supervisory Access'}
+                        {displayRole === 'Clerk' && 'Operational Access'}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {new Date(user.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
                       <Select
-                        value={currentRole}
+                        value={displayRole}
                         onValueChange={(newRole) => handleRoleChange(user.user_id, newRole)}
                       >
                         <SelectTrigger className="w-32">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="user">User</SelectItem>
-                          <SelectItem value="staff">Staff</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="Master">Master</SelectItem>
+                          <SelectItem value="Admin">Admin</SelectItem>
+                          <SelectItem value="Manager">Manager</SelectItem>
+                          <SelectItem value="Clerk">Clerk</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
@@ -218,32 +347,63 @@ const Users = () => {
         </CardContent>
       </Card>
 
+      {/* Role Descriptions */}
       <Card>
         <CardHeader>
-          <CardTitle>Role Descriptions</CardTitle>
+          <CardTitle>Dash System Role Hierarchy</CardTitle>
+          <CardDescription>
+            Internal user roles and their system permissions
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <Badge variant="default" className="flex items-center gap-1">
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3 p-3 rounded-lg border">
+              <Badge variant="default" className="flex items-center gap-1 mt-0.5">
+                <Crown className="h-3 w-3" />
+                MASTER
+              </Badge>
+              <div>
+                <h4 className="font-medium">System Master</h4>
+                <p className="text-sm text-muted-foreground">
+                  Complete system control, user management, all administrative functions, system configuration
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3 p-3 rounded-lg border">
+              <Badge variant="secondary" className="flex items-center gap-1 mt-0.5">
                 <Shield className="h-3 w-3" />
                 ADMIN
               </Badge>
-              <span className="text-sm">Full system access, can manage all users, clients, services, and pricing</span>
+              <div>
+                <h4 className="font-medium">Administrator</h4>
+                <p className="text-sm text-muted-foreground">
+                  Manage clients, trainees, services, assignments, and operational data
+                </p>
+              </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <UserCog className="h-3 w-3" />
-                STAFF
+            <div className="flex items-start space-x-3 p-3 rounded-lg border">
+              <Badge variant="outline" className="flex items-center gap-1 mt-0.5">
+                <Settings className="h-3 w-3" />
+                MANAGER
               </Badge>
-              <span className="text-sm">Can manage clients, services, and pricing but cannot manage users</span>
+              <div>
+                <h4 className="font-medium">Manager</h4>
+                <p className="text-sm text-muted-foreground">
+                  Supervisory access to operations, can assign trainees and approve services
+                </p>
+              </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <Badge variant="outline" className="flex items-center gap-1">
+            <div className="flex items-start space-x-3 p-3 rounded-lg border">
+              <Badge variant="outline" className="flex items-center gap-1 mt-0.5">
                 <User className="h-3 w-3" />
-                USER
+                CLERK
               </Badge>
-              <span className="text-sm">Read-only access to view data</span>
+              <div>
+                <h4 className="font-medium">Clerk</h4>
+                <p className="text-sm text-muted-foreground">
+                  Operational access to view and process daily tasks, data entry
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>
