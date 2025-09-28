@@ -8,7 +8,7 @@ interface AuthContextType {
   userRole: string | null;
   loading: boolean;
   signIn: (username: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error: any }>;
+  signUp: (email: string, firstName: string, lastName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -125,12 +125,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+  const signUp = async (email: string, firstName: string, lastName: string) => {
+    // Generate a temporary password for account creation
+    const tempPassword = 'temp_' + Math.random().toString(36).substring(2, 15);
+    const redirectUrl = `${window.location.origin}/auth?reset=true`;
     
     const { error } = await supabase.auth.signUp({
       email,
-      password,
+      password: tempPassword,
       options: {
         emailRedirectTo: redirectUrl,
         data: {
@@ -139,6 +141,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     });
+
+    // If signup successful, immediately send password reset email
+    if (!error) {
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+    }
+    
     return { error };
   };
 

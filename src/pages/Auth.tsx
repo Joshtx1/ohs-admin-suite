@@ -18,13 +18,8 @@ const loginSchema = z.object({
 
 const signupSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string(),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
 });
 
 const Auth = () => {
@@ -47,8 +42,6 @@ const Auth = () => {
   // Signup form state
   const [signupForm, setSignupForm] = useState({
     email: '',
-    password: '',
-    confirmPassword: '',
     firstName: '',
     lastName: '',
   });
@@ -61,7 +54,8 @@ const Auth = () => {
 
   // Check if user came from password reset
   useEffect(() => {
-    if (searchParams.get('reset') === 'true' && user) {
+    const resetParam = searchParams.get('reset');
+    if ((resetParam === 'true' || resetParam === '') && user) {
       setShowPasswordChange(true);
     }
   }, [searchParams, user]);
@@ -112,7 +106,6 @@ const Auth = () => {
       const validatedData = signupSchema.parse(signupForm);
       const { error } = await signUp(
         validatedData.email,
-        validatedData.password,
         validatedData.firstName,
         validatedData.lastName
       );
@@ -125,8 +118,14 @@ const Auth = () => {
         });
       } else {
         toast({
-          title: 'Account Created',
-          description: 'Please check your email to verify your account.',
+          title: 'Account Setup Email Sent',
+          description: 'Please check your email to complete your account setup and create your password.',
+        });
+        // Clear the form
+        setSignupForm({
+          email: '',
+          firstName: '',
+          lastName: '',
         });
       }
     } catch (err) {
@@ -407,29 +406,12 @@ const Auth = () => {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    value={signupForm.password}
-                    onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="signup-confirmPassword"
-                    type="password"
-                    value={signupForm.confirmPassword}
-                    onChange={(e) => setSignupForm({ ...signupForm, confirmPassword: e.target.value })}
-                    required
-                  />
-                </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Creating Account...' : 'Create Account'}
+                  {loading ? 'Sending Setup Email...' : 'Send Setup Email'}
                 </Button>
+                <p className="text-sm text-muted-foreground text-center mt-2">
+                  You'll receive an email to complete your account setup and create your password.
+                </p>
               </form>
             </TabsContent>
           </Tabs>
