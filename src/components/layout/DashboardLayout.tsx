@@ -19,7 +19,8 @@ import {
   DollarSign, 
   LayoutDashboard, 
   LogOut,
-  UserCog
+  UserCog,
+  UserPlus
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -52,6 +53,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       name: 'Clients',
       href: '/dashboard/clients',
       icon: Building2,
+    },
+    {
+      name: 'Trainees',
+      href: '/dashboard/trainees',
+      icon: UserPlus,
     },
     {
       name: 'Services',
