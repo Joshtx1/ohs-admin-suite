@@ -83,7 +83,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   };
 
   const filteredNavigation = navigation.filter(item => 
-    !item.adminOnly || userRole === 'admin'
+    !item.adminOnly || userRole === 'admin' || userRole === 'master'
   );
 
   return (
