@@ -12,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import RoleManagement from '@/components/RoleManagement';
 import UserEditDialog from '@/components/UserEditDialog';
 import CreateUserDialog from '@/components/CreateUserDialog';
+import ResetPasswordDialog from '@/components/ResetPasswordDialog';
 import { 
   UserCog, 
   Shield, 
@@ -23,7 +24,8 @@ import {
   Plus,
   Filter,
   Edit,
-  UserPlus
+  UserPlus,
+  KeyRound
 } from 'lucide-react';
 
 interface UserProfile {
@@ -50,6 +52,8 @@ const Users = () => {
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [showCreateUser, setShowCreateUser] = useState(false);
+  const [resetPasswordUser, setResetPasswordUser] = useState<UserProfile | null>(null);
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
 
   // Map old roles to new Dash system roles for display
   const getRoleDisplayName = (role: string) => {
@@ -193,6 +197,20 @@ const Users = () => {
 
   const handleUserSaved = () => {
     fetchUsers();
+  };
+
+  const handleResetPassword = (user: UserProfile) => {
+    setResetPasswordUser(user);
+    setIsResetPasswordDialogOpen(true);
+  };
+
+  const handleResetPasswordDialogClose = () => {
+    setIsResetPasswordDialogOpen(false);
+    setResetPasswordUser(null);
+  };
+
+  const handlePasswordResetSuccess = () => {
+    // Just close the dialog, no need to refetch users
   };
 
   const createMockUsers = async () => {
@@ -489,6 +507,13 @@ const Users = () => {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleResetPassword(user)}
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
                         <Select
                           value={displayRole}
                           onValueChange={(newRole) => handleRoleChange(user.user_id, newRole)}
@@ -593,6 +618,13 @@ const Users = () => {
         isOpen={showCreateUser}
         onClose={() => setShowCreateUser(false)}
         onUserCreated={handleUserSaved}
+      />
+
+      <ResetPasswordDialog
+        user={resetPasswordUser}
+        isOpen={isResetPasswordDialogOpen}
+        onClose={handleResetPasswordDialogClose}
+        onSuccess={handlePasswordResetSuccess}
       />
     </div>
   );
