@@ -60,7 +60,7 @@ const Users = () => {
   };
 
   useEffect(() => {
-    if (userRole !== 'admin') {
+    if (userRole !== 'admin' && userRole !== 'master') {
       toast({
         title: 'Access Denied',
         description: 'You need master or admin privileges to view this page',
@@ -201,7 +201,7 @@ const Users = () => {
     }
   };
 
-  if (userRole !== 'admin') {
+  if (userRole !== 'admin' && userRole !== 'master') {
     return (
       <div className="space-y-6">
         <div className="text-center">
