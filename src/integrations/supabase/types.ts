@@ -491,6 +491,7 @@ export type Database = {
           phone: string | null
           photo_url: string | null
           signature_url: string | null
+          ssn: string | null
           state: string | null
           status: string
           street: string | null
@@ -525,6 +526,7 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           signature_url?: string | null
+          ssn?: string | null
           state?: string | null
           status?: string
           street?: string | null
@@ -559,6 +561,7 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           signature_url?: string | null
+          ssn?: string | null
           state?: string | null
           status?: string
           street?: string | null

@@ -22,7 +22,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, UserPlus, Edit, Eye, Search, Filter } from 'lucide-react';
+import { Plus, UserPlus, Edit, Eye, Search, Filter, Download, Upload } from 'lucide-react';
+import Papa from 'papaparse';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -32,6 +33,7 @@ import { SignatureCapture } from '@/components/SignatureCapture';
 interface Trainee {
   id: string;
   name: string;
+  ssn: string | null;
   first_name: string | null;
   middle_name: string | null;
   last_name: string | null;
@@ -73,6 +75,7 @@ const Trainees = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [formData, setFormData] = useState({
     name: '',
+    ssn: '',
     first_name: '',
     middle_name: '',
     last_name: '',
@@ -90,7 +93,6 @@ const Trainees = () => {
     height: '',
     hair: '',
     eyes: '',
-    age: '',
     council_id: '',
     gender: 'Male',
     language: 'English',
@@ -116,10 +118,11 @@ const Trainees = () => {
     if (searchTerm) {
       filtered = filtered.filter(trainee =>
         trainee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trainee.ssn?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trainee.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         trainee.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        trainee.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        trainee.occupation_craft?.toLowerCase().includes(searchTerm.toLowerCase())
+        trainee.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trainee.mobile_number?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -150,6 +153,7 @@ const Trainees = () => {
   const resetForm = () => {
     setFormData({
       name: '',
+      ssn: '',
       first_name: '',
       middle_name: '',
       last_name: '',
@@ -167,7 +171,6 @@ const Trainees = () => {
       height: '',
       hair: '',
       eyes: '',
-      age: '',
       council_id: '',
       gender: 'Male',
       language: 'English',
@@ -190,6 +193,7 @@ const Trainees = () => {
     setEditingTrainee(trainee);
     setFormData({
       name: trainee.name || '',
+      ssn: trainee.ssn || '',
       first_name: trainee.first_name || '',
       middle_name: trainee.middle_name || '',
       last_name: trainee.last_name || '',
@@ -207,7 +211,6 @@ const Trainees = () => {
       height: trainee.height || '',
       hair: trainee.hair || '',
       eyes: trainee.eyes || '',
-      age: trainee.age?.toString() || '',
       council_id: trainee.council_id || '',
       gender: trainee.gender || 'Male',
       language: trainee.language || 'English',
@@ -221,6 +224,19 @@ const Trainees = () => {
     setDialogOpen(true);
   };
 
+  // Calculate age from birthdate
+  const calculateAge = (birthDate: string): number | null => {
+    if (!birthDate) return null;
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -229,10 +245,16 @@ const Trainees = () => {
       return;
     }
 
+    if (!formData.ssn) {
+      toast.error('SSN is required');
+      return;
+    }
+
     try {
+      const age = calculateAge(formData.date_of_birth);
       const traineeData = {
         ...formData,
-        age: formData.age ? parseInt(formData.age) : null,
+        age,
         created_by: editingTrainee ? undefined : user.id,
         date_of_birth: formData.date_of_birth || null,
         email: formData.email || null,
@@ -254,7 +276,8 @@ const Trainees = () => {
         notes: formData.notes || null,
         photo_url: formData.photo_url || null,
         signature_url: formData.signature_url || null,
-        medical_history: formData.medical_history || null
+        medical_history: formData.medical_history || null,
+        ssn: formData.ssn || null
       };
 
       if (editingTrainee) {
@@ -277,10 +300,104 @@ const Trainees = () => {
       setDialogOpen(false);
       resetForm();
       fetchTrainees();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving trainee:', error);
-      toast.error(`Failed to ${editingTrainee ? 'update' : 'add'} trainee`);
+      if (error?.message?.includes('duplicate') || error?.message?.includes('unique')) {
+        toast.error('A trainee with this SSN already exists');
+      } else {
+        toast.error(`Failed to ${editingTrainee ? 'update' : 'add'} trainee`);
+      }
     }
+  };
+
+  // Export functionality
+  const exportToCSV = () => {
+    const csvData = filteredTrainees.map(trainee => ({
+      SSN: trainee.ssn || '',
+      Name: trainee.name || '',
+      'First Name': trainee.first_name || '',
+      'Middle Name': trainee.middle_name || '',
+      'Last Name': trainee.last_name || '',
+      Email: trainee.email || '',
+      Phone: trainee.phone || '',
+      'Mobile Number': trainee.mobile_number || '',
+      'Date of Birth': trainee.date_of_birth || '',
+      Age: trainee.age || '',
+      Gender: trainee.gender || '',
+      Language: trainee.language || '',
+      'License Number': trainee.license_number || '',
+      'License Type': trainee.license_type || '',
+      Status: trainee.status || ''
+    }));
+
+    const csv = Papa.unparse(csvData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `trainees_export_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    toast.success('Export completed successfully');
+  };
+
+  // Import functionality
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    Papa.parse(file, {
+      header: true,
+      complete: (results) => {
+        const importData = results.data as any[];
+        console.log('Import data:', importData);
+        
+        // Process each row and insert into database
+        importData.forEach(async (row) => {
+          if (row.SSN && row.Name) {
+            try {
+              const age = calculateAge(row['Date of Birth']);
+              const traineeData = {
+                name: row.Name,
+                ssn: row.SSN,
+                first_name: row['First Name'] || null,
+                middle_name: row['Middle Name'] || null,
+                last_name: row['Last Name'] || null,
+                email: row.Email || null,
+                phone: row.Phone || null,
+                mobile_number: row['Mobile Number'] || null,
+                date_of_birth: row['Date of Birth'] || null,
+                age,
+                gender: row.Gender || null,
+                language: row.Language || null,
+                license_number: row['License Number'] || null,
+                license_type: row['License Type'] || null,
+                status: row.Status || 'active',
+                created_by: user?.id
+              };
+
+              const { error } = await supabase
+                .from('trainees')
+                .insert([traineeData]);
+              
+              if (error && !error.message.includes('duplicate')) {
+                console.error('Error importing trainee:', error);
+              }
+            } catch (error) {
+              console.error('Error processing import row:', error);
+            }
+          }
+        });
+        
+        toast.success('Import completed successfully');
+        fetchTrainees();
+      },
+      error: (error) => {
+        console.error('CSV parse error:', error);
+        toast.error('Error parsing CSV file');
+      }
+    });
+    
+    // Reset file input
+    event.target.value = '';
   };
 
   const formatDate = (dateString: string | null) => {
@@ -306,14 +423,35 @@ const Trainees = () => {
           </p>
         </div>
         
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openAddDialog}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Trainee
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportToCSV}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <label htmlFor="import-csv">
+            <Button variant="outline" asChild>
+              <span>
+                <Upload className="h-4 w-4 mr-2" />
+                Import CSV
+              </span>
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          </label>
+          <input
+            id="import-csv"
+            type="file"
+            accept=".csv"
+            onChange={handleImport}
+            className="hidden"
+          />
+          
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openAddDialog}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Trainee
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingTrainee ? 'Edit Trainee' : 'Add New Trainee'}
@@ -369,22 +507,24 @@ const Trainees = () => {
 
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-2">
-                      <Label htmlFor="id">ID</Label>
+                      <Label htmlFor="ssn">SSN *</Label>
                       <Input
-                        id="council_id"
-                        value={formData.council_id}
-                        onChange={(e) => setFormData(prev => ({ ...prev, council_id: e.target.value }))}
-                        placeholder="123456789 - US"
+                        id="ssn"
+                        value={formData.ssn}
+                        onChange={(e) => setFormData(prev => ({ ...prev, ssn: e.target.value }))}
+                        placeholder="123-45-6789"
+                        required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="age">Age</Label>
+                      <Label htmlFor="age">Age (Auto)</Label>
                       <Input
                         id="age"
                         type="number"
-                        value={formData.age}
-                        onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
-                        placeholder="51"
+                        value={formData.date_of_birth ? calculateAge(formData.date_of_birth)?.toString() || '' : ''}
+                        placeholder="Auto-calculated"
+                        disabled
+                        className="bg-muted"
                       />
                     </div>
                     <div className="space-y-2">
@@ -628,6 +768,7 @@ const Trainees = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Search and Filter Section */}
@@ -695,35 +836,18 @@ const Trainees = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Photo</TableHead>
+                  <TableHead>SSN</TableHead>
                   <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Mobile</TableHead>
-                  <TableHead>Occupation</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredTrainees.map((trainee) => (
                   <TableRow key={trainee.id}>
-                    <TableCell>
-                      {trainee.photo_url ? (
-                        <img 
-                          src={trainee.photo_url} 
-                          alt="Trainee" 
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                          <UserPlus className="w-5 h-5 text-muted-foreground" />
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium">{trainee.name}</TableCell>
-                    <TableCell>{trainee.email || 'N/A'}</TableCell>
-                    <TableCell>{trainee.mobile_number || 'N/A'}</TableCell>
-                    <TableCell>{trainee.occupation_craft || 'N/A'}</TableCell>
+                    <TableCell className="font-medium">{trainee.ssn || 'N/A'}</TableCell>
+                    <TableCell>{trainee.name}</TableCell>
                     <TableCell>
                       <Badge 
                         variant={
@@ -734,6 +858,7 @@ const Trainees = () => {
                         {trainee.status}
                       </Badge>
                     </TableCell>
+                    <TableCell>{trainee.phone || trainee.mobile_number || 'N/A'}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
                         <Button 
