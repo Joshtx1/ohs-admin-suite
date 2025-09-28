@@ -20,6 +20,10 @@ const serviceSchema = z.object({
   description: z.string().max(1000).optional(),
   category: z.string().min(1, 'Category is required').max(100),
   duration_minutes: z.number().min(1, 'Duration must be at least 1 minute'),
+  member_price: z.number().min(0, 'Member price must be 0 or greater'),
+  non_member_price: z.number().min(0, 'Non-member price must be 0 or greater'),
+  valid_for_days: z.number().min(0, 'Valid for days must be 0 or greater'),
+  status: z.string().min(1, 'Status is required'),
   is_active: z.boolean().default(true),
 });
 
@@ -30,8 +34,13 @@ interface Service {
   description?: string;
   category: string;
   duration_minutes: number;
+  member_price: number;
+  non_member_price: number;
+  valid_for_days: number;
+  status: string;
   is_active: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 const Services = () => {
@@ -47,6 +56,10 @@ const Services = () => {
     description: '',
     category: '',
     duration_minutes: '60',
+    member_price: '20',
+    non_member_price: '30',
+    valid_for_days: '0',
+    status: 'A',
     is_active: true,
   });
   
@@ -56,14 +69,14 @@ const Services = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
 
   const serviceCategories = [
-    'Medical Examination',
-    'Health Screening',
-    'Fitness Assessment',
-    'Occupational Therapy',
-    'Safety Training',
-    'Consultation',
-    'Report Generation',
-    'Other'
+    'AUDIO',
+    'DRUG AND ALCOHOL',
+    'LAB',
+    'MEQ',
+    'MISC',
+    'PHYSICAL FCE',
+    'RESPIRATOR FIT',
+    'VISION'
   ];
 
   useEffect(() => {
@@ -130,6 +143,10 @@ const Services = () => {
       description: '',
       category: '',
       duration_minutes: '60',
+      member_price: '20',
+      non_member_price: '30',
+      valid_for_days: '0',
+      status: 'A',
       is_active: true,
     });
     setEditingService(null);
@@ -142,6 +159,9 @@ const Services = () => {
       const processedData = {
         ...formData,
         duration_minutes: parseInt(formData.duration_minutes),
+        member_price: parseFloat(formData.member_price),
+        non_member_price: parseFloat(formData.non_member_price),
+        valid_for_days: parseInt(formData.valid_for_days),
       };
 
       const validatedData = serviceSchema.parse(processedData);
@@ -167,6 +187,10 @@ const Services = () => {
             description: validatedData.description,
             category: validatedData.category,
             duration_minutes: validatedData.duration_minutes,
+            member_price: validatedData.member_price,
+            non_member_price: validatedData.non_member_price,
+            valid_for_days: validatedData.valid_for_days,
+            status: validatedData.status,
             is_active: validatedData.is_active,
             created_by: user?.id,
           }]);
@@ -208,6 +232,10 @@ const Services = () => {
       description: service.description || '',
       category: service.category,
       duration_minutes: service.duration_minutes.toString(),
+      member_price: service.member_price?.toString() || '20',
+      non_member_price: service.non_member_price?.toString() || '30',
+      valid_for_days: service.valid_for_days?.toString() || '0',
+      status: service.status || 'A',
       is_active: service.is_active,
     });
     setDialogOpen(true);
@@ -215,14 +243,17 @@ const Services = () => {
 
   const handleExport = () => {
     const csvContent = [
-      ['Code', 'Name', 'Description', 'Category', 'Duration (min)', 'Status'].join(','),
+      ['Code', 'Name', 'Description', 'Category', 'Duration (min)', 'Member Price', 'Non-Member Price', 'Valid Days', 'Status'].join(','),
       ...filteredServices.map(service => [
         service.service_code,
         `"${service.name}"`,
         `"${service.description || ''}"`,
         `"${service.category}"`,
         service.duration_minutes,
-        service.is_active ? 'Active' : 'Inactive'
+        service.member_price || 0,
+        service.non_member_price || 0,
+        service.valid_for_days || 0,
+        service.status === 'A' ? 'Active' : 'Inactive'
       ].join(','))
     ].join('\n');
 
@@ -345,6 +376,62 @@ const Services = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="member_price">Member Price ($) *</Label>
+                  <Input
+                    id="member_price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.member_price}
+                    onChange={(e) => setFormData({ ...formData, member_price: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="non_member_price">Non-Member Price ($) *</Label>
+                  <Input
+                    id="non_member_price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.non_member_price}
+                    onChange={(e) => setFormData({ ...formData, non_member_price: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="valid_for_days">Valid For (days) *</Label>
+                  <Input
+                    id="valid_for_days"
+                    type="number"
+                    min="0"
+                    value={formData.valid_for_days}
+                    onChange={(e) => setFormData({ ...formData, valid_for_days: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status *</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) => setFormData({ ...formData, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="A">Active</SelectItem>
+                      <SelectItem value="I">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -453,7 +540,9 @@ const Services = () => {
               <TableRow>
                 <TableHead className="font-semibold">Code</TableHead>
                 <TableHead className="font-semibold">Description</TableHead>
-                <TableHead className="font-semibold text-center">PRICE</TableHead>
+                <TableHead className="font-semibold text-center">Member Price</TableHead>
+                <TableHead className="font-semibold text-center">Non-Member Price</TableHead>
+                <TableHead className="font-semibold text-center">Valid Days</TableHead>
                 <TableHead className="font-semibold text-center">Status</TableHead>
                 <TableHead className="font-semibold text-center">Actions</TableHead>
               </TableRow>
@@ -478,14 +567,20 @@ const Services = () => {
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
-                    <span className="text-muted-foreground">--</span>
+                    <span className="font-medium">${service.member_price || 0}</span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className="font-medium">${service.non_member_price || 0}</span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className="text-sm">{service.valid_for_days || 0} days</span>
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge 
-                      variant={service.is_active ? 'default' : 'secondary'}
-                      className={service.is_active ? 'bg-green-600 text-white' : ''}
+                      variant={service.status === 'A' ? 'default' : 'secondary'}
+                      className={service.status === 'A' ? 'bg-green-600 text-white' : ''}
                     >
-                      {service.is_active ? 'ACTIVE' : 'INACTIVE'}
+                      {service.status === 'A' ? 'ACTIVE' : 'INACTIVE'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center">
@@ -514,7 +609,7 @@ const Services = () => {
               ))}
               {filteredServices.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No services found matching your criteria
                   </TableCell>
                 </TableRow>

@@ -318,9 +318,13 @@ export type Database = {
           duration_minutes: number
           id: string
           is_active: boolean
+          member_price: number | null
           name: string
+          non_member_price: number | null
           service_code: string
+          status: string | null
           updated_at: string
+          valid_for_days: number | null
         }
         Insert: {
           category: string
@@ -330,9 +334,13 @@ export type Database = {
           duration_minutes?: number
           id?: string
           is_active?: boolean
+          member_price?: number | null
           name: string
+          non_member_price?: number | null
           service_code: string
+          status?: string | null
           updated_at?: string
+          valid_for_days?: number | null
         }
         Update: {
           category?: string
@@ -342,9 +350,13 @@ export type Database = {
           duration_minutes?: number
           id?: string
           is_active?: boolean
+          member_price?: number | null
           name?: string
+          non_member_price?: number | null
           service_code?: string
+          status?: string | null
           updated_at?: string
+          valid_for_days?: number | null
         }
         Relationships: []
       }
