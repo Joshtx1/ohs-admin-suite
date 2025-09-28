@@ -13,7 +13,7 @@ interface CreateUserRequest {
   email: string;
   password: string;
   phone?: string;
-  role: 'admin' | 'staff' | 'user';
+  role: 'admin' | 'manager' | 'supervisor' | 'clerk';
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -27,44 +27,64 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Get the authorization header
     const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      console.error('No authorization header');
-      return new Response(
-        JSON.stringify({ error: 'Authorization required' }),
-        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      );
-    }
-
-    // Create Supabase client with anon key to verify the calling user
-    const supabaseAnon = createClient(
+    
+    // Check if this is a bootstrap scenario (no admin users exist)
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Verify the calling user has admin/master role
-    const { data: { user }, error: userError } = await supabaseAnon.auth.getUser();
-    if (userError || !user) {
-      console.error('User verification failed:', userError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication' }),
-        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      );
-    }
-
-    // Check if user has admin or master role
-    const { data: roleData, error: roleError } = await supabaseAnon
+    const { data: adminUsers, error: adminCheckError } = await supabaseAdmin
       .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
+      .select('user_id')
+      .eq('role', 'admin')
+      .limit(1);
 
-    if (roleError || !roleData || !['admin', 'master'].includes(roleData.role)) {
-      console.error('Insufficient privileges:', roleData?.role);
-      return new Response(
-        JSON.stringify({ error: 'Insufficient privileges' }),
-        { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    const isBootstrap = !adminCheckError && (!adminUsers || adminUsers.length === 0);
+    
+    if (!isBootstrap) {
+      // Normal flow - require authentication
+      if (!authHeader) {
+        console.error('No authorization header');
+        return new Response(
+          JSON.stringify({ error: 'Authorization required' }),
+          { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
+
+      // Create Supabase client with anon key to verify the calling user
+      const supabaseAnon = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        { global: { headers: { Authorization: authHeader } } }
       );
+
+      // Verify the calling user has admin role
+      const { data: { user }, error: userError } = await supabaseAnon.auth.getUser();
+      if (userError || !user) {
+        console.error('User verification failed:', userError);
+        return new Response(
+          JSON.stringify({ error: 'Invalid authentication' }),
+          { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
+
+      // Check if user has admin role
+      const { data: roleData, error: roleError } = await supabaseAnon
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (roleError || !roleData || roleData.role !== 'admin') {
+        console.error('Insufficient privileges:', roleData?.role);
+        return new Response(
+          JSON.stringify({ error: 'Insufficient privileges' }),
+          { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        );
+      }
+    } else {
+      console.log('Bootstrap mode: Creating first admin user');
     }
 
     // Parse request body
@@ -80,7 +100,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Check if username already exists
-    const { data: existingProfile, error: checkError } = await supabaseAnon
+    const { data: existingProfile, error: checkError } = await supabaseAdmin
       .from('profiles')
       .select('username')
       .eq('username', username)
@@ -100,18 +120,6 @@ const handler = async (req: Request): Promise<Response> => {
         { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
-
-    // Create Supabase admin client with service role key
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    );
 
     // Create user with admin client
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
