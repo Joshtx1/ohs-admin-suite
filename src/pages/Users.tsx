@@ -55,31 +55,32 @@ const Users = () => {
   const [resetPasswordUser, setResetPasswordUser] = useState<UserProfile | null>(null);
   const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
 
-  // Map old roles to new Dash system roles for display
+  // Map roles to display names for the new hierarchy
   const getRoleDisplayName = (role: string) => {
     switch (role) {
-      case 'admin': return 'Master';
-      case 'staff': return 'Admin';
-      case 'user': return 'Clerk';
+      case 'admin': return 'Admin';
+      case 'manager': return 'Manager';
+      case 'supervisor': return 'Supervisor';
+      case 'clerk': return 'Clerk';
       default: return role.charAt(0).toUpperCase() + role.slice(1);
     }
   };
 
   const getRoleValue = (displayName: string) => {
     switch (displayName) {
-      case 'Master': return 'admin';
-      case 'Admin': return 'staff';
-      case 'Manager': return 'staff'; // Map Manager to staff for now
-      case 'Clerk': return 'user';
-      default: return 'user';
+      case 'Admin': return 'admin';
+      case 'Manager': return 'manager';
+      case 'Supervisor': return 'supervisor';
+      case 'Clerk': return 'clerk';
+      default: return 'clerk';
     }
   };
 
   useEffect(() => {
-    if (userRole !== 'admin' && userRole !== 'master') {
+    if (userRole !== 'admin') {
       toast({
         title: 'Access Denied',
-        description: 'You need master or admin privileges to view this page',
+        description: 'You need admin privileges to view this page',
         variant: 'destructive',
       });
       return;
@@ -489,9 +490,9 @@ const Users = () => {
                     </TableCell>
                     <TableCell>
                       <div className="text-xs text-muted-foreground">
-                        {displayRole === 'Master' && 'Full System Control'}
-                        {displayRole === 'Admin' && 'Administrative Access'}
-                        {displayRole === 'Manager' && 'Supervisory Access'}
+                        {displayRole === 'Admin' && 'Full System Control'}
+                        {displayRole === 'Manager' && 'Administrative Access'}
+                        {displayRole === 'Supervisor' && 'Supervisory Access'}
                         {displayRole === 'Clerk' && 'Operational Access'}
                       </div>
                     </TableCell>

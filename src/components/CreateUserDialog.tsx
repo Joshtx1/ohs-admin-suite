@@ -110,9 +110,10 @@ const CreateUserDialog = ({ isOpen, onClose, onUserCreated }: CreateUserDialogPr
 
   const getRoleDisplayName = (role: string) => {
     switch (role) {
-      case 'admin': return 'Master';
-      case 'staff': return 'Admin';
-      case 'user': return 'Clerk';
+      case 'admin': return 'Admin';
+      case 'manager': return 'Manager';
+      case 'supervisor': return 'Supervisor';
+      case 'clerk': return 'Clerk';
       default: return role;
     }
   };
