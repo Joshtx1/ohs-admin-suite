@@ -495,6 +495,7 @@ export type Database = {
           state: string | null
           status: string
           street: string | null
+          unique_id: string | null
           updated_at: string
           zip: string | null
         }
@@ -530,6 +531,7 @@ export type Database = {
           state?: string | null
           status?: string
           street?: string | null
+          unique_id?: string | null
           updated_at?: string
           zip?: string | null
         }
@@ -565,6 +567,7 @@ export type Database = {
           state?: string | null
           status?: string
           street?: string | null
+          unique_id?: string | null
           updated_at?: string
           zip?: string | null
         }
@@ -597,6 +600,10 @@ export type Database = {
     }
     Functions: {
       generate_service_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_trainee_unique_id: {
         Args: Record<PropertyKey, never>
         Returns: string
       }

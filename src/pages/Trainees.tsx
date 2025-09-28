@@ -32,6 +32,7 @@ import { SignatureCapture } from '@/components/SignatureCapture';
 
 interface Trainee {
   id: string;
+  unique_id: string | null;
   name: string;
   ssn: string | null;
   first_name: string | null;
@@ -62,6 +63,7 @@ interface Trainee {
   medical_history: string | null;
   status: string;
   created_at: string;
+  updated_at: string;
 }
 
 const Trainees = () => {
@@ -313,21 +315,39 @@ const Trainees = () => {
   // Export functionality
   const exportToCSV = () => {
     const csvData = filteredTrainees.map(trainee => ({
-      SSN: trainee.ssn || '',
-      Name: trainee.name || '',
+      'Internal ID': trainee.id || '',
+      'Unique ID': trainee.unique_id || '',
+      'SSN': trainee.ssn || '',
+      'Name': trainee.name || '',
       'First Name': trainee.first_name || '',
       'Middle Name': trainee.middle_name || '',
       'Last Name': trainee.last_name || '',
-      Email: trainee.email || '',
-      Phone: trainee.phone || '',
+      'Email': trainee.email || '',
+      'Phone': trainee.phone || '',
       'Mobile Number': trainee.mobile_number || '',
       'Date of Birth': trainee.date_of_birth || '',
-      Age: trainee.age || '',
-      Gender: trainee.gender || '',
-      Language: trainee.language || '',
+      'Age': trainee.age || '',
+      'Gender': trainee.gender || '',
+      'Language': trainee.language || '',
       'License Number': trainee.license_number || '',
       'License Type': trainee.license_type || '',
-      Status: trainee.status || ''
+      'Street': trainee.street || '',
+      'City': trainee.city || '',
+      'State': trainee.state || '',
+      'Zip': trainee.zip || '',
+      'Country': trainee.country || '',
+      'Height': trainee.height || '',
+      'Hair': trainee.hair || '',
+      'Eyes': trainee.eyes || '',
+      'Council ID': trainee.council_id || '',
+      'Occupation/Craft': trainee.occupation_craft || '',
+      'Notes': trainee.notes || '',
+      'Photo URL': trainee.photo_url || '',
+      'Signature URL': trainee.signature_url || '',
+      'Medical History': trainee.medical_history || '',
+      'Status': trainee.status || '',
+      'Created At': trainee.created_at || '',
+      'Updated At': trainee.updated_at || ''
     }));
 
     const csv = Papa.unparse(csvData);
@@ -744,7 +764,7 @@ const Trainees = () => {
                     <SelectContent>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="graduated">Graduated</SelectItem>
+                      <SelectItem value="banned">Banned</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -794,7 +814,7 @@ const Trainees = () => {
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="graduated">Graduated</SelectItem>
+                  <SelectItem value="banned">Banned</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -852,7 +872,7 @@ const Trainees = () => {
                       <Badge 
                         variant={
                           trainee.status === 'active' ? 'default' : 
-                          trainee.status === 'graduated' ? 'secondary' : 'outline'
+                          trainee.status === 'banned' ? 'destructive' : 'outline'
                         }
                       >
                         {trainee.status}
