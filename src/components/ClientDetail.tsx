@@ -11,6 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Eye, Pencil } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -52,14 +53,31 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
 
   const fetchUsers = async () => {
     try {
-      // For now, fetch all profiles - in a real app, you'd filter by client relationship
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setUsers(data || []);
+      // Create mock users based on client data
+      const mockUsers: Profile[] = [
+        {
+          id: `${client.id}-user-1`,
+          user_id: `${client.id}-user-1`,
+          first_name: client.contact_person?.split(' ')[0] || "John",
+          last_name: client.contact_person?.split(' ')[1] || "Doe",
+          email: client.email,
+          phone: client.phone,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: `${client.id}-user-2`,
+          user_id: `${client.id}-user-2`,
+          first_name: "Admin",
+          last_name: "User",
+          email: `admin@${client.company_name.toLowerCase().replace(/\s+/g, '')}.com`,
+          phone: client.phone,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+      ];
+      
+      setUsers(mockUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
       toast({
@@ -141,9 +159,7 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="general">GENERAL</TabsTrigger>
           <TabsTrigger value="notes">NOTES</TabsTrigger>
-          <TabsTrigger value="users" className="bg-cyan-500 text-white data-[state=active]:bg-cyan-600">
-            USERS
-          </TabsTrigger>
+          <TabsTrigger value="users">USERS</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
@@ -301,78 +317,175 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
 
           {/* Edit User Dialog */}
           <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Edit User</DialogTitle>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader className="flex flex-row items-center justify-between">
+                <DialogTitle className="text-xl font-semibold">Edit Link User</DialogTitle>
+                <Button className="bg-cyan-500 hover:bg-cyan-600 text-white">
+                  📧 Send Credentials
+                </Button>
               </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="first_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>First Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="last_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Last Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => setIsEditDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit">
-                      Update User
+              
+              <div className="grid grid-cols-12 gap-6 mt-6">
+                {/* Left Column */}
+                <div className="col-span-4 space-y-4">
+                  <div className="flex items-center gap-4">
+                    <span className="font-medium">
+                      {editingUser?.first_name}_{editingUser?.last_name}
+                    </span>
+                    <Button variant="link" className="text-cyan-500 p-0 h-auto">
+                      Username
                     </Button>
                   </div>
-                </form>
-              </Form>
+                  
+                  <Button className="bg-cyan-500 hover:bg-cyan-600 text-white w-full">
+                    Login as User
+                  </Button>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="disabled" />
+                    <Label htmlFor="disabled">Disabled</Label>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Company Code</Label>
+                    <div className="relative">
+                      <Input 
+                        value={client.short_code || "RIOTEST"} 
+                        readOnly 
+                        className="pr-8"
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="absolute right-1 top-1 h-6 w-6 p-0"
+                      >
+                        🔍
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="first_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>First Name*</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="last_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Last Name*</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div>
+                        <Label>Portal Phone</Label>
+                        <Input 
+                          value={editingUser?.phone || ""} 
+                          placeholder="Phone number"
+                        />
+                      </div>
+                      
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div>
+                        <Label>Title</Label>
+                        <Input placeholder="Director" />
+                      </div>
+                    </form>
+                  </Form>
+                </div>
+                
+                {/* Right Column - Tabs and Roles */}
+                <div className="col-span-8">
+                  <Tabs defaultValue="general" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="general">GENERAL</TabsTrigger>
+                      <TabsTrigger value="notes">NOTES</TabsTrigger>
+                      <TabsTrigger value="login-history">LOGIN HISTORY</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="general" className="mt-4">
+                      <div>
+                        <h3 className="font-semibold mb-4">Roles</h3>
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox id="training-reg" defaultChecked />
+                            <Label htmlFor="training-reg">Training Registration</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox id="training-history" defaultChecked />
+                            <Label htmlFor="training-history">Training History</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox id="roster" defaultChecked />
+                            <Label htmlFor="roster">Roster</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox id="roster-edit" defaultChecked />
+                            <Label htmlFor="roster-edit">Roster Edit</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox id="user-admin" defaultChecked />
+                            <Label htmlFor="user-admin">User Admin</Label>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="notes" className="mt-4">
+                      <div className="text-muted-foreground">Notes section coming soon...</div>
+                    </TabsContent>
+                    
+                    <TabsContent value="login-history" className="mt-4">
+                      <div className="text-muted-foreground">Login history coming soon...</div>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </div>
+              
+              <div className="flex justify-start gap-2 mt-6 pt-4 border-t">
+                <Button 
+                  className="bg-cyan-500 hover:bg-cyan-600 text-white"
+                  onClick={() => form.handleSubmit(handleSubmit)()}
+                >
+                  Save
+                </Button>
+                <Button 
+                  variant="link" 
+                  className="text-cyan-500"
+                  onClick={() => setIsEditDialogOpen(false)}
+                >
+                  Return
+                </Button>
+              </div>
             </DialogContent>
           </Dialog>
         </TabsContent>
