@@ -5,9 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import RoleManagement from '@/components/RoleManagement';
+import UserEditDialog from '@/components/UserEditDialog';
 import { 
   UserCog, 
   Shield, 
@@ -17,7 +20,9 @@ import {
   Settings,
   Eye,
   Plus,
-  Filter
+  Filter,
+  Edit,
+  UserPlus
 } from 'lucide-react';
 
 interface UserProfile {
@@ -27,6 +32,9 @@ interface UserProfile {
   last_name: string;
   email: string;
   phone?: string;
+  user_code?: string;
+  username?: string;
+  status: string;
   created_at: string;
   user_roles?: { role: string }[];
 }
@@ -38,6 +46,8 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Map old roles to new Dash system roles for display
   const getRoleDisplayName = (role: string) => {
@@ -169,6 +179,117 @@ const Users = () => {
     }
   };
 
+  const handleEditUser = (user: UserProfile) => {
+    setEditingUser(user);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditDialogClose = () => {
+    setIsEditDialogOpen(false);
+    setEditingUser(null);
+  };
+
+  const handleUserSaved = () => {
+    fetchUsers();
+  };
+
+  const createMockUsers = async () => {
+    try {
+      // Create mock users with different roles
+      const mockUsers = [
+        {
+          first_name: 'John',
+          last_name: 'Master',
+          email: 'john.master@dashsystem.com',
+          phone: '555-0101',
+          username: 'jmaster',
+          status: 'active',
+          role: 'admin'
+        },
+        {
+          first_name: 'Sarah',
+          last_name: 'Administrator', 
+          email: 'sarah.admin@dashsystem.com',
+          phone: '555-0102',
+          username: 'sadmin',
+          status: 'active',
+          role: 'staff'
+        },
+        {
+          first_name: 'Mike',
+          last_name: 'Manager',
+          email: 'mike.manager@dashsystem.com',
+          phone: '555-0103', 
+          username: 'mmanager',
+          status: 'active',
+          role: 'staff'
+        },
+        {
+          first_name: 'Lisa',
+          last_name: 'Clerk',
+          email: 'lisa.clerk@dashsystem.com',
+          phone: '555-0104',
+          username: 'lclerk', 
+          status: 'active',
+          role: 'user'
+        }
+      ];
+
+      for (const mockUser of mockUsers) {
+        // Create auth user first
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: mockUser.email,
+          password: 'TempPassword123!',
+          email_confirm: true,
+          user_metadata: {
+            first_name: mockUser.first_name,
+            last_name: mockUser.last_name
+          }
+        });
+
+        if (authError) {
+          console.error('Error creating auth user:', authError);
+          continue;
+        }
+
+        // The profile should be created automatically by the trigger
+        // Just update it with additional fields
+        if (authData.user) {
+          await supabase
+            .from('profiles')
+            .update({
+              phone: mockUser.phone,
+              username: mockUser.username,
+              status: mockUser.status
+            })
+            .eq('user_id', authData.user.id);
+
+          // Set role
+          await supabase
+            .from('user_roles')
+            .upsert({
+              user_id: authData.user.id,
+              role: mockUser.role as 'admin' | 'staff' | 'user'
+            });
+        }
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Mock users created successfully',
+      });
+
+      fetchUsers();
+    } catch (error) {
+      console.error('Error creating mock users:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create mock users',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getRoleIcon = (role: string) => {
     const displayRole = getRoleDisplayName(role);
     switch (displayRole) {
@@ -227,6 +348,14 @@ const Users = () => {
         </p>
       </div>
 
+      <Tabs defaultValue="users" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="users">System Users</TabsTrigger>
+          <TabsTrigger value="roles">Role Management</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users" className="space-y-6">
+
       {/* Search and Filter Controls */}
       <Card>
         <CardHeader>
@@ -270,9 +399,15 @@ const Users = () => {
               <UserCog className="h-5 w-5" />
               Dash System Users
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Eye className="h-4 w-4" />
-              Showing {filteredUsers.length} of {users.length} users
+            <div className="flex items-center gap-2">
+              <Button onClick={createMockUsers} variant="outline" size="sm">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Mock Users
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                <Eye className="h-4 w-4 inline mr-1" />
+                Showing {filteredUsers.length} of {users.length} users
+              </div>
             </div>
           </CardTitle>
           <CardDescription>
@@ -283,9 +418,12 @@ const Users = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>User ID</TableHead>
                 <TableHead>Name</TableHead>
+                <TableHead>Username</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Access Level</TableHead>
                 <TableHead>Member Since</TableHead>
@@ -299,10 +437,27 @@ const Users = () => {
                 return (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
+                      <Badge variant="outline" className="font-mono">
+                        {user.user_code || 'N/A'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">
                       {`${user.first_name} ${user.last_name}`.trim() || 'Unnamed User'}
+                    </TableCell>
+                    <TableCell>
+                      <code className="bg-muted px-2 py-1 rounded text-xs">
+                        {user.username || '-'}
+                      </code>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.phone || '-'}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={user.status === 'active' ? 'default' : user.status === 'inactive' ? 'secondary' : 'destructive'}
+                      >
+                        {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <Badge 
                         variant={getRoleBadgeVariant(currentRole)}
@@ -324,20 +479,29 @@ const Users = () => {
                       {new Date(user.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={displayRole}
-                        onValueChange={(newRole) => handleRoleChange(user.user_id, newRole)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Master">Master</SelectItem>
-                          <SelectItem value="Admin">Admin</SelectItem>
-                          <SelectItem value="Manager">Manager</SelectItem>
-                          <SelectItem value="Clerk">Clerk</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditUser(user)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Select
+                          value={displayRole}
+                          onValueChange={(newRole) => handleRoleChange(user.user_id, newRole)}
+                        >
+                          <SelectTrigger className="w-24">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Master">Master</SelectItem>
+                            <SelectItem value="Admin">Admin</SelectItem>
+                            <SelectItem value="Manager">Manager</SelectItem>
+                            <SelectItem value="Clerk">Clerk</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -408,6 +572,20 @@ const Users = () => {
           </div>
         </CardContent>
       </Card>
+
+        </TabsContent>
+
+        <TabsContent value="roles">
+          <RoleManagement />
+        </TabsContent>
+      </Tabs>
+
+      <UserEditDialog
+        user={editingUser}
+        isOpen={isEditDialogOpen}
+        onClose={handleEditDialogClose}
+        onSave={handleUserSaved}
+      />
     </div>
   );
 };

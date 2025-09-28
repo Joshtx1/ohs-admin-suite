@@ -270,6 +270,30 @@ export type Database = {
           },
         ]
       }
+      permissions: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       pricing: {
         Row: {
           client_id: string | null
@@ -338,8 +362,11 @@ export type Database = {
           id: string
           last_name: string
           phone: string | null
+          status: string
           updated_at: string
+          user_code: string | null
           user_id: string
+          username: string | null
         }
         Insert: {
           created_at?: string
@@ -348,8 +375,11 @@ export type Database = {
           id?: string
           last_name: string
           phone?: string | null
+          status?: string
           updated_at?: string
+          user_code?: string | null
           user_id: string
+          username?: string | null
         }
         Update: {
           created_at?: string
@@ -358,10 +388,42 @@ export type Database = {
           id?: string
           last_name?: string
           phone?: string | null
+          status?: string
           updated_at?: string
+          user_code?: string | null
           user_id?: string
+          username?: string | null
         }
         Relationships: []
+      }
+      role_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permission_id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission_id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {
@@ -604,6 +666,10 @@ export type Database = {
         Returns: string
       }
       generate_trainee_unique_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_user_code: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
