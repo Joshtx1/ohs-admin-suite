@@ -49,6 +49,12 @@ const Auth = () => {
     lastName: '',
   });
 
+  // Temporary bypass - redirect to dashboard for testing
+  // Comment out this section when auth is working  
+  if (window.location.search.includes('bypass=true')) {
+    return <Navigate to="/dashboard?bypass=true" replace />;
+  }
+
   // Redirect authenticated users
   if (user) {
     return <Navigate to="/dashboard" replace />;

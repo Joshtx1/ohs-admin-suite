@@ -19,6 +19,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Temporary bypass for testing
+  const bypassAuth = window.location.search.includes('bypass=true');
+  
+  if (bypassAuth) {
+    // Create a mock user for bypass mode
+    const mockUser = { id: 'bypass-user', email: 'bypass@test.com' } as User;
+    const mockSession = { user: mockUser } as Session;
+    
+    return (
+      <AuthContext.Provider value={{
+        user: mockUser,
+        session: mockSession,
+        userRole: 'master',
+        loading: false,
+        signIn: async () => ({ error: null }),
+        signUp: async () => ({ error: null }),
+        signOut: async () => {},
+      }}>
+        {children}
+      </AuthContext.Provider>
+    );
+  }
 
   useEffect(() => {
     // Set up auth state listener first
