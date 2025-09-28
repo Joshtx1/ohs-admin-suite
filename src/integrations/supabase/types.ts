@@ -17,7 +17,13 @@ export type Database = {
       clients: {
         Row: {
           address: string | null
+          admin_der: string | null
+          bill_to: string | null
+          billing_der: string | null
+          billing_temp_company_name: string | null
           city: string | null
+          client_name: string | null
+          comments: string | null
           company_name: string
           contact_person: string
           created_at: string
@@ -26,14 +32,27 @@ export type Database = {
           employee_count: number | null
           id: string
           industry: string | null
+          mailing_city_state_zip: string | null
+          mailing_street_address: string | null
+          mem_status: string | null
+          mem_type: string | null
+          payment_status: string | null
           phone: string
           postal_code: string | null
+          profile: string | null
+          short_code: string | null
           status: string
           updated_at: string
         }
         Insert: {
           address?: string | null
+          admin_der?: string | null
+          bill_to?: string | null
+          billing_der?: string | null
+          billing_temp_company_name?: string | null
           city?: string | null
+          client_name?: string | null
+          comments?: string | null
           company_name: string
           contact_person: string
           created_at?: string
@@ -42,14 +61,27 @@ export type Database = {
           employee_count?: number | null
           id?: string
           industry?: string | null
+          mailing_city_state_zip?: string | null
+          mailing_street_address?: string | null
+          mem_status?: string | null
+          mem_type?: string | null
+          payment_status?: string | null
           phone: string
           postal_code?: string | null
+          profile?: string | null
+          short_code?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           address?: string | null
+          admin_der?: string | null
+          bill_to?: string | null
+          billing_der?: string | null
+          billing_temp_company_name?: string | null
           city?: string | null
+          client_name?: string | null
+          comments?: string | null
           company_name?: string
           contact_person?: string
           created_at?: string
@@ -58,8 +90,15 @@ export type Database = {
           employee_count?: number | null
           id?: string
           industry?: string | null
+          mailing_city_state_zip?: string | null
+          mailing_street_address?: string | null
+          mem_status?: string | null
+          mem_type?: string | null
+          payment_status?: string | null
           phone?: string
           postal_code?: string | null
+          profile?: string | null
+          short_code?: string | null
           status?: string
           updated_at?: string
         }
