@@ -41,8 +41,10 @@ const handler = async (req: Request): Promise<Response> => {
       .limit(1);
 
     const isBootstrap = !adminCheckError && (!adminUsers || adminUsers.length === 0);
+    console.log('Bootstrap check:', { adminUsers, adminCheckError, isBootstrap });
     
     if (!isBootstrap) {
+      console.log('Normal mode: Checking authentication');
       // Normal flow - require authentication
       if (!authHeader) {
         console.error('No authorization header');
@@ -84,7 +86,7 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
     } else {
-      console.log('Bootstrap mode: Creating first admin user');
+      console.log('Bootstrap mode: Creating first admin user - skipping authentication');
     }
 
     // Parse request body
