@@ -92,27 +92,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (username: string, password: string) => {
     try {
+      console.log('Attempting login with username:', username);
+      
       // First, find the user by username to get their email
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('email')
+        .select('email, username, user_id')
         .eq('username', username)
         .maybeSingle();
 
-      if (profileError || !profileData) {
-        console.log('Profile lookup error:', profileError);
+      console.log('Profile lookup result:', { profileData, profileError });
+
+      if (profileError) {
+        console.error('Profile lookup error:', profileError);
+        return { error: { message: 'Database error occurred. Please try again.' } };
+      }
+      
+      if (!profileData) {
+        console.log('No profile found for username:', username);
         return { error: { message: 'Invalid username or password' } };
       }
 
+      console.log('Found profile, attempting auth with email:', profileData.email);
+
       // Now sign in with the email
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: profileData.email,
         password,
       });
       
-      return { error };
+      console.log('Auth result:', { user: authData?.user?.id, error: authError });
+      
+      if (authError) {
+        console.error('Auth error:', authError);
+        return { error: { message: 'Invalid username or password' } };
+      }
+      
+      return { error: null };
     } catch (error) {
-      return { error: { message: 'Invalid username or password' } };
+      console.error('Unexpected error in signIn:', error);
+      return { error: { message: 'An unexpected error occurred. Please try again.' } };
     }
   };
 
