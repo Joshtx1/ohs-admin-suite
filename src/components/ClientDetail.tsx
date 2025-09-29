@@ -198,8 +198,12 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
             </div>
             <div className="space-y-4">
               <div>
-                <Label>Membership Status</Label>
-                <Input value={client.mem_status || ""} readOnly />
+                <Label>Client Type</Label>
+                <Input value={client.mem_status === 'member' ? 'Member' : client.mem_status === 'non-member' ? 'Non-Member' : client.mem_status || ""} readOnly />
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Input value={client.status === 'active' ? 'Active' : client.status === 'inactive' ? 'In-Active' : client.status === 'suspended' ? 'Suspended' : client.status || ""} readOnly />
               </div>
               <div>
                 <Label>Membership Type</Label>

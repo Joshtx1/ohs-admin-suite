@@ -27,14 +27,14 @@ const clientSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().min(1, "Phone is required"),
   short_code: z.string().min(1, "Short code is required"),
-  mem_status: z.string().min(1, "Membership status is required"),
+  mem_status: z.string().min(1, "Client type is required"),
   mem_type: z.string().min(1, "Membership type is required"),
   mailing_street_address: z.string().optional(),
   mailing_city_state_zip: z.string().optional(),
   bill_to: z.string().optional(),
   comments: z.string().optional(),
   payment_status: z.string().optional(),
-  status: z.enum(["active", "inactive"]).default("active"),
+  status: z.enum(["active", "inactive", "suspended"]).default("active"),
 });
 
 type Client = DatabaseClient;
@@ -60,7 +60,7 @@ export default function Clients() {
       email: "",
       phone: "",
       short_code: "",
-      mem_status: "M",
+      mem_status: "member",
       mem_type: "Contractor",
       mailing_street_address: "",
       mailing_city_state_zip: "",
@@ -161,14 +161,14 @@ export default function Clients() {
       email: client.email || "",
       phone: client.phone || "",
       short_code: client.short_code || "",
-      mem_status: client.mem_status || "M",
+      mem_status: client.mem_status || "member",
       mem_type: client.mem_type || "Contractor",
       mailing_street_address: client.mailing_street_address || "",
       mailing_city_state_zip: client.mailing_city_state_zip || "",
       bill_to: client.bill_to || "",
       comments: client.comments || "",
       payment_status: client.payment_status || "Check",
-      status: (client.status === "active" || client.status === "inactive") ? client.status : "active",
+      status: (client.status === "active" || client.status === "inactive" || client.status === "suspended") ? client.status : "active",
     });
     setIsDialogOpen(true);
   };
@@ -358,7 +358,28 @@ export default function Clients() {
                   name="mem_status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Membership Status</FormLabel>
+                      <FormLabel>Client Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select client type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="member">Member</SelectItem>
+                          <SelectItem value="non-member">Non-Member</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -366,8 +387,9 @@ export default function Clients() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="M">M</SelectItem>
-                          <SelectItem value="N">N</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">In-Active</SelectItem>
+                          <SelectItem value="suspended">Suspended</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
