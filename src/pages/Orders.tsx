@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, X, Check, CalendarIcon } from "lucide-react";
+import { Search, X, Check, CalendarIcon, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 interface Trainee {
   id: string;
@@ -46,9 +48,32 @@ interface SelectedService extends Service {
   date: string;
 }
 
+interface Order {
+  id: string;
+  created_at: string;
+  service_date: string;
+  status: string;
+  total_amount: number;
+  notes: string;
+  trainees: { name: string; unique_id: string };
+  clients: { company_name: string } | null;
+  order_items: Array<{
+    service_id: string;
+    price: number;
+    status: string;
+    services: { name: string; service_code: string };
+  }>;
+}
+
 export default function Orders() {
   const { toast } = useToast();
+  const [currentTab, setCurrentTab] = useState<"view" | "create">("view");
   const [currentStep, setCurrentStep] = useState(1);
+  
+  // Orders viewing
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [orderSearchQuery, setOrderSearchQuery] = useState("");
   
   // Step 1: Trainee Selection
   const [traineeSearchQuery, setTraineeSearchQuery] = useState("");
@@ -85,10 +110,48 @@ export default function Orders() {
   });
 
   useEffect(() => {
+    fetchOrders();
     fetchTrainees();
     fetchClients();
     fetchServices();
   }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setOrdersLoading(true);
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
+          id,
+          created_at,
+          service_date,
+          status,
+          total_amount,
+          notes,
+          trainees (name, unique_id),
+          clients (company_name),
+          order_items (
+            service_id,
+            price,
+            status,
+            services (name, service_code)
+          )
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch orders",
+        variant: "destructive",
+      });
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
 
   const fetchTrainees = async () => {
     try {
@@ -279,13 +342,17 @@ export default function Orders() {
         description: `Created ${selectedTrainees.length} registration${selectedTrainees.length > 1 ? 's' : ''}`,
       });
 
-      // Reset form
+      // Refresh orders list
+      fetchOrders();
+
+      // Reset form and switch to view tab
       setCurrentStep(1);
       setSelectedTrainees([]);
       setSelectedServices([]);
       setSelectedClientId("");
       setOrderPO("");
       setRegistrationType("client");
+      setCurrentTab("view");
     } catch (error) {
       console.error("Error creating registrations:", error);
       toast({
@@ -339,6 +406,28 @@ export default function Orders() {
 
   const totalRegistrations = selectedTrainees.length * selectedServices.length;
 
+  const filteredOrders = orders.filter(order => {
+    if (!orderSearchQuery.trim()) return true;
+    const query = orderSearchQuery.toLowerCase();
+    const traineeName = order.trainees?.name?.toLowerCase() || '';
+    const clientName = order.clients?.company_name?.toLowerCase() || '';
+    const traineeId = order.trainees?.unique_id?.toLowerCase() || '';
+    return traineeName.includes(query) || clientName.includes(query) || traineeId.includes(query);
+  });
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'created':
+        return 'secondary';
+      case 'pending':
+        return 'outline';
+      case 'completed':
+        return 'default';
+      default:
+        return 'secondary';
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -353,10 +442,113 @@ export default function Orders() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Trainee Registration</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Orders Management</h1>
       </div>
 
-      <div className="grid grid-cols-4 gap-6">
+      <Tabs value={currentTab} onValueChange={(v) => setCurrentTab(v as "view" | "create")}>
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="view">View Orders</TabsTrigger>
+          <TabsTrigger value="create">Create Registration</TabsTrigger>
+        </TabsList>
+
+        {/* View Orders Tab */}
+        <TabsContent value="view" className="mt-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>All Orders</CardTitle>
+                <div className="relative w-72">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by trainee, client, or ID..."
+                    value={orderSearchQuery}
+                    onChange={(e) => setOrderSearchQuery(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {ordersLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-16 bg-muted animate-pulse rounded" />
+                  ))}
+                </div>
+              ) : filteredOrders.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>No orders found</p>
+                  <Button 
+                    variant="link" 
+                    onClick={() => setCurrentTab("create")}
+                    className="mt-2"
+                  >
+                    Create your first registration
+                  </Button>
+                </div>
+              ) : (
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Trainee</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Services</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredOrders.map((order) => (
+                        <TableRow key={order.id}>
+                          <TableCell className="font-medium">
+                            {format(new Date(order.service_date), "MMM dd, yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{order.trainees?.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {order.trainees?.unique_id}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {order.clients?.company_name || <span className="text-muted-foreground">Self Pay</span>}
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              {order.order_items?.length || 0} service{order.order_items?.length !== 1 ? 's' : ''}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            ${order.total_amount?.toFixed(2) || '0.00'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusBadgeVariant(order.status)}>
+                              {order.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Create Registration Tab */}
+        <TabsContent value="create" className="mt-6">
+
+        <div className="grid grid-cols-4 gap-6">
         {/* Step Navigation */}
         <div className="col-span-1 space-y-2">
           {[
@@ -801,8 +993,8 @@ export default function Orders() {
         </div>
       </div>
 
-      {/* Create Trainee Dialog */}
-      <Dialog open={isCreateTraineeOpen} onOpenChange={setIsCreateTraineeOpen}>
+        {/* Create Trainee Dialog */}
+        <Dialog open={isCreateTraineeOpen} onOpenChange={setIsCreateTraineeOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Trainee</DialogTitle>
@@ -859,7 +1051,9 @@ export default function Orders() {
             </div>
           </div>
         </DialogContent>
-      </Dialog>
+        </Dialog>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
