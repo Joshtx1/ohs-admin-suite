@@ -49,6 +49,7 @@ export default function Orders() {
   const [traineeSearchQuery, setTraineeSearchQuery] = useState("");
   const [allTrainees, setAllTrainees] = useState<Trainee[]>([]);
   const [selectedTrainees, setSelectedTrainees] = useState<Trainee[]>([]);
+  const [isSelectTraineeOpen, setIsSelectTraineeOpen] = useState(false);
   
   // Step 2: Registration Type
   const [registrationType, setRegistrationType] = useState<"client" | "selfpay">("client");
@@ -84,7 +85,7 @@ export default function Orders() {
     try {
       const { data, error } = await supabase
         .from("trainees")
-        .select("id, name, unique_id")
+        .select("id, name, unique_id, ssn, first_name, last_name, email, phone")
         .eq("status", "active")
         .order("name");
 
@@ -130,6 +131,7 @@ export default function Orders() {
   const addTrainee = (trainee: Trainee) => {
     if (!selectedTrainees.find(t => t.id === trainee.id)) {
       setSelectedTrainees([...selectedTrainees, trainee]);
+      setTraineeSearchQuery(""); // Clear search after selection
     }
   };
 
@@ -291,10 +293,12 @@ export default function Orders() {
   const canProceedToStep4 = selectedServices.length > 0;
 
   const filteredTrainees = allTrainees.filter(trainee => {
+    if (!traineeSearchQuery) return false;
     const query = traineeSearchQuery.toLowerCase();
-    const lastName = trainee.name?.split(' ').pop()?.toLowerCase() || '';
+    const firstName = trainee.first_name?.toLowerCase() || '';
+    const lastName = trainee.last_name?.toLowerCase() || '';
     const ssn = trainee.ssn?.toLowerCase() || '';
-    return lastName.includes(query) || ssn.includes(query);
+    return firstName.includes(query) || lastName.includes(query) || ssn.includes(query);
   });
 
   const servicesByCategory = services.reduce((acc, service) => {
@@ -363,61 +367,92 @@ export default function Orders() {
               {/* Step 1: Trainee Selection */}
               {currentStep === 1 && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <Label className="text-sm">Search by SSN or Last Name</Label>
-                        <Button
-                          variant="link"
-                          className="h-auto p-0 text-primary"
-                          onClick={() => setIsCreateTraineeOpen(true)}
-                        >
-                          Create New Trainee
-                        </Button>
-                      </div>
-                      <div className="relative">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search by SSN or last name"
-                          value={traineeSearchQuery}
-                          onChange={(e) => setTraineeSearchQuery(e.target.value)}
-                          className="pl-8"
-                        />
-                      </div>
-                      <ScrollArea className="h-[400px] mt-4 border rounded-lg p-2">
-                        {filteredTrainees.map((trainee) => (
-                          <div
-                            key={trainee.id}
-                            onClick={() => addTrainee(trainee)}
-                            className="p-2 hover:bg-muted cursor-pointer rounded text-sm"
-                          >
-                            {trainee.name} - {trainee.unique_id}
-                          </div>
-                        ))}
-                      </ScrollArea>
-                    </div>
-                    <div>
-                      <Label className="text-sm mb-2 block">SELECTED</Label>
-                      <div className="space-y-2">
-                        {selectedTrainees.map((trainee) => (
-                          <div key={trainee.id} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div>
-                              <Button
-                                variant="link"
-                                className="h-auto p-0 text-primary"
-                                onClick={() => removeTrainee(trainee.id)}
-                              >
-                                REMOVE
-                              </Button>
-                              <div className="font-medium">{trainee.name}</div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex gap-3">
+                      <Dialog open={isSelectTraineeOpen} onOpenChange={setIsSelectTraineeOpen}>
+                        <DialogTrigger asChild>
+                          <Button>Select Trainees</Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Search and Select Trainee</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="relative">
+                              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                placeholder="Search by SSN, first name, or last name"
+                                value={traineeSearchQuery}
+                                onChange={(e) => setTraineeSearchQuery(e.target.value)}
+                                className="pl-8"
+                              />
                             </div>
-                            <div className="font-mono text-sm">{trainee.unique_id}</div>
+                            {traineeSearchQuery && (
+                              <ScrollArea className="h-[300px] border rounded-lg">
+                                {filteredTrainees.length > 0 ? (
+                                  filteredTrainees.map((trainee) => (
+                                    <div
+                                      key={trainee.id}
+                                      onClick={() => {
+                                        addTrainee(trainee);
+                                      }}
+                                      className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                                    >
+                                      <div className="font-medium">{trainee.name}</div>
+                                      <div className="text-sm text-muted-foreground">
+                                        {trainee.unique_id} {trainee.ssn && `• SSN: ${trainee.ssn}`}
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="p-6 text-center text-muted-foreground">
+                                    No trainees found
+                                  </div>
+                                )}
+                              </ScrollArea>
+                            )}
                           </div>
-                        ))}
-                      </div>
+                        </DialogContent>
+                      </Dialog>
+                      <Button
+                        variant="link"
+                        className="h-auto p-0 text-primary"
+                        onClick={() => setIsCreateTraineeOpen(true)}
+                      >
+                        Create New Trainee
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex justify-end">
+
+                  <div>
+                    <Label className="text-sm mb-3 block font-semibold">SELECTED TRAINEES</Label>
+                    <div className="space-y-2">
+                      {selectedTrainees.length > 0 ? (
+                        selectedTrainees.map((trainee) => (
+                          <div key={trainee.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div>
+                              <div className="font-medium">{trainee.name}</div>
+                              <div className="text-sm text-muted-foreground">{trainee.unique_id}</div>
+                            </div>
+                            <Button
+                              variant="link"
+                              className="h-auto p-0 text-destructive"
+                              onClick={() => removeTrainee(trainee.id)}
+                            >
+                              REMOVE
+                            </Button>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-6 text-center border rounded-lg border-dashed">
+                          <p className="text-muted-foreground">No trainees selected</p>
+                          <p className="text-sm text-muted-foreground mt-1">Click "Select Trainees" to add</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end mt-6">
                     <Button onClick={() => setCurrentStep(2)} disabled={!canProceedToStep2}>
                       Next
                     </Button>
