@@ -35,7 +35,7 @@ const UserEditDialog = ({ user, isOpen, onClose, onSave }: UserEditDialogProps) 
     email: '',
     phone: '',
     username: '',
-    status: 'active',
+    status: 'Active',
   });
   const [loading, setLoading] = useState(false);
 
@@ -47,7 +47,7 @@ const UserEditDialog = ({ user, isOpen, onClose, onSave }: UserEditDialogProps) 
         email: user.email || '',
         phone: user.phone || '',
         username: user.username || '',
-        status: user.status || 'active',
+        status: user.status || 'Active',
       });
     }
   }, [user]);
@@ -159,9 +159,9 @@ const UserEditDialog = ({ user, isOpen, onClose, onSave }: UserEditDialogProps) 
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Inactive">Inactive</SelectItem>
+                <SelectItem value="Suspended">Suspended</SelectItem>
               </SelectContent>
             </Select>
           </div>

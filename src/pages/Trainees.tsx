@@ -103,7 +103,7 @@ const Trainees = () => {
     photo_url: '',
     signature_url: '',
     medical_history: '',
-    status: 'active'
+    status: 'Active'
   });
 
   useEffect(() => {
@@ -181,7 +181,7 @@ const Trainees = () => {
       photo_url: '',
       signature_url: '',
       medical_history: '',
-      status: 'active'
+      status: 'Active'
     });
     setEditingTrainee(null);
   };
@@ -221,7 +221,7 @@ const Trainees = () => {
       photo_url: trainee.photo_url || '',
       signature_url: trainee.signature_url || '',
       medical_history: trainee.medical_history || '',
-      status: trainee.status || 'active'
+      status: trainee.status || 'Active'
     });
     setDialogOpen(true);
   };
@@ -476,7 +476,7 @@ const Trainees = () => {
             // Build trainee data using header mapping
             const traineeData: any = {
               created_by: user?.id,
-              status: 'active'
+              status: 'Active'
             };
 
             // Map CSV columns to database columns
@@ -893,9 +893,9 @@ const Trainees = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="banned">Banned</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                      <SelectItem value="Suspended">Suspended</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -943,9 +943,9 @@ const Trainees = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="banned">Banned</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                  <SelectItem value="Suspended">Suspended</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1002,8 +1002,8 @@ const Trainees = () => {
                     <TableCell>
                       <Badge 
                         variant={
-                          trainee.status === 'active' ? 'default' : 
-                          trainee.status === 'banned' ? 'destructive' : 'outline'
+                          trainee.status === 'Active' ? 'default' : 
+                          trainee.status === 'Suspended' ? 'destructive' : 'outline'
                         }
                       >
                         {trainee.status}
