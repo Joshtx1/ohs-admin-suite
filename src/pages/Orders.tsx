@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, X, Check } from "lucide-react";
+import { Search, X, Check, CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Trainee {
   id: string;
@@ -26,6 +30,7 @@ interface Client {
   id: string;
   company_name: string;
   contact_person: string;
+  profile?: string;
 }
 
 interface Service {
@@ -56,11 +61,15 @@ export default function Orders() {
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState("");
   const [orderPO, setOrderPO] = useState("");
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
+  const [isSelectClientOpen, setIsSelectClientOpen] = useState(false);
   
   // Step 3: Service Selection
   const [services, setServices] = useState<Service[]>([]);
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
+  const [serviceDate, setServiceDate] = useState<Date>(new Date());
+  const [serviceSearchQuery, setServiceSearchQuery] = useState("");
   
   // Loading states
   const [loading, setLoading] = useState(true);
@@ -102,7 +111,7 @@ export default function Orders() {
     try {
       const { data, error } = await supabase
         .from("clients")
-        .select("id, company_name, contact_person")
+        .select("id, company_name, contact_person, profile")
         .eq("status", "active")
         .order("company_name");
 
@@ -304,7 +313,24 @@ export default function Orders() {
     return isNotSelected && (name.includes(query) || firstName.includes(query) || lastName.includes(query) || ssn.includes(query));
   });
 
-  const servicesByCategory = services.reduce((acc, service) => {
+  const filteredClients = clients.filter(client => {
+    if (!clientSearchQuery.trim()) return true;
+    const query = clientSearchQuery.toLowerCase();
+    const companyName = client.company_name?.toLowerCase() || '';
+    const profile = client.profile?.toLowerCase() || '';
+    return companyName.includes(query) || profile.includes(query);
+  });
+
+  const filteredServices = services.filter(service => {
+    if (!serviceSearchQuery.trim()) return true;
+    const query = serviceSearchQuery.toLowerCase();
+    const name = service.name?.toLowerCase() || '';
+    const code = service.service_code?.toLowerCase() || '';
+    const category = service.category?.toLowerCase() || '';
+    return name.includes(query) || code.includes(query) || category.includes(query);
+  });
+
+  const servicesByCategory = filteredServices.reduce((acc, service) => {
     const category = service.category || "Other";
     if (!acc[category]) acc[category] = [];
     acc[category].push(service);
@@ -480,38 +506,70 @@ export default function Orders() {
                   </div>
 
                   {registrationType === "client" && (
-                    <div className="grid grid-cols-2 gap-6 mt-6">
+                    <div className="space-y-6 mt-6">
                       <div>
-                        <Button onClick={() => {
-                          const client = clients[0];
-                          if (client) setSelectedClientId(client.id);
-                        }}>
-                          SELECT CLIENT
-                        </Button>
+                        <Dialog open={isSelectClientOpen} onOpenChange={setIsSelectClientOpen}>
+                          <DialogTrigger asChild>
+                            <Button>Select Client</Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Search and Select Client</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="relative">
+                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  placeholder="Search by company name or profile ID"
+                                  value={clientSearchQuery}
+                                  onChange={(e) => setClientSearchQuery(e.target.value)}
+                                  className="pl-8"
+                                />
+                              </div>
+                              <ScrollArea className="h-[300px] border rounded-lg">
+                                {filteredClients.length > 0 ? (
+                                  filteredClients.map((client) => (
+                                    <div
+                                      key={client.id}
+                                      onClick={() => {
+                                        setSelectedClientId(client.id);
+                                        setIsSelectClientOpen(false);
+                                        setClientSearchQuery("");
+                                      }}
+                                      className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                                    >
+                                      <div className="font-medium">{client.company_name}</div>
+                                      {client.profile && (
+                                        <div className="text-sm text-muted-foreground">Profile: {client.profile}</div>
+                                      )}
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="p-6 text-center text-muted-foreground">
+                                    No clients found
+                                  </div>
+                                )}
+                              </ScrollArea>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        
                         {selectedClientId && (
-                          <div className="mt-4 p-4 border rounded-lg">
+                          <div className="mt-4 p-4 border rounded-lg flex items-center justify-between">
                             <div className="font-medium">
                               {clients.find(c => c.id === selectedClientId)?.company_name}
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {clients.find(c => c.id === selectedClientId)?.contact_person}
-                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedClientId("")}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
                           </div>
                         )}
-                        <ScrollArea className="h-[200px] mt-4 border rounded-lg p-2">
-                          {clients.map((client) => (
-                            <div
-                              key={client.id}
-                              onClick={() => setSelectedClientId(client.id)}
-                              className={`p-2 hover:bg-muted cursor-pointer rounded text-sm ${
-                                selectedClientId === client.id ? "bg-muted" : ""
-                              }`}
-                            >
-                              {client.company_name}
-                            </div>
-                          ))}
-                        </ScrollArea>
                       </div>
+                      
                       <div>
                         <Label className="text-sm mb-2 block">ORDER PO Number</Label>
                         <Input
@@ -537,55 +595,110 @@ export default function Orders() {
               {/* Step 3: Service Selection */}
               {currentStep === 3 && (
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <Label className="text-sm font-semibold">SERVICE</Label>
-                    <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button>SELECT SERVICES</Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[80vh]">
-                        <DialogHeader>
-                          <DialogTitle>Select Services</DialogTitle>
-                        </DialogHeader>
-                        <Tabs defaultValue={Object.keys(servicesByCategory)[0]} className="w-full">
-                          <TabsList className="w-full justify-start overflow-x-auto">
-                            {Object.keys(servicesByCategory).map((category) => (
-                              <TabsTrigger key={category} value={category}>
-                                {category}
-                              </TabsTrigger>
-                            ))}
-                          </TabsList>
-                          {Object.entries(servicesByCategory).map(([category, categoryServices]) => (
-                            <TabsContent key={category} value={category}>
-                              <ScrollArea className="h-[400px]">
-                                <div className="space-y-2 p-2">
-                                  {categoryServices.map((service) => (
-                                    <div
-                                      key={service.id}
-                                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted cursor-pointer"
-                                      onClick={() => {
-                                        const date = new Date().toISOString().split('T')[0];
-                                        addService(service, date);
-                                      }}
-                                    >
-                                      <div>
-                                        <div className="font-medium">{service.name}</div>
-                                        <div className="text-sm text-muted-foreground">
-                                          {service.service_code}
-                                        </div>
-                                      </div>
-                                      <div className="text-sm font-medium">
-                                        ${service.member_price}
-                                      </div>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-semibold mb-2 block">SERVICE DATE</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !serviceDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {serviceDate ? format(serviceDate, "PPP") : <span>Pick a date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={serviceDate}
+                            onSelect={(date) => date && setServiceDate(date)}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <Label className="text-sm font-semibold">SERVICES</Label>
+                      <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button>SELECT SERVICES</Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[80vh]">
+                          <DialogHeader>
+                            <DialogTitle>Select Services</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="relative">
+                              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                placeholder="Search services by name, code, or category"
+                                value={serviceSearchQuery}
+                                onChange={(e) => setServiceSearchQuery(e.target.value)}
+                                className="pl-8"
+                              />
+                            </div>
+                            <Tabs defaultValue={Object.keys(servicesByCategory)[0]} className="w-full">
+                              <TabsList className="w-full justify-start overflow-x-auto">
+                                {Object.keys(servicesByCategory).map((category) => (
+                                  <TabsTrigger key={category} value={category}>
+                                    {category} ({servicesByCategory[category].length})
+                                  </TabsTrigger>
+                                ))}
+                              </TabsList>
+                              {Object.entries(servicesByCategory).map(([category, categoryServices]) => (
+                                <TabsContent key={category} value={category}>
+                                  <ScrollArea className="h-[400px]">
+                                    <div className="space-y-2 p-2">
+                                      {categoryServices.map((service) => {
+                                        const isSelected = selectedServices.some(s => s.id === service.id);
+                                        return (
+                                          <div
+                                            key={service.id}
+                                            className={cn(
+                                              "flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors",
+                                              isSelected 
+                                                ? "bg-primary/10 border-primary" 
+                                                : "hover:bg-muted"
+                                            )}
+                                            onClick={() => {
+                                              const date = format(serviceDate, "yyyy-MM-dd");
+                                              if (!isSelected) {
+                                                addService(service, date);
+                                              }
+                                            }}
+                                          >
+                                            <div className="flex-1">
+                                              <div className="font-medium flex items-center gap-2">
+                                                {service.name}
+                                                {isSelected && (
+                                                  <Check className="h-4 w-4 text-primary" />
+                                                )}
+                                              </div>
+                                              <div className="text-sm text-muted-foreground">
+                                                {service.service_code}
+                                              </div>
+                                            </div>
+                                            <div className="text-sm font-medium">
+                                              ${service.member_price}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
-                                  ))}
-                                </div>
-                              </ScrollArea>
-                            </TabsContent>
-                          ))}
-                        </Tabs>
-                      </DialogContent>
-                    </Dialog>
+                                  </ScrollArea>
+                                </TabsContent>
+                              ))}
+                            </Tabs>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </div>
 
                   <div className="border rounded-lg">
