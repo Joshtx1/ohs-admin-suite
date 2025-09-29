@@ -67,7 +67,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       icon: Wrench,
     },
     {
-      name: 'Users',
+      name: 'Dash Users',
       href: '/dashboard/users',
       icon: Users,
       adminOnly: true,
