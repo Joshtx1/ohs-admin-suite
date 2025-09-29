@@ -9,6 +9,8 @@ const corsHeaders = {
 
 interface ResetPasswordRequest {
   email: string;
+  newPassword?: string;
+  adminReset?: boolean;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -23,7 +25,7 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { email }: ResetPasswordRequest = await req.json();
+    const { email, newPassword, adminReset }: ResetPasswordRequest = await req.json();
 
     if (!email) {
       return new Response(
@@ -32,6 +34,45 @@ const handler = async (req: Request): Promise<Response> => {
           status: 400,
           headers: { "Content-Type": "application/json", ...corsHeaders },
         }
+      );
+    }
+
+    // If admin reset with new password, update user directly
+    if (adminReset && newPassword) {
+      const { data: user, error: getUserError } = await supabaseClient.auth.admin.listUsers();
+      
+      if (getUserError) {
+        console.error("Error getting users:", getUserError);
+        return new Response(
+          JSON.stringify({ error: getUserError.message }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const targetUser = user.users.find(u => u.email === email);
+      if (!targetUser) {
+        return new Response(
+          JSON.stringify({ error: "User not found" }),
+          { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const { error: updateError } = await supabaseClient.auth.admin.updateUserById(
+        targetUser.id,
+        { password: newPassword }
+      );
+
+      if (updateError) {
+        console.error("Error updating password:", updateError);
+        return new Response(
+          JSON.stringify({ error: updateError.message }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ message: "Password updated successfully" }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
