@@ -293,12 +293,15 @@ export default function Orders() {
   const canProceedToStep4 = selectedServices.length > 0;
 
   const filteredTrainees = allTrainees.filter(trainee => {
-    if (!traineeSearchQuery) return false;
+    if (!traineeSearchQuery.trim()) return true; // Show all when no search query
     const query = traineeSearchQuery.toLowerCase();
+    const name = trainee.name?.toLowerCase() || '';
     const firstName = trainee.first_name?.toLowerCase() || '';
     const lastName = trainee.last_name?.toLowerCase() || '';
     const ssn = trainee.ssn?.toLowerCase() || '';
-    return firstName.includes(query) || lastName.includes(query) || ssn.includes(query);
+    // Filter out already selected trainees
+    const isNotSelected = !selectedTrainees.find(t => t.id === trainee.id);
+    return isNotSelected && (name.includes(query) || firstName.includes(query) || lastName.includes(query) || ssn.includes(query));
   });
 
   const servicesByCategory = services.reduce((acc, service) => {
@@ -387,30 +390,29 @@ export default function Orders() {
                                 className="pl-8"
                               />
                             </div>
-                            {traineeSearchQuery && (
-                              <ScrollArea className="h-[300px] border rounded-lg">
-                                {filteredTrainees.length > 0 ? (
-                                  filteredTrainees.map((trainee) => (
-                                    <div
-                                      key={trainee.id}
-                                      onClick={() => {
-                                        addTrainee(trainee);
-                                      }}
-                                      className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
-                                    >
-                                      <div className="font-medium">{trainee.name}</div>
-                                      <div className="text-sm text-muted-foreground">
-                                        {trainee.unique_id} {trainee.ssn && `• SSN: ${trainee.ssn}`}
-                                      </div>
+                            <ScrollArea className="h-[300px] border rounded-lg">
+                              {filteredTrainees.length > 0 ? (
+                                filteredTrainees.map((trainee) => (
+                                  <div
+                                    key={trainee.id}
+                                    onClick={() => {
+                                      addTrainee(trainee);
+                                      setIsSelectTraineeOpen(false);
+                                    }}
+                                    className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                                  >
+                                    <div className="font-medium">{trainee.name}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {trainee.unique_id} {trainee.ssn && `• SSN: ${trainee.ssn}`}
                                     </div>
-                                  ))
-                                ) : (
-                                  <div className="p-6 text-center text-muted-foreground">
-                                    No trainees found
                                   </div>
-                                )}
-                              </ScrollArea>
-                            )}
+                                ))
+                              ) : (
+                                <div className="p-6 text-center text-muted-foreground">
+                                  No trainees found
+                                </div>
+                              )}
+                            </ScrollArea>
                           </div>
                         </DialogContent>
                       </Dialog>
