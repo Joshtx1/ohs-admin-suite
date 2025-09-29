@@ -15,6 +15,11 @@ interface Trainee {
   id: string;
   name: string;
   unique_id: string;
+  ssn?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
 }
 
 interface Client {
@@ -58,6 +63,16 @@ export default function Orders() {
   
   // Loading states
   const [loading, setLoading] = useState(true);
+  
+  // Create trainee dialog
+  const [isCreateTraineeOpen, setIsCreateTraineeOpen] = useState(false);
+  const [newTrainee, setNewTrainee] = useState({
+    first_name: "",
+    last_name: "",
+    ssn: "",
+    email: "",
+    phone: "",
+  });
 
   useEffect(() => {
     fetchTrainees();
@@ -128,6 +143,64 @@ export default function Orders() {
 
   const removeService = (index: number) => {
     setSelectedServices(selectedServices.filter((_, i) => i !== index));
+  };
+
+  const createTrainee = async () => {
+    if (!newTrainee.first_name || !newTrainee.last_name) {
+      toast({
+        title: "Error",
+        description: "First name and last name are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error("User not authenticated");
+
+      const { data, error } = await supabase
+        .from("trainees")
+        .insert({
+          name: `${newTrainee.first_name} ${newTrainee.last_name}`,
+          first_name: newTrainee.first_name,
+          last_name: newTrainee.last_name,
+          ssn: newTrainee.ssn || null,
+          email: newTrainee.email || null,
+          phone: newTrainee.phone || null,
+          created_by: user.user.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Trainee created successfully",
+      });
+
+      // Add to trainees list and selected trainees
+      setAllTrainees([...allTrainees, data]);
+      setSelectedTrainees([...selectedTrainees, data]);
+      
+      // Reset form and close dialog
+      setNewTrainee({
+        first_name: "",
+        last_name: "",
+        ssn: "",
+        email: "",
+        phone: "",
+      });
+      setIsCreateTraineeOpen(false);
+    } catch (error) {
+      console.error("Error creating trainee:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create trainee",
+        variant: "destructive",
+      });
+    }
   };
 
   const createRegistrations = async () => {
@@ -217,10 +290,12 @@ export default function Orders() {
     (registrationType === "client" && selectedClientId);
   const canProceedToStep4 = selectedServices.length > 0;
 
-  const filteredTrainees = allTrainees.filter(trainee =>
-    trainee.name.toLowerCase().includes(traineeSearchQuery.toLowerCase()) ||
-    trainee.unique_id.toLowerCase().includes(traineeSearchQuery.toLowerCase())
-  );
+  const filteredTrainees = allTrainees.filter(trainee => {
+    const query = traineeSearchQuery.toLowerCase();
+    const lastName = trainee.name?.split(' ').pop()?.toLowerCase() || '';
+    const ssn = trainee.ssn?.toLowerCase() || '';
+    return lastName.includes(query) || ssn.includes(query);
+  });
 
   const servicesByCategory = services.reduce((acc, service) => {
     const category = service.category || "Other";
@@ -290,11 +365,20 @@ export default function Orders() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <Label className="text-sm mb-2 block">Search</Label>
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="text-sm">Search by SSN or Last Name</Label>
+                        <Button
+                          variant="link"
+                          className="h-auto p-0 text-primary"
+                          onClick={() => setIsCreateTraineeOpen(true)}
+                        >
+                          Create New Trainee
+                        </Button>
+                      </div>
                       <div className="relative">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="search"
+                          placeholder="Search by SSN or last name"
                           value={traineeSearchQuery}
                           onChange={(e) => setTraineeSearchQuery(e.target.value)}
                           className="pl-8"
@@ -566,6 +650,66 @@ export default function Orders() {
           </Card>
         </div>
       </div>
+
+      {/* Create Trainee Dialog */}
+      <Dialog open={isCreateTraineeOpen} onOpenChange={setIsCreateTraineeOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Trainee</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>First Name *</Label>
+              <Input
+                value={newTrainee.first_name}
+                onChange={(e) => setNewTrainee({ ...newTrainee, first_name: e.target.value })}
+                placeholder="Enter first name"
+              />
+            </div>
+            <div>
+              <Label>Last Name *</Label>
+              <Input
+                value={newTrainee.last_name}
+                onChange={(e) => setNewTrainee({ ...newTrainee, last_name: e.target.value })}
+                placeholder="Enter last name"
+              />
+            </div>
+            <div>
+              <Label>SSN</Label>
+              <Input
+                value={newTrainee.ssn}
+                onChange={(e) => setNewTrainee({ ...newTrainee, ssn: e.target.value })}
+                placeholder="Enter SSN"
+              />
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={newTrainee.email}
+                onChange={(e) => setNewTrainee({ ...newTrainee, email: e.target.value })}
+                placeholder="Enter email"
+              />
+            </div>
+            <div>
+              <Label>Phone</Label>
+              <Input
+                value={newTrainee.phone}
+                onChange={(e) => setNewTrainee({ ...newTrainee, phone: e.target.value })}
+                placeholder="Enter phone"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsCreateTraineeOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={createTrainee}>
+                Create Trainee
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
