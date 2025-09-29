@@ -1,46 +1,20 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus, Search, Filter, Eye, Edit, Trash2, Calendar } from "lucide-react";
+import { Search, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-interface Order {
+interface Trainee {
   id: string;
-  client_id: string;
-  trainee_id: string;
-  status: string;
-  total_amount: number;
-  service_date: string;
-  notes: string;
-  created_at: string;
-  clients: {
-    company_name: string;
-    contact_person: string;
-  };
-  trainees: {
-    name: string;
-    unique_id: string;
-  };
-  order_items: {
-    id: string;
-    service_id: string;
-    price: number;
-    status: string;
-    services: {
-      name: string;
-      service_code: string;
-    };
-  }[];
+  name: string;
+  unique_id: string;
 }
 
 interface Client {
@@ -49,87 +23,60 @@ interface Client {
   contact_person: string;
 }
 
-interface Trainee {
-  id: string;
-  name: string;
-  unique_id: string;
-}
-
 interface Service {
   id: string;
   name: string;
   service_code: string;
+  category: string;
   member_price: number;
   non_member_price: number;
 }
 
-const statusColors = {
-  created: "bg-blue-100 text-blue-800",
-  scheduled: "bg-yellow-100 text-yellow-800",
-  "in-progress": "bg-orange-100 text-orange-800",
-  completed: "bg-green-100 text-green-800",
-  billed: "bg-purple-100 text-purple-800",
-  cancelled: "bg-red-100 text-red-800"
-};
+interface SelectedService extends Service {
+  date: string;
+}
 
 export default function Orders() {
-  const navigate = useNavigate();
   const { toast } = useToast();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
   
-  // Create order form state
+  // Step 1: Trainee Selection
+  const [traineeSearchQuery, setTraineeSearchQuery] = useState("");
+  const [allTrainees, setAllTrainees] = useState<Trainee[]>([]);
+  const [selectedTrainees, setSelectedTrainees] = useState<Trainee[]>([]);
+  
+  // Step 2: Registration Type
+  const [registrationType, setRegistrationType] = useState<"client" | "selfpay">("client");
   const [clients, setClients] = useState<Client[]>([]);
-  const [trainees, setTrainees] = useState<Trainee[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
   const [selectedClientId, setSelectedClientId] = useState("");
-  const [selectedTraineeId, setSelectedTraineeId] = useState("");
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [serviceDate, setServiceDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [orderNotes, setOrderNotes] = useState("");
+  const [orderPO, setOrderPO] = useState("");
+  
+  // Step 3: Service Selection
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
+  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
+  
+  // Loading states
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchOrders();
+    fetchTrainees();
     fetchClients();
     fetchServices();
   }, []);
 
-  useEffect(() => {
-    if (selectedClientId) {
-      fetchClientTrainees(selectedClientId);
-    }
-  }, [selectedClientId]);
-
-  const fetchOrders = async () => {
+  const fetchTrainees = async () => {
     try {
       const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          *,
-          clients (company_name, contact_person),
-          trainees (name, unique_id),
-          order_items (
-            id,
-            service_id,
-            price,
-            status,
-            services (name, service_code)
-          )
-        `)
-        .order("created_at", { ascending: false });
+        .from("trainees")
+        .select("id, name, unique_id")
+        .eq("status", "active")
+        .order("name");
 
       if (error) throw error;
-      setOrders(data || []);
+      setAllTrainees(data || []);
     } catch (error) {
-      console.error("Error fetching orders:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load orders",
-        variant: "destructive",
-      });
+      console.error("Error fetching trainees:", error);
     } finally {
       setLoading(false);
     }
@@ -150,31 +97,13 @@ export default function Orders() {
     }
   };
 
-  const fetchClientTrainees = async (clientId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("client_trainee_assignments")
-        .select(`
-          trainees (id, name, unique_id)
-        `)
-        .eq("client_id", clientId)
-        .eq("status", "active");
-
-      if (error) throw error;
-      const traineesData = data?.map(item => item.trainees).filter(Boolean) || [];
-      setTrainees(traineesData);
-    } catch (error) {
-      console.error("Error fetching client trainees:", error);
-    }
-  };
-
   const fetchServices = async () => {
     try {
       const { data, error } = await supabase
         .from("services")
-        .select("id, name, service_code, member_price, non_member_price")
+        .select("id, name, service_code, category, member_price, non_member_price")
         .eq("is_active", true)
-        .order("name");
+        .order("category, name");
 
       if (error) throw error;
       setServices(data || []);
@@ -183,11 +112,38 @@ export default function Orders() {
     }
   };
 
-  const createOrder = async () => {
-    if (!selectedClientId || !selectedTraineeId || selectedServices.length === 0) {
+  const addTrainee = (trainee: Trainee) => {
+    if (!selectedTrainees.find(t => t.id === trainee.id)) {
+      setSelectedTrainees([...selectedTrainees, trainee]);
+    }
+  };
+
+  const removeTrainee = (traineeId: string) => {
+    setSelectedTrainees(selectedTrainees.filter(t => t.id !== traineeId));
+  };
+
+  const addService = (service: Service, date: string) => {
+    setSelectedServices([...selectedServices, { ...service, date }]);
+  };
+
+  const removeService = (index: number) => {
+    setSelectedServices(selectedServices.filter((_, i) => i !== index));
+  };
+
+  const createRegistrations = async () => {
+    if (selectedTrainees.length === 0 || selectedServices.length === 0) {
       toast({
         title: "Error",
-        description: "Please select client, trainee, and at least one service",
+        description: "Please select trainees and services",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (registrationType === "client" && !selectedClientId) {
+      toast({
+        title: "Error",
+        description: "Please select a client",
         variant: "destructive",
       });
       return;
@@ -197,85 +153,89 @@ export default function Orders() {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("User not authenticated");
 
-      // Calculate total amount
-      const selectedServiceDetails = services.filter(s => selectedServices.includes(s.id));
-      const totalAmount = selectedServiceDetails.reduce((sum, service) => sum + (service.member_price || 0), 0);
+      // Create one order per trainee
+      for (const trainee of selectedTrainees) {
+        const totalAmount = selectedServices.reduce((sum, service) => 
+          sum + (service.member_price || 0), 0
+        );
 
-      // Create order
-      const { data: orderData, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          client_id: selectedClientId,
-          trainee_id: selectedTraineeId,
-          created_by: user.user.id,
-          status: "created",
-          total_amount: totalAmount,
-          service_date: serviceDate,
-          notes: orderNotes
-        })
-        .select()
-        .single();
+        const { data: orderData, error: orderError } = await supabase
+          .from("orders")
+          .insert({
+            client_id: registrationType === "client" ? selectedClientId : null,
+            trainee_id: trainee.id,
+            created_by: user.user.id,
+            status: "created",
+            total_amount: totalAmount,
+            service_date: selectedServices[0]?.date || new Date().toISOString().split('T')[0],
+            notes: registrationType === "client" ? `PO: ${orderPO}` : "Self Pay"
+          })
+          .select()
+          .single();
 
-      if (orderError) throw orderError;
+        if (orderError) throw orderError;
 
-      // Create order items
-      const orderItems = selectedServiceDetails.map(service => ({
-        order_id: orderData.id,
-        service_id: service.id,
-        price: service.member_price || 0,
-        status: "pending"
-      }));
+        // Create order items for each service
+        const orderItems = selectedServices.map(service => ({
+          order_id: orderData.id,
+          service_id: service.id,
+          price: service.member_price || 0,
+          status: "pending"
+        }));
 
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
+        const { error: itemsError } = await supabase
+          .from("order_items")
+          .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+        if (itemsError) throw itemsError;
+      }
 
       toast({
         title: "Success",
-        description: "Order created successfully",
+        description: `Created ${selectedTrainees.length} registration${selectedTrainees.length > 1 ? 's' : ''}`,
       });
 
-      setIsCreateDialogOpen(false);
-      resetCreateForm();
-      fetchOrders();
+      // Reset form
+      setCurrentStep(1);
+      setSelectedTrainees([]);
+      setSelectedServices([]);
+      setSelectedClientId("");
+      setOrderPO("");
+      setRegistrationType("client");
     } catch (error) {
-      console.error("Error creating order:", error);
+      console.error("Error creating registrations:", error);
       toast({
         title: "Error",
-        description: "Failed to create order",
+        description: "Failed to create registrations",
         variant: "destructive",
       });
     }
   };
 
-  const resetCreateForm = () => {
-    setSelectedClientId("");
-    setSelectedTraineeId("");
-    setSelectedServices([]);
-    setServiceDate(format(new Date(), "yyyy-MM-dd"));
-    setOrderNotes("");
-    setTrainees([]);
-  };
+  const canProceedToStep2 = selectedTrainees.length > 0;
+  const canProceedToStep3 = registrationType === "selfpay" || 
+    (registrationType === "client" && selectedClientId);
+  const canProceedToStep4 = selectedServices.length > 0;
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
-      order.clients.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.trainees.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.trainees.unique_id.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const filteredTrainees = allTrainees.filter(trainee =>
+    trainee.name.toLowerCase().includes(traineeSearchQuery.toLowerCase()) ||
+    trainee.unique_id.toLowerCase().includes(traineeSearchQuery.toLowerCase())
+  );
+
+  const servicesByCategory = services.reduce((acc, service) => {
+    const category = service.category || "Other";
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(service);
+    return acc;
+  }, {} as Record<string, Service[]>);
+
+  const totalRegistrations = selectedTrainees.length * selectedServices.length;
 
   if (loading) {
     return (
       <div className="container mx-auto p-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-muted rounded w-1/4"></div>
-          <div className="h-4 bg-muted rounded w-1/2"></div>
           <div className="h-32 bg-muted rounded"></div>
         </div>
       </div>
@@ -283,237 +243,329 @@ export default function Orders() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
-          <p className="text-muted-foreground">
-            Manage and track service orders for trainees
-          </p>
-        </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Order
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create New Order</DialogTitle>
-              <DialogDescription>
-                Select a client, trainee, and services to create a new order.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="client">Client</Label>
-                <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.company_name} - {client.contact_person}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+    <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Trainee Registration</h1>
+      </div>
+
+      <div className="grid grid-cols-4 gap-6">
+        {/* Step Navigation */}
+        <div className="col-span-1 space-y-2">
+          {[
+            { num: 1, label: "Trainees" },
+            { num: 2, label: "Registration Type" },
+            { num: 3, label: "Service" },
+            { num: 4, label: "Review" }
+          ].map((step) => (
+            <button
+              key={step.num}
+              onClick={() => {
+                if (step.num === 1 || 
+                    (step.num === 2 && canProceedToStep2) ||
+                    (step.num === 3 && canProceedToStep3) ||
+                    (step.num === 4 && canProceedToStep4)) {
+                  setCurrentStep(step.num);
+                }
+              }}
+              className={`w-full text-left p-3 rounded-lg transition-colors ${
+                currentStep === step.num
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted hover:bg-muted/80"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">{step.num}</span>
+                <span>{step.label}</span>
               </div>
-              
-              {selectedClientId && (
-                <div className="grid gap-2">
-                  <Label htmlFor="trainee">Trainee</Label>
-                  <Select value={selectedTraineeId} onValueChange={setSelectedTraineeId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a trainee" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {trainees.map((trainee) => (
-                        <SelectItem key={trainee.id} value={trainee.id}>
-                          {trainee.name} ({trainee.unique_id})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            </button>
+          ))}
+        </div>
+
+        {/* Step Content */}
+        <div className="col-span-3">
+          <Card>
+            <CardContent className="p-6">
+              {/* Step 1: Trainee Selection */}
+              {currentStep === 1 && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <Label className="text-sm mb-2 block">Search</Label>
+                      <div className="relative">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="search"
+                          value={traineeSearchQuery}
+                          onChange={(e) => setTraineeSearchQuery(e.target.value)}
+                          className="pl-8"
+                        />
+                      </div>
+                      <ScrollArea className="h-[400px] mt-4 border rounded-lg p-2">
+                        {filteredTrainees.map((trainee) => (
+                          <div
+                            key={trainee.id}
+                            onClick={() => addTrainee(trainee)}
+                            className="p-2 hover:bg-muted cursor-pointer rounded text-sm"
+                          >
+                            {trainee.name} - {trainee.unique_id}
+                          </div>
+                        ))}
+                      </ScrollArea>
+                    </div>
+                    <div>
+                      <Label className="text-sm mb-2 block">SELECTED</Label>
+                      <div className="space-y-2">
+                        {selectedTrainees.map((trainee) => (
+                          <div key={trainee.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div>
+                              <Button
+                                variant="link"
+                                className="h-auto p-0 text-primary"
+                                onClick={() => removeTrainee(trainee.id)}
+                              >
+                                REMOVE
+                              </Button>
+                              <div className="font-medium">{trainee.name}</div>
+                            </div>
+                            <div className="font-mono text-sm">{trainee.unique_id}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button onClick={() => setCurrentStep(2)} disabled={!canProceedToStep2}>
+                      Next
+                    </Button>
+                  </div>
                 </div>
               )}
 
-              <div className="grid gap-2">
-                <Label>Services</Label>
-                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                  {services.map((service) => (
-                    <label key={service.id} className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedServices.includes(service.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedServices([...selectedServices, service.id]);
-                          } else {
-                            setSelectedServices(selectedServices.filter(id => id !== service.id));
-                          }
-                        }}
-                        className="rounded"
-                      />
-                      <span className="text-sm">
-                        {service.name} - ${service.member_price}
-                      </span>
-                    </label>
-                  ))}
+              {/* Step 2: Registration Type */}
+              {currentStep === 2 && (
+                <div className="space-y-6">
+                  <div>
+                    <Label className="text-sm font-semibold mb-4 block">REGISTRATION TYPE</Label>
+                    <RadioGroup value={registrationType} onValueChange={(v) => setRegistrationType(v as "client" | "selfpay")}>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <RadioGroupItem value="client" id="client" />
+                        <Label htmlFor="client" className="cursor-pointer">CLIENT TO PAY</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="selfpay" id="selfpay" />
+                        <Label htmlFor="selfpay" className="cursor-pointer">Self Pay</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {registrationType === "client" && (
+                    <div className="grid grid-cols-2 gap-6 mt-6">
+                      <div>
+                        <Button onClick={() => {
+                          const client = clients[0];
+                          if (client) setSelectedClientId(client.id);
+                        }}>
+                          SELECT CLIENT
+                        </Button>
+                        {selectedClientId && (
+                          <div className="mt-4 p-4 border rounded-lg">
+                            <div className="font-medium">
+                              {clients.find(c => c.id === selectedClientId)?.company_name}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {clients.find(c => c.id === selectedClientId)?.contact_person}
+                            </div>
+                          </div>
+                        )}
+                        <ScrollArea className="h-[200px] mt-4 border rounded-lg p-2">
+                          {clients.map((client) => (
+                            <div
+                              key={client.id}
+                              onClick={() => setSelectedClientId(client.id)}
+                              className={`p-2 hover:bg-muted cursor-pointer rounded text-sm ${
+                                selectedClientId === client.id ? "bg-muted" : ""
+                              }`}
+                            >
+                              {client.company_name}
+                            </div>
+                          ))}
+                        </ScrollArea>
+                      </div>
+                      <div>
+                        <Label className="text-sm mb-2 block">ORDER PO Number</Label>
+                        <Input
+                          placeholder="Enter PO number"
+                          value={orderPO}
+                          onChange={(e) => setOrderPO(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between">
+                    <Button variant="outline" onClick={() => setCurrentStep(1)}>
+                      Back
+                    </Button>
+                    <Button onClick={() => setCurrentStep(3)} disabled={!canProceedToStep3}>
+                      Next
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="grid gap-2">
-                <Label htmlFor="service-date">Service Date</Label>
-                <Input
-                  id="service-date"
-                  type="date"
-                  value={serviceDate}
-                  onChange={(e) => setServiceDate(e.target.value)}
-                />
-              </div>
+              {/* Step 3: Service Selection */}
+              {currentStep === 3 && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-semibold">SERVICE</Label>
+                    <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button>SELECT SERVICES</Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl max-h-[80vh]">
+                        <DialogHeader>
+                          <DialogTitle>Select Services</DialogTitle>
+                        </DialogHeader>
+                        <Tabs defaultValue={Object.keys(servicesByCategory)[0]} className="w-full">
+                          <TabsList className="w-full justify-start overflow-x-auto">
+                            {Object.keys(servicesByCategory).map((category) => (
+                              <TabsTrigger key={category} value={category}>
+                                {category}
+                              </TabsTrigger>
+                            ))}
+                          </TabsList>
+                          {Object.entries(servicesByCategory).map(([category, categoryServices]) => (
+                            <TabsContent key={category} value={category}>
+                              <ScrollArea className="h-[400px]">
+                                <div className="space-y-2 p-2">
+                                  {categoryServices.map((service) => (
+                                    <div
+                                      key={service.id}
+                                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted cursor-pointer"
+                                      onClick={() => {
+                                        const date = new Date().toISOString().split('T')[0];
+                                        addService(service, date);
+                                      }}
+                                    >
+                                      <div>
+                                        <div className="font-medium">{service.name}</div>
+                                        <div className="text-sm text-muted-foreground">
+                                          {service.service_code}
+                                        </div>
+                                      </div>
+                                      <div className="text-sm font-medium">
+                                        ${service.member_price}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </ScrollArea>
+                            </TabsContent>
+                          ))}
+                        </Tabs>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Add any notes or special instructions..."
-                  value={orderNotes}
-                  onChange={(e) => setOrderNotes(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={createOrder}>
-                Create Order
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Order Management</CardTitle>
-          <CardDescription>
-            View and manage all service orders
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex space-x-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by client or trainee..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="created">Created</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="billed">Billed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Trainee</TableHead>
-                <TableHead>Services</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Service Date</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-mono text-sm">
-                    {order.id.slice(0, 8)}...
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{order.clients.company_name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {order.clients.contact_person}
-                      </div>
+                  <div className="border rounded-lg">
+                    <div className="bg-muted p-2 grid grid-cols-4 gap-2 text-sm font-semibold">
+                      <div>Date</div>
+                      <div>Code</div>
+                      <div>Name</div>
+                      <div></div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{order.trainees.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {order.trainees.unique_id}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      {order.order_items.map((item) => (
-                        <div key={item.id} className="text-sm">
-                          {item.services.name}
-                          <Badge variant="outline" className="ml-2">
-                            {item.status}
-                          </Badge>
+                    <ScrollArea className="h-[300px]">
+                      {selectedServices.map((service, index) => (
+                        <div key={index} className="p-2 grid grid-cols-4 gap-2 text-sm border-b items-center">
+                          <div>{service.date}</div>
+                          <div>{service.service_code}</div>
+                          <div>{service.name}</div>
+                          <div className="flex justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeService(index)}
+                            >
+                              <X className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={statusColors[order.status as keyof typeof statusColors]}>
-                      {order.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    ${order.total_amount}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(order.service_date), "MMM dd, yyyy")}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    </ScrollArea>
+                  </div>
 
-          {filteredOrders.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No orders found</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  <div className="text-right text-sm font-semibold">
+                    {selectedServices.length} TOTAL
+                  </div>
+
+                  <div className="flex justify-between">
+                    <Button variant="outline" onClick={() => setCurrentStep(2)}>
+                      Back
+                    </Button>
+                    <Button onClick={() => setCurrentStep(4)} disabled={!canProceedToStep4}>
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Review */}
+              {currentStep === 4 && (
+                <div className="space-y-4">
+                  <Label className="text-sm font-semibold">Review</Label>
+                  <ScrollArea className="h-[400px]">
+                    {selectedTrainees.map((trainee) => (
+                      <div key={trainee.id} className="mb-6 border-b pb-4">
+                        <div className="font-semibold mb-2">{trainee.name}</div>
+                        <div className="space-y-1">
+                          {selectedServices.map((service, idx) => (
+                            <div key={idx} className="flex justify-between text-sm p-2 bg-muted/50 rounded">
+                              <div className="flex gap-4">
+                                <span>{service.service_code}</span>
+                                <span>{service.name}</span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto p-0 text-destructive"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </ScrollArea>
+
+                  <div className="bg-primary/10 p-4 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-semibold">Add {totalRegistrations} Registrations</div>
+                        <div className="text-sm text-muted-foreground">
+                          Employer: {registrationType === "client" 
+                            ? clients.find(c => c.id === selectedClientId)?.company_name 
+                            : "SELF PAY"}
+                        </div>
+                      </div>
+                      <Button onClick={createRegistrations} size="lg">
+                        <Check className="mr-2 h-4 w-4" />
+                        Confirm
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <Button variant="outline" onClick={() => setCurrentStep(3)}>
+                      Back
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
