@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import RoutingSlip from "@/components/RoutingSlip";
 
 interface Trainee {
   id: string;
@@ -55,13 +56,29 @@ interface Order {
   status: string;
   total_amount: number;
   notes: string;
-  trainees: { name: string; unique_id: string };
-  clients: { company_name: string } | null;
+  trainees: { 
+    name: string; 
+    unique_id: string;
+    email?: string;
+    phone?: string;
+    date_of_birth?: string;
+    ssn?: string;
+  };
+  clients: { 
+    company_name: string;
+    contact_person: string;
+    phone: string;
+    email: string;
+  } | null;
   order_items: Array<{
     service_id: string;
     price: number;
     status: string;
-    services: { name: string; service_code: string };
+    services: { 
+      name: string; 
+      service_code: string;
+      category: string;
+    };
   }>;
 }
 
@@ -74,6 +91,8 @@ export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isRoutingSlipOpen, setIsRoutingSlipOpen] = useState(false);
   
   // Step 1: Trainee Selection
   const [traineeSearchQuery, setTraineeSearchQuery] = useState("");
@@ -128,13 +147,29 @@ export default function Orders() {
           status,
           total_amount,
           notes,
-          trainees (name, unique_id),
-          clients (company_name),
+          trainees (
+            name, 
+            unique_id,
+            email,
+            phone,
+            date_of_birth,
+            ssn
+          ),
+          clients (
+            company_name,
+            contact_person,
+            phone,
+            email
+          ),
           order_items (
             service_id,
             price,
             status,
-            services (name, service_code)
+            services (
+              name, 
+              service_code,
+              category
+            )
           )
         `)
         .order("created_at", { ascending: false });
@@ -151,6 +186,11 @@ export default function Orders() {
     } finally {
       setOrdersLoading(false);
     }
+  };
+
+  const handleViewOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setIsRoutingSlipOpen(true);
   };
 
   const fetchTrainees = async () => {
@@ -531,7 +571,11 @@ export default function Orders() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleViewOrder(order)}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
                           </TableCell>
@@ -1054,6 +1098,13 @@ export default function Orders() {
         </Dialog>
         </TabsContent>
       </Tabs>
+
+      {/* Routing Slip Dialog */}
+      <RoutingSlip 
+        open={isRoutingSlipOpen}
+        onOpenChange={setIsRoutingSlipOpen}
+        order={selectedOrder}
+      />
     </div>
   );
 }
