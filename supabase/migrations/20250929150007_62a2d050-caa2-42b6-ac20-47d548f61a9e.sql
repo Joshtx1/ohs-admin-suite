@@ -1,0 +1,1 @@
+UPDATE trainees SET status = 'Active';
