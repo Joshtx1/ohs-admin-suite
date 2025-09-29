@@ -86,7 +86,7 @@ export default function Orders() {
       const { data, error } = await supabase
         .from("trainees")
         .select("id, name, unique_id, ssn, first_name, last_name, email, phone")
-        .eq("status", "active")
+        .ilike("status", "active")
         .order("name");
 
       if (error) throw error;
