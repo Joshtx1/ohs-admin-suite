@@ -359,6 +359,89 @@ const Trainees = () => {
     toast.success('Export completed successfully');
   };
 
+  // Header mapping for flexible CSV import
+  const createHeaderMap = (headers: string[]) => {
+    const headerMap: { [key: string]: string } = {};
+    
+    const mappings = {
+      // ID fields (will be skipped)
+      'internal id': 'id',
+      'unique id': 'unique_id',
+      // Basic info
+      'name': 'name',
+      'first name': 'first_name',
+      'middle name': 'middle_name', 
+      'last name': 'last_name',
+      'ssn': 'ssn',
+      'email': 'email',
+      'phone': 'phone',
+      'mobile number': 'mobile_number',
+      'date of birth': 'date_of_birth',
+      'age': 'age',
+      'gender': 'gender',
+      'language': 'language',
+      // License info
+      'license number': 'license_number',
+      'license type': 'license_type',
+      // Address
+      'street': 'street',
+      'city': 'city',
+      'state': 'state',
+      'zip': 'zip',
+      'country': 'country',
+      // Physical attributes
+      'height': 'height',
+      'hair': 'hair',
+      'eyes': 'eyes',
+      // Additional info
+      'council id': 'council_id',
+      'occupation/craft': 'occupation_craft',
+      'status': 'status',
+      'notes': 'notes',
+      'photo url': 'photo_url',
+      'signature url': 'signature_url',
+      'medical history': 'medical_history'
+    };
+
+    headers.forEach(header => {
+      const normalizedHeader = header.toLowerCase().trim();
+      if (mappings[normalizedHeader]) {
+        headerMap[header] = mappings[normalizedHeader];
+      }
+    });
+
+    return headerMap;
+  };
+
+  // Convert date formats (MM/DD/YYYY to YYYY-MM-DD)
+  const convertDateFormat = (dateStr: string | null): string | null => {
+    if (!dateStr) return null;
+    
+    try {
+      // Handle MM/DD/YYYY format
+      if (dateStr.includes('/')) {
+        const [month, day, year] = dateStr.split('/');
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+      
+      // Handle YYYY-MM-DD format (already correct)
+      if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return dateStr;
+      }
+      
+      // Try to parse other formats
+      const date = new Date(dateStr);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+      
+      return null;
+    } catch (error) {
+      console.warn('Could not convert date:', dateStr);
+      return null;
+    }
+  };
+
   // Import functionality
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -366,53 +449,101 @@ const Trainees = () => {
 
     Papa.parse(file, {
       header: true,
-      complete: (results) => {
+      skipEmptyLines: true,
+      transformHeader: (header: string) => header.trim(),
+      complete: async (results) => {
         const importData = results.data as any[];
-        console.log('Import data:', importData);
+        console.log('Raw import data:', importData);
         
-        // Process each row and insert into database
-        importData.forEach(async (row) => {
-          if (row.SSN && row.Name) {
-            try {
-              const age = calculateAge(row['Date of Birth']);
-              const traineeData = {
-                name: row.Name,
-                ssn: row.SSN,
-                first_name: row['First Name'] || null,
-                middle_name: row['Middle Name'] || null,
-                last_name: row['Last Name'] || null,
-                email: row.Email || null,
-                phone: row.Phone || null,
-                mobile_number: row['Mobile Number'] || null,
-                date_of_birth: row['Date of Birth'] || null,
-                age,
-                gender: row.Gender || null,
-                language: row.Language || null,
-                license_number: row['License Number'] || null,
-                license_type: row['License Type'] || null,
-                status: row.Status || 'active',
-                created_by: user?.id
-              };
+        if (importData.length === 0) {
+          toast.error('No data found in CSV file');
+          return;
+        }
 
-              const { error } = await supabase
-                .from('trainees')
-                .insert([traineeData]);
-              
-              if (error && !error.message.includes('duplicate')) {
-                console.error('Error importing trainee:', error);
-              }
-            } catch (error) {
-              console.error('Error processing import row:', error);
-            }
-          }
-        });
+        const headers = Object.keys(importData[0]);
+        const headerMap = createHeaderMap(headers);
+        console.log('Header mapping:', headerMap);
         
-        toast.success('Import completed successfully');
+        let successCount = 0;
+        let errorCount = 0;
+        const errors: string[] = [];
+
+        // Process rows sequentially to avoid overwhelming the database
+        for (let i = 0; i < importData.length; i++) {
+          const row = importData[i];
+          
+          try {
+            // Build trainee data using header mapping
+            const traineeData: any = {
+              created_by: user?.id,
+              status: 'active'
+            };
+
+            // Map CSV columns to database columns
+            Object.entries(row).forEach(([csvHeader, value]) => {
+              const dbColumn = headerMap[csvHeader];
+              if (dbColumn && value !== null && value !== undefined && value !== '') {
+                // Skip auto-generated fields
+                if (dbColumn === 'id' || dbColumn === 'unique_id') {
+                  return;
+                }
+                
+                // Handle date fields
+                if (dbColumn === 'date_of_birth') {
+                  traineeData[dbColumn] = convertDateFormat(value as string);
+                } else {
+                  traineeData[dbColumn] = value;
+                }
+              }
+            });
+
+            // Calculate age if date of birth is provided
+            if (traineeData.date_of_birth) {
+              traineeData.age = calculateAge(traineeData.date_of_birth);
+            }
+
+            // Validate required fields
+            if (!traineeData.name && !traineeData.first_name && !traineeData.last_name) {
+              errors.push(`Row ${i + 1}: Missing name information`);
+              errorCount++;
+              continue;
+            }
+
+            console.log(`Processing row ${i + 1}:`, traineeData);
+
+            const { error } = await supabase
+              .from('trainees')
+              .insert([traineeData]);
+            
+            if (error) {
+              console.error(`Error importing row ${i + 1}:`, error);
+              errors.push(`Row ${i + 1}: ${error.message}`);
+              errorCount++;
+            } else {
+              successCount++;
+            }
+          } catch (error) {
+            console.error(`Error processing row ${i + 1}:`, error);
+            errors.push(`Row ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            errorCount++;
+          }
+        }
+        
+        // Show detailed results
+        if (successCount > 0) {
+          toast.success(`Successfully imported ${successCount} trainee(s)`);
+        }
+        
+        if (errorCount > 0) {
+          console.error('Import errors:', errors);
+          toast.error(`Failed to import ${errorCount} trainee(s). Check console for details.`);
+        }
+        
         fetchTrainees();
       },
       error: (error) => {
         console.error('CSV parse error:', error);
-        toast.error('Error parsing CSV file');
+        toast.error(`Error parsing CSV file: ${error.message}`);
       }
     });
     
