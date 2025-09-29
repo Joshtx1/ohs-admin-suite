@@ -539,67 +539,6 @@ const Users = () => {
         </CardContent>
       </Card>
 
-      {/* Role Descriptions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Dash System Role Hierarchy</CardTitle>
-          <CardDescription>
-            Internal user roles and their system permissions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-start space-x-3 p-3 rounded-lg border">
-              <Badge variant="default" className="flex items-center gap-1 mt-0.5">
-                <Crown className="h-3 w-3" />
-                MASTER
-              </Badge>
-              <div>
-                <h4 className="font-medium">System Master</h4>
-                <p className="text-sm text-muted-foreground">
-                  Complete system control, user management, all administrative functions, system configuration
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3 p-3 rounded-lg border">
-              <Badge variant="secondary" className="flex items-center gap-1 mt-0.5">
-                <Shield className="h-3 w-3" />
-                ADMIN
-              </Badge>
-              <div>
-                <h4 className="font-medium">Administrator</h4>
-                <p className="text-sm text-muted-foreground">
-                  Manage clients, trainees, services, assignments, and operational data
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3 p-3 rounded-lg border">
-              <Badge variant="outline" className="flex items-center gap-1 mt-0.5">
-                <Settings className="h-3 w-3" />
-                MANAGER
-              </Badge>
-              <div>
-                <h4 className="font-medium">Manager</h4>
-                <p className="text-sm text-muted-foreground">
-                  Supervisory access to operations, can assign trainees and approve services
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3 p-3 rounded-lg border">
-              <Badge variant="outline" className="flex items-center gap-1 mt-0.5">
-                <User className="h-3 w-3" />
-                CLERK
-              </Badge>
-              <div>
-                <h4 className="font-medium">Clerk</h4>
-                <p className="text-sm text-muted-foreground">
-                  Operational access to view and process daily tasks, data entry
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
         </TabsContent>
 
