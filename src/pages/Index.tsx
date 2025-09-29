@@ -6,7 +6,7 @@ const Index = () => {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="text-center space-y-6">
         <div>
-          <h1 className="mb-4 text-4xl font-bold">OHS Clinic Management</h1>
+          <h1 className="mb-4 text-4xl font-bold">OHS PRIME MED</h1>
           <p className="text-xl text-muted-foreground">
             Professional occupational health and safety management system
           </p>
