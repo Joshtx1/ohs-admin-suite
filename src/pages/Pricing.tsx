@@ -79,8 +79,8 @@ const Pricing = () => {
           .from('pricing')
           .select(`
             *,
-            services:service_id (name),
-            clients:client_id (company_name)
+            services!service_id(name),
+            clients!client_id(company_name)
           `)
           .order('created_at', { ascending: false }),
         supabase
