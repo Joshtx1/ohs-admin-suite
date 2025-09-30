@@ -35,6 +35,8 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
   const [loading, setLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<Profile | null>(null);
+  const [editedClient, setEditedClient] = useState(client);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof userSchema>>({
@@ -146,6 +148,44 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
     }
   };
 
+  const handleSaveClient = async () => {
+    try {
+      setIsSaving(true);
+      const { error } = await supabase
+        .from("clients")
+        .update({
+          company_name: editedClient.company_name,
+          contact_person: editedClient.contact_person,
+          email: editedClient.email,
+          phone: editedClient.phone,
+          mem_status: editedClient.mem_status,
+          status: editedClient.status,
+          mem_type: editedClient.mem_type,
+          payment_status: editedClient.payment_status,
+          mailing_street_address: editedClient.mailing_street_address,
+          mailing_city_state_zip: editedClient.mailing_city_state_zip,
+          comments: editedClient.comments,
+        })
+        .eq("id", client.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Client updated successfully",
+      });
+    } catch (error) {
+      console.error("Error updating client:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update client",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
@@ -169,62 +209,106 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <Label>Profile ID</Label>
-                <Input value={client.profile || ""} readOnly />
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <Label>Profile ID</Label>
+                  <Input value={client.profile || ""} readOnly />
+                </div>
+                <div>
+                  <Label>Client Code</Label>
+                  <Input value={client.short_code || ""} readOnly />
+                </div>
+                <div>
+                  <Label>Company Name</Label>
+                  <Input 
+                    value={editedClient.company_name || ""} 
+                    onChange={(e) => setEditedClient({...editedClient, company_name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Contact Person</Label>
+                  <Input 
+                    value={editedClient.contact_person || ""} 
+                    onChange={(e) => setEditedClient({...editedClient, contact_person: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input 
+                    value={editedClient.email || ""} 
+                    onChange={(e) => setEditedClient({...editedClient, email: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Phone</Label>
+                  <Input 
+                    value={editedClient.phone || ""} 
+                    onChange={(e) => setEditedClient({...editedClient, phone: e.target.value})}
+                  />
+                </div>
               </div>
-              <div>
-                <Label>Client Code</Label>
-                <Input value={client.short_code || ""} readOnly />
-              </div>
-              <div>
-                <Label>Company Name</Label>
-                <Input value={client.company_name || ""} readOnly />
-              </div>
-              <div>
-                <Label>Contact Person</Label>
-                <Input value={client.contact_person || ""} readOnly />
-              </div>
-              <div>
-                <Label>Email</Label>
-                <Input value={client.email || ""} readOnly />
-              </div>
-              <div>
-                <Label>Phone</Label>
-                <Input value={client.phone || ""} readOnly />
+              <div className="space-y-4">
+                <div>
+                  <Label>Client Type</Label>
+                  <Input 
+                    value={editedClient.mem_status || ""} 
+                    onChange={(e) => setEditedClient({...editedClient, mem_status: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <Input 
+                    value={editedClient.status || ""} 
+                    onChange={(e) => setEditedClient({...editedClient, status: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Membership Type</Label>
+                  <Input 
+                    value={editedClient.mem_type || ""} 
+                    onChange={(e) => setEditedClient({...editedClient, mem_type: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Payment Status</Label>
+                  <Input 
+                    value={editedClient.payment_status || ""} 
+                    onChange={(e) => setEditedClient({...editedClient, payment_status: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Street Address</Label>
+                  <Input 
+                    value={editedClient.mailing_street_address || ""} 
+                    onChange={(e) => setEditedClient({...editedClient, mailing_street_address: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>City, State, Zip</Label>
+                  <Input 
+                    value={editedClient.mailing_city_state_zip || ""} 
+                    onChange={(e) => setEditedClient({...editedClient, mailing_city_state_zip: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Comments</Label>
+                  <Input 
+                    value={editedClient.comments || ""} 
+                    onChange={(e) => setEditedClient({...editedClient, comments: e.target.value})}
+                  />
+                </div>
               </div>
             </div>
-            <div className="space-y-4">
-              <div>
-                <Label>Client Type</Label>
-                <Input value={client.mem_status === 'member' ? 'Member' : client.mem_status === 'non-member' ? 'Non-Member' : client.mem_status || ""} readOnly />
-              </div>
-              <div>
-                <Label>Status</Label>
-                <Input value={client.status === 'active' ? 'Active' : client.status === 'inactive' ? 'In-Active' : client.status === 'suspended' ? 'Suspended' : client.status || ""} readOnly />
-              </div>
-              <div>
-                <Label>Membership Type</Label>
-                <Input value={client.mem_type || ""} readOnly />
-              </div>
-              <div>
-                <Label>Payment Status</Label>
-                <Input value={client.payment_status || ""} readOnly />
-              </div>
-              <div>
-                <Label>Street Address</Label>
-                <Input value={client.mailing_street_address || ""} readOnly />
-              </div>
-              <div>
-                <Label>City, State, Zip</Label>
-                <Input value={client.mailing_city_state_zip || ""} readOnly />
-              </div>
-              <div>
-                <Label>Comments</Label>
-                <Input value={client.comments || ""} readOnly />
-              </div>
+            <div className="flex justify-end">
+              <Button 
+                onClick={handleSaveClient}
+                disabled={isSaving}
+                className="bg-green-500 hover:bg-green-600"
+              >
+                {isSaving ? "Saving..." : "Save Changes"}
+              </Button>
             </div>
           </div>
         </TabsContent>
