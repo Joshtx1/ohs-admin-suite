@@ -66,6 +66,27 @@ export type Database = {
             referencedRelation: "trainees"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_assignments_client"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_assignments_created_by"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_assignments_trainee"
+            columns: ["trainee_id"]
+            isOneToOne: false
+            referencedRelation: "trainees"
+            referencedColumns: ["id"]
+          },
         ]
       }
       clients: {
@@ -159,7 +180,15 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_clients_created_by"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       conversations: {
         Row: {
@@ -447,6 +476,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_pricing_client"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_pricing_created_by"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_pricing_service"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "pricing_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
@@ -582,7 +632,15 @@ export type Database = {
           updated_at?: string
           valid_for_days?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_services_created_by"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       trainee_assignment_services: {
         Row: {
@@ -616,6 +674,34 @@ export type Database = {
           service_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_assignment_services_assignment"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "client_trainee_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_assignment_services_authorized_by"
+            columns: ["authorized_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_assignment_services_created_by"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "fk_assignment_services_service"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "trainee_assignment_services_assignment_id_fkey"
             columns: ["assignment_id"]
@@ -741,7 +827,15 @@ export type Database = {
           updated_at?: string
           zip?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_trainees_created_by"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
