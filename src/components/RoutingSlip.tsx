@@ -13,15 +13,21 @@ interface RoutingSlipProps {
 export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipProps) {
   if (!order) return null;
 
-  // Group services by department (fallback to category if no department)
-  const servicesByDepartment = (order.order_items || []).reduce((acc, item) => {
+  // Group services by room first, then department
+  const servicesByRoom = (order.order_items || []).reduce((acc, item) => {
+    const room = item.services.room || "No Room";
     const department = item.services.department || item.services.category || "Other";
-    if (!acc[department]) {
-      acc[department] = [];
+    const key = `Room ${room} - ${department}`;
+    
+    if (!acc[room]) {
+      acc[room] = {};
     }
-    acc[department].push(item);
+    if (!acc[room][department]) {
+      acc[room][department] = [];
+    }
+    acc[room][department].push(item);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, Record<string, any[]>>);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -123,6 +129,12 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                     <p className="text-sm">{order.clients.email}</p>
                   </div>
                 )}
+                {order.notes && order.notes.startsWith('PO:') && (
+                  <div className="col-span-2">
+                    <p className="text-sm font-semibold text-muted-foreground">Purchase Order</p>
+                    <p className="font-medium">{order.notes.replace('PO:', '').trim()}</p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="p-4 border rounded-lg">
@@ -158,36 +170,51 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
             </>
           )}
 
-          {/* Services by Department */}
+          {/* Services by Room and Department */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">Scheduled Services by Department</h3>
+            <h3 className="text-lg font-semibold mb-3">Scheduled Services by Room</h3>
             <div className="space-y-4">
-              {Object.entries(servicesByDepartment).map(([department, items]) => (
-                <div key={department} className="border rounded-lg overflow-hidden">
-                  <div className="bg-primary/10 px-4 py-2 border-b">
-                    <h4 className="font-semibold">{department}</h4>
-                  </div>
-                  <div className="divide-y">
-                    {items.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-4 hover:bg-muted/50">
-                        <div className="flex-1">
-                          <p className="font-medium">{item.services.name}</p>
-                          <div className="flex gap-4 text-sm text-muted-foreground mt-1">
-                            <span>Code: {item.services.service_code}</span>
-                            {item.services.room && <span>Room: {item.services.room}</span>}
+              {Object.entries(servicesByRoom)
+                .sort(([roomA], [roomB]) => {
+                  // Sort rooms numerically
+                  const numA = roomA === "No Room" ? 999 : parseInt(roomA);
+                  const numB = roomB === "No Room" ? 999 : parseInt(roomB);
+                  return numA - numB;
+                })
+                .map(([room, departments]) => (
+                  <div key={room} className="border-2 rounded-lg overflow-hidden">
+                    <div className="bg-primary/20 px-4 py-3 border-b-2">
+                      <h4 className="font-bold text-lg">Room {room}</h4>
+                    </div>
+                    <div className="space-y-2 p-2">
+                      {Object.entries(departments).map(([department, items]) => (
+                        <div key={department} className="border rounded-lg overflow-hidden">
+                          <div className="bg-primary/10 px-4 py-2 border-b">
+                            <h5 className="font-semibold">{department}</h5>
+                          </div>
+                          <div className="divide-y">
+                            {items.map((item, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-4 hover:bg-muted/50">
+                                <div className="flex-1">
+                                  <p className="font-medium">{item.services.name}</p>
+                                  <div className="flex gap-4 text-sm text-muted-foreground mt-1">
+                                    <span>Code: {item.services.service_code}</span>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold">${item.price.toFixed(2)}</p>
+                                  <Badge variant="outline" className="mt-1">
+                                    {item.status}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold">${item.price.toFixed(2)}</p>
-                          <Badge variant="outline" className="mt-1">
-                            {item.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
 

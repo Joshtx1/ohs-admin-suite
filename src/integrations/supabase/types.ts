@@ -360,6 +360,7 @@ export type Database = {
           created_by: string
           id: string
           notes: string | null
+          payment_status: string | null
           reason_for_test: string | null
           service_date: string | null
           status: string
@@ -373,6 +374,7 @@ export type Database = {
           created_by: string
           id?: string
           notes?: string | null
+          payment_status?: string | null
           reason_for_test?: string | null
           service_date?: string | null
           status?: string
@@ -386,6 +388,7 @@ export type Database = {
           created_by?: string
           id?: string
           notes?: string | null
+          payment_status?: string | null
           reason_for_test?: string | null
           service_date?: string | null
           status?: string

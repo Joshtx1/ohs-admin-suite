@@ -11,6 +11,7 @@ export interface Order {
   service_date: string;
   notes: string | null;
   reason_for_test?: string | null;
+  payment_status?: string | null;
   created_at: string;
   updated_at: string;
   created_by: string;

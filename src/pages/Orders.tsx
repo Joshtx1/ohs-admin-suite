@@ -269,7 +269,8 @@ export default function Orders() {
             total_amount: totalAmount,
             service_date: selectedServices[0]?.date || new Date().toISOString().split('T')[0],
             notes: registrationType === "client" ? `PO: ${orderPO}` : "Self Pay",
-            reason_for_test: reasonForTest
+            reason_for_test: reasonForTest,
+            payment_status: registrationType === "client" ? "Billed" : "Payment Due"
           })
           .select()
           .single();
