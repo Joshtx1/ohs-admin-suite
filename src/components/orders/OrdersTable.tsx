@@ -3,11 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Eye, FileText } from 'lucide-react';
+import { Search, Eye, FileText, List } from 'lucide-react';
 import { DataTable } from '@/components/common/DataTable';
 import { Order } from '@/hooks/useOrdersData';
 import { getStatusBadgeVariant, getStatusDisplay } from '@/lib/status';
 import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface OrdersTableProps {
   orders: Order[];
@@ -16,17 +18,34 @@ interface OrdersTableProps {
 
 export function OrdersTable({ orders, onViewOrder }: OrdersTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all');
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<Order | null>(null);
 
   const filteredOrders = orders.filter(order => {
-    if (!searchTerm) return true;
+    // Search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        order.clients?.company_name.toLowerCase().includes(searchLower) ||
+        order.trainees?.name.toLowerCase().includes(searchLower) ||
+        order.trainees?.unique_id?.toLowerCase().includes(searchLower) ||
+        order.status.toLowerCase().includes(searchLower);
+      
+      if (!matchesSearch) return false;
+    }
     
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      order.clients?.company_name.toLowerCase().includes(searchLower) ||
-      order.trainees?.name.toLowerCase().includes(searchLower) ||
-      order.trainees?.unique_id?.toLowerCase().includes(searchLower) ||
-      order.status.toLowerCase().includes(searchLower)
-    );
+    // Status filter
+    if (statusFilter !== 'all' && order.status !== statusFilter) {
+      return false;
+    }
+    
+    // Payment status filter
+    if (paymentStatusFilter !== 'all' && order.payment_status !== paymentStatusFilter) {
+      return false;
+    }
+    
+    return true;
   });
 
   const columns = [
@@ -55,9 +74,9 @@ export function OrdersTable({ orders, onViewOrder }: OrdersTableProps) {
       cell: (order: Order) => format(new Date(order.service_date), 'MMM dd, yyyy'),
     },
     {
-      header: 'Total',
+      header: 'Services',
       cell: (order: Order) => (
-        <span className="font-medium">${order.total_amount.toFixed(2)}</span>
+        <span className="font-medium">{order.order_items?.length || 0}</span>
       ),
     },
     {
@@ -69,48 +88,152 @@ export function OrdersTable({ orders, onViewOrder }: OrdersTableProps) {
       ),
     },
     {
+      header: 'Payment Status',
+      cell: (order: Order) => (
+        <Badge variant={order.payment_status === 'Billed' ? 'default' : 'secondary'}>
+          {order.payment_status || 'Payment Due'}
+        </Badge>
+      ),
+    },
+    {
       header: 'Created',
       cell: (order: Order) => format(new Date(order.created_at), 'MMM dd, yyyy'),
     },
     {
       header: 'Actions',
       cell: (order: Order) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onViewOrder(order)}
-        >
-          <Eye className="h-4 w-4 mr-2" />
-          View
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onViewOrder(order)}
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            View
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSelectedOrderDetails(order)}
+          >
+            <List className="h-4 w-4 mr-2" />
+            Details
+          </Button>
+        </div>
       ),
     },
   ];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          Orders & Registrations
-        </CardTitle>
-        <CardDescription>
-          View and manage all order registrations
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by trainee, client, or status..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Orders & Registrations
+          </CardTitle>
+          <CardDescription>
+            View and manage all order registrations
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-4 items-end">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by trainee, client, or status..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="created">Created</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={paymentStatusFilter} onValueChange={setPaymentStatusFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by Payment" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Payment Status</SelectItem>
+                <SelectItem value="Billed">Billed</SelectItem>
+                <SelectItem value="Payment Due">Payment Due</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <DataTable data={filteredOrders} columns={columns} pageSize={10} />
-      </CardContent>
-    </Card>
+          <DataTable data={filteredOrders} columns={columns} pageSize={10} />
+        </CardContent>
+      </Card>
+
+      {/* Order Details Dialog */}
+      <Dialog open={!!selectedOrderDetails} onOpenChange={() => setSelectedOrderDetails(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Order Details - Services</DialogTitle>
+          </DialogHeader>
+          {selectedOrderDetails && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+                <div>
+                  <div className="text-sm text-muted-foreground">Trainee</div>
+                  <div className="font-medium">{selectedOrderDetails.trainees?.name}</div>
+                  <div className="text-sm">{selectedOrderDetails.trainees?.unique_id}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Client</div>
+                  <div className="font-medium">{selectedOrderDetails.clients?.company_name || 'Self-Pay'}</div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold mb-2">Services ({selectedOrderDetails.order_items?.length || 0})</h3>
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="text-left p-3">Service</th>
+                        <th className="text-left p-3">Code</th>
+                        <th className="text-left p-3">Category</th>
+                        <th className="text-left p-3">Department</th>
+                        <th className="text-left p-3">Room</th>
+                        <th className="text-right p-3">Price</th>
+                        <th className="text-left p-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedOrderDetails.order_items?.map((item, idx) => (
+                        <tr key={idx} className="border-t">
+                          <td className="p-3">{item.services.name}</td>
+                          <td className="p-3">{item.services.service_code}</td>
+                          <td className="p-3">{item.services.category}</td>
+                          <td className="p-3">{item.services.department || '-'}</td>
+                          <td className="p-3">{item.services.room || '-'}</td>
+                          <td className="p-3 text-right">${item.price.toFixed(2)}</td>
+                          <td className="p-3">
+                            <Badge variant={getStatusBadgeVariant(item.status)}>
+                              {getStatusDisplay(item.status)}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
