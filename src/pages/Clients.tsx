@@ -105,6 +105,17 @@ export default function Clients() {
 
   const handleSubmit = async (values: z.infer<typeof clientSchema>) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to add clients",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const clientData: InsertClient = {
         profile: values.profile,
         company_name: values.company_name,
@@ -121,6 +132,7 @@ export default function Clients() {
         payment_status: values.payment_status || null,
         payment_terms: values.payment_terms || null,
         status: values.status,
+        created_by: user.id,
       };
 
       if (editingClient) {
@@ -143,11 +155,22 @@ export default function Clients() {
       fetchClients();
       setIsDialogOpen(false);
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving client:", error);
+      
+      // Show more specific error messages
+      let errorMessage = "Failed to save client";
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.code === "23505") {
+        errorMessage = "A client with this profile ID or code already exists";
+      } else if (error?.code === "23502") {
+        errorMessage = "Missing required field. Please fill in all required fields";
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to save client",
+        description: errorMessage,
         variant: "destructive",
       });
     }
