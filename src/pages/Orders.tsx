@@ -14,9 +14,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import RoutingSlip from "@/components/RoutingSlip";
+import { OrdersTable } from "@/components/orders/OrdersTable";
+import { useOrdersData, Order } from "@/hooks/useOrdersData";
 
 interface Trainee {
   id: string;
@@ -49,48 +49,13 @@ interface SelectedService extends Service {
   date: string;
 }
 
-interface Order {
-  id: string;
-  created_at: string;
-  service_date: string;
-  status: string;
-  total_amount: number;
-  notes: string;
-  trainees: { 
-    name: string; 
-    unique_id: string;
-    email?: string;
-    phone?: string;
-    date_of_birth?: string;
-    ssn?: string;
-  };
-  clients: { 
-    company_name: string;
-    contact_person: string;
-    phone: string;
-    email: string;
-  } | null;
-  order_items: Array<{
-    service_id: string;
-    price: number;
-    status: string;
-    services: { 
-      name: string; 
-      service_code: string;
-      category: string;
-    };
-  }>;
-}
-
 export default function Orders() {
   const { toast } = useToast();
   const [currentTab, setCurrentTab] = useState<"view" | "create">("view");
   const [currentStep, setCurrentStep] = useState(1);
   
-  // Orders viewing
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(true);
-  const [orderSearchQuery, setOrderSearchQuery] = useState("");
+  // Orders viewing using the custom hook
+  const { orders, loading: ordersLoading, refetch: refetchOrders } = useOrdersData();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isRoutingSlipOpen, setIsRoutingSlipOpen] = useState(false);
   
@@ -129,64 +94,10 @@ export default function Orders() {
   });
 
   useEffect(() => {
-    fetchOrders();
     fetchTrainees();
     fetchClients();
     fetchServices();
   }, []);
-
-  const fetchOrders = async () => {
-    try {
-      setOrdersLoading(true);
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          id,
-          created_at,
-          service_date,
-          status,
-          total_amount,
-          notes,
-          trainees (
-            name, 
-            unique_id,
-            email,
-            phone,
-            date_of_birth,
-            ssn
-          ),
-          clients (
-            company_name,
-            contact_person,
-            phone,
-            email
-          ),
-          order_items (
-            service_id,
-            price,
-            status,
-            services (
-              name, 
-              service_code,
-              category
-            )
-          )
-        `)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setOrders(data || []);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch orders",
-        variant: "destructive",
-      });
-    } finally {
-      setOrdersLoading(false);
-    }
-  };
 
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order);
@@ -383,7 +294,7 @@ export default function Orders() {
       });
 
       // Refresh orders list
-      fetchOrders();
+      refetchOrders();
 
       // Reset form and switch to view tab
       setCurrentStep(1);
@@ -446,28 +357,6 @@ export default function Orders() {
 
   const totalRegistrations = selectedTrainees.length * selectedServices.length;
 
-  const filteredOrders = orders.filter(order => {
-    if (!orderSearchQuery.trim()) return true;
-    const query = orderSearchQuery.toLowerCase();
-    const traineeName = order.trainees?.name?.toLowerCase() || '';
-    const clientName = order.clients?.company_name?.toLowerCase() || '';
-    const traineeId = order.trainees?.unique_id?.toLowerCase() || '';
-    return traineeName.includes(query) || clientName.includes(query) || traineeId.includes(query);
-  });
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'created':
-        return 'secondary';
-      case 'pending':
-        return 'outline';
-      case 'completed':
-        return 'default';
-      default:
-        return 'secondary';
-    }
-  };
-
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -493,100 +382,10 @@ export default function Orders() {
 
         {/* View Orders Tab */}
         <TabsContent value="view" className="mt-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>All Orders</CardTitle>
-                <div className="relative w-72">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by trainee, client, or ID..."
-                    value={orderSearchQuery}
-                    onChange={(e) => setOrderSearchQuery(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {ordersLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-16 bg-muted animate-pulse rounded" />
-                  ))}
-                </div>
-              ) : filteredOrders.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>No orders found</p>
-                  <Button 
-                    variant="link" 
-                    onClick={() => setCurrentTab("create")}
-                    className="mt-2"
-                  >
-                    Create your first registration
-                  </Button>
-                </div>
-              ) : (
-                <div className="border rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Trainee</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Services</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredOrders.map((order) => (
-                        <TableRow key={order.id}>
-                          <TableCell className="font-medium">
-                            {format(new Date(order.service_date), "MMM dd, yyyy")}
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{order.trainees?.name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {order.trainees?.unique_id}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {order.clients?.company_name || <span className="text-muted-foreground">Self Pay</span>}
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              {order.order_items?.length || 0} service{order.order_items?.length !== 1 ? 's' : ''}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            ${order.total_amount?.toFixed(2) || '0.00'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={getStatusBadgeVariant(order.status)}>
-                              {order.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleViewOrder(order)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <OrdersTable 
+            orders={orders}
+            onViewOrder={handleViewOrder}
+          />
         </TabsContent>
 
         {/* Create Registration Tab */}

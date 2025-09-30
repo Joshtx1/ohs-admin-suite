@@ -2,14 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
+import { DataTable } from '@/components/common/DataTable';
+import { getStatusBadgeVariant, getStatusDisplay } from '@/lib/status';
 import { 
   Dialog,
   DialogContent,
@@ -984,47 +978,45 @@ const Trainees = () => {
               )}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>SSN</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTrainees.map((trainee) => (
-                  <TableRow key={trainee.id}>
-                    <TableCell className="font-medium">{trainee.ssn || 'N/A'}</TableCell>
-                    <TableCell>{trainee.name}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={
-                          trainee.status === 'active' ? 'default' : 
-                          trainee.status === 'suspended' ? 'destructive' : 'outline'
-                        }
-                      >
-                        {trainee.status.charAt(0).toUpperCase() + trainee.status.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{trainee.phone || trainee.mobile_number || 'N/A'}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => openEditDialog(trainee)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <DataTable 
+              data={filteredTrainees}
+              columns={[
+                {
+                  header: 'SSN',
+                  accessorKey: 'ssn',
+                  cell: (trainee) => trainee.ssn || 'N/A'
+                },
+                {
+                  header: 'Name',
+                  accessorKey: 'name'
+                },
+                {
+                  header: 'Status',
+                  cell: (trainee) => (
+                    <Badge variant={getStatusBadgeVariant(trainee.status)}>
+                      {getStatusDisplay(trainee.status)}
+                    </Badge>
+                  )
+                },
+                {
+                  header: 'Phone',
+                  cell: (trainee) => trainee.phone || trainee.mobile_number || 'N/A'
+                },
+                {
+                  header: 'Actions',
+                  cell: (trainee) => (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => openEditDialog(trainee)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )
+                }
+              ]}
+              pageSize={10}
+            />
           )}
         </CardContent>
       </Card>

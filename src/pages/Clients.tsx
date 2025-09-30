@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { DataTable } from "@/components/common/DataTable";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Pencil, Plus, Trash2, Search, Download, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import ClientDetail from "@/components/ClientDetail";
+import { getStatusBadgeVariant, getStatusDisplay } from "@/lib/status";
 
 import { Database } from "@/integrations/supabase/types";
 
@@ -520,78 +522,76 @@ export default function Clients() {
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader className="bg-gray-800 text-white">
-            <TableRow>
-              <TableHead className="text-white">Actions</TableHead>
-              <TableHead className="text-white">Profile ID</TableHead>
-              <TableHead className="text-white">Client Code</TableHead>
-              <TableHead className="text-white">Company Name</TableHead>
-              <TableHead className="text-white">Status</TableHead>
-              <TableHead className="text-white">Address</TableHead>
-              <TableHead className="text-white">Contact</TableHead>
-              <TableHead className="text-white">Payment Method</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredClients.map((client) => (
-              <TableRow key={client.id} className="hover:bg-gray-50">
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedClient(client)}
-                      className="text-cyan-500 hover:text-cyan-600"
-                    >
-                      <Pencil className="w-4 h-4" />
-                      Details
-                    </Button>
-                    {userRole === "admin" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(client.id)}
-                        className="text-red-500 hover:text-red-600"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="font-medium">{client.profile}</TableCell>
-                <TableCell>{client.short_code}</TableCell>
-                <TableCell>{client.company_name}</TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    client.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {client.status}
-                  </span>
-                </TableCell>
-                <TableCell>{client.mailing_street_address}</TableCell>
-                <TableCell>
-                  <div>
-                    <div>{client.contact_person}</div>
-                    <div className="text-sm text-gray-500">{client.email}</div>
-                    <div className="text-sm text-gray-500">{client.phone}</div>
-                  </div>
-                </TableCell>
-                <TableCell>{client.payment_status}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {filteredClients.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          No clients found matching your criteria.
-        </div>
-      )}
+      <DataTable 
+        data={filteredClients}
+        columns={[
+          {
+            header: 'Actions',
+            cell: (client) => (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedClient(client)}
+                  className="text-cyan-500 hover:text-cyan-600"
+                >
+                  <Pencil className="w-4 h-4" />
+                  Details
+                </Button>
+                {userRole === "admin" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(client.id)}
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            )
+          },
+          {
+            header: 'Profile ID',
+            accessorKey: 'profile'
+          },
+          {
+            header: 'Client Code',
+            accessorKey: 'short_code'
+          },
+          {
+            header: 'Company Name',
+            accessorKey: 'company_name'
+          },
+          {
+            header: 'Status',
+            cell: (client) => (
+              <Badge variant={getStatusBadgeVariant(client.status)}>
+                {getStatusDisplay(client.status)}
+              </Badge>
+            )
+          },
+          {
+            header: 'Address',
+            accessorKey: 'mailing_street_address'
+          },
+          {
+            header: 'Contact',
+            cell: (client) => (
+              <div>
+                <div>{client.contact_person}</div>
+                <div className="text-sm text-muted-foreground">{client.email}</div>
+                <div className="text-sm text-muted-foreground">{client.phone}</div>
+              </div>
+            )
+          },
+          {
+            header: 'Payment Method',
+            accessorKey: 'payment_status'
+          }
+        ]}
+        pageSize={10}
+      />
     </div>
   );
 }

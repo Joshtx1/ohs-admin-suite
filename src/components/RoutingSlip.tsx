@@ -2,47 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-
-interface Service {
-  name: string;
-  service_code: string;
-  category: string;
-}
-
-interface OrderItem {
-  service_id: string;
-  price: number;
-  status: string;
-  services: Service;
-}
-
-interface Trainee {
-  name: string;
-  unique_id: string;
-  email?: string;
-  phone?: string;
-  date_of_birth?: string;
-  ssn?: string;
-}
-
-interface Client {
-  company_name: string;
-  contact_person: string;
-  phone: string;
-  email: string;
-}
-
-interface Order {
-  id: string;
-  created_at: string;
-  service_date: string;
-  status: string;
-  total_amount: number;
-  notes: string;
-  trainees: Trainee;
-  clients: Client | null;
-  order_items: OrderItem[];
-}
+import { Order } from "@/hooks/useOrdersData";
 
 interface RoutingSlipProps {
   open: boolean;
@@ -54,14 +14,14 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
   if (!order) return null;
 
   // Group services by category
-  const servicesByCategory = order.order_items.reduce((acc, item) => {
+  const servicesByCategory = (order.order_items || []).reduce((acc, item) => {
     const category = item.services.category || "Other";
     if (!acc[category]) {
       acc[category] = [];
     }
     acc[category].push(item);
     return acc;
-  }, {} as Record<string, OrderItem[]>);
+  }, {} as Record<string, any[]>);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -96,43 +56,45 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
           <Separator />
 
           {/* Trainee Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Trainee Information</h3>
-            <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
-              <div>
-                <p className="text-sm font-semibold text-muted-foreground">Name</p>
-                <p className="font-medium">{order.trainees.name}</p>
+          {order.trainees && (
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Trainee Information</h3>
+              <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Name</p>
+                  <p className="font-medium">{order.trainees.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">ID</p>
+                  <p className="font-mono">{order.trainees.unique_id}</p>
+                </div>
+                {order.trainees.email && (
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Email</p>
+                    <p className="text-sm">{order.trainees.email}</p>
+                  </div>
+                )}
+                {order.trainees.phone && (
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Phone</p>
+                    <p className="text-sm">{order.trainees.phone}</p>
+                  </div>
+                )}
+                {order.trainees.date_of_birth && (
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Date of Birth</p>
+                    <p className="text-sm">{format(new Date(order.trainees.date_of_birth), "MMM dd, yyyy")}</p>
+                  </div>
+                )}
+                {order.trainees.ssn && (
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">SSN</p>
+                    <p className="text-sm">***-**-{order.trainees.ssn.slice(-4)}</p>
+                  </div>
+                )}
               </div>
-              <div>
-                <p className="text-sm font-semibold text-muted-foreground">ID</p>
-                <p className="font-mono">{order.trainees.unique_id}</p>
-              </div>
-              {order.trainees.email && (
-                <div>
-                  <p className="text-sm font-semibold text-muted-foreground">Email</p>
-                  <p className="text-sm">{order.trainees.email}</p>
-                </div>
-              )}
-              {order.trainees.phone && (
-                <div>
-                  <p className="text-sm font-semibold text-muted-foreground">Phone</p>
-                  <p className="text-sm">{order.trainees.phone}</p>
-                </div>
-              )}
-              {order.trainees.date_of_birth && (
-                <div>
-                  <p className="text-sm font-semibold text-muted-foreground">Date of Birth</p>
-                  <p className="text-sm">{format(new Date(order.trainees.date_of_birth), "MMM dd, yyyy")}</p>
-                </div>
-              )}
-              {order.trainees.ssn && (
-                <div>
-                  <p className="text-sm font-semibold text-muted-foreground">SSN</p>
-                  <p className="text-sm">***-**-{order.trainees.ssn.slice(-4)}</p>
-                </div>
-              )}
             </div>
-          </div>
+          )}
 
           <Separator />
 
@@ -149,14 +111,18 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                   <p className="text-sm font-semibold text-muted-foreground">Contact Person</p>
                   <p className="text-sm">{order.clients.contact_person}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-muted-foreground">Phone</p>
-                  <p className="text-sm">{order.clients.phone}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-muted-foreground">Email</p>
-                  <p className="text-sm">{order.clients.email}</p>
-                </div>
+                {order.clients.phone && (
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Phone</p>
+                    <p className="text-sm">{order.clients.phone}</p>
+                  </div>
+                )}
+                {order.clients.email && (
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Email</p>
+                    <p className="text-sm">{order.clients.email}</p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="p-4 border rounded-lg">

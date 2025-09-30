@@ -6,13 +6,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DataTable } from '@/components/common/DataTable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2, Search, Download, Filter } from 'lucide-react';
 import { z } from 'zod';
+import { getStatusBadgeVariant, getStatusDisplay } from '@/lib/status';
 
 const serviceSchema = z.object({
   service_code: z.string().min(1, 'Service code is required').max(20),
@@ -535,87 +536,83 @@ const Services = () => {
       {/* Services Table */}
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead className="font-semibold">Code</TableHead>
-                <TableHead className="font-semibold">Description</TableHead>
-                <TableHead className="font-semibold text-center">Member Price</TableHead>
-                <TableHead className="font-semibold text-center">Non-Member Price</TableHead>
-                <TableHead className="font-semibold text-center">Valid Days</TableHead>
-                <TableHead className="font-semibold text-center">Status</TableHead>
-                <TableHead className="font-semibold text-center">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredServices.map((service) => (
-                <TableRow key={service.id} className="hover:bg-muted/30">
-                  <TableCell className="font-medium">
-                    {service.service_code}
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{service.name}</div>
-                      {service.description && (
-                        <div className="text-sm text-muted-foreground mt-1">
-                          {service.description}
-                        </div>
-                      )}
-                      <div className="text-sm text-muted-foreground">
-                        {service.category} • {service.duration_minutes} min
+          <DataTable 
+            data={filteredServices}
+            columns={[
+              {
+                header: 'Code',
+                accessorKey: 'service_code'
+              },
+              {
+                header: 'Description',
+                cell: (service) => (
+                  <div>
+                    <div className="font-medium">{service.name}</div>
+                    {service.description && (
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {service.description}
                       </div>
+                    )}
+                    <div className="text-sm text-muted-foreground">
+                      {service.category} • {service.duration_minutes} min
                     </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="font-medium">${service.member_price || 0}</span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="font-medium">${service.non_member_price || 0}</span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="text-sm">{service.valid_for_days || 0} days</span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge 
-                      variant={service.status === 'active' ? 'default' : 'secondary'}
-                      className={service.status === 'active' ? 'bg-green-600 text-white' : ''}
+                  </div>
+                )
+              },
+              {
+                header: 'Member Price',
+                cell: (service) => (
+                  <span className="font-medium">${service.member_price || 0}</span>
+                )
+              },
+              {
+                header: 'Non-Member Price',
+                cell: (service) => (
+                  <span className="font-medium">${service.non_member_price || 0}</span>
+                )
+              },
+              {
+                header: 'Valid Days',
+                cell: (service) => (
+                  <span className="text-sm">{service.valid_for_days || 0} days</span>
+                )
+              },
+              {
+                header: 'Status',
+                cell: (service) => (
+                  <Badge variant={getStatusBadgeVariant(service.status)}>
+                    {getStatusDisplay(service.status)}
+                  </Badge>
+                )
+              },
+              {
+                header: 'Actions',
+                cell: (service) => (
+                  <div className="flex items-center justify-center space-x-1">
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onClick={() => handleEdit(service)}
+                      className="text-cyan-600 h-auto p-0"
                     >
-                      {service.status === 'active' ? 'ACTIVE' : 'INACTIVE'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center space-x-1">
+                      Edit
+                    </Button>
+                    {userRole === 'admin' && (
                       <Button
-                        variant="link"
+                        variant="ghost"
                         size="sm"
-                        onClick={() => handleEdit(service)}
-                        className="text-cyan-600 h-auto p-0"
+                        onClick={() => handleDelete(service.id)}
+                        className="text-destructive h-auto p-1"
                       >
-                        Edit
+                        <Trash2 className="h-4 w-4" />
                       </Button>
-                      {userRole === 'admin' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(service.id)}
-                          className="text-destructive h-auto p-1"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filteredServices.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    No services found matching your criteria
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                    )}
+                  </div>
+                )
+              }
+            ]}
+            pageSize={10}
+          />
         </CardContent>
       </Card>
     </div>

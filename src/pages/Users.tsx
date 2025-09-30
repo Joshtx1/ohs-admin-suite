@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DataTable } from '@/components/common/DataTable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,6 +27,7 @@ import {
   UserPlus,
   KeyRound
 } from 'lucide-react';
+import { getStatusBadgeVariant, getStatusDisplay } from '@/lib/status';
 
 interface UserProfile {
   id: string;
@@ -436,106 +437,121 @@ const Users = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Username</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Access Level</TableHead>
-                <TableHead>Member Since</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => {
-                const currentRole = user.user_roles?.[0]?.role || 'user';
-                const displayRole = getRoleDisplayName(currentRole);
-                return (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">
-                      <Badge variant="outline" className="font-mono">
-                        {user.user_code || 'N/A'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {`${user.first_name} ${user.last_name}`.trim() || 'Unnamed User'}
-                    </TableCell>
-                    <TableCell>
-                      <code className="bg-muted px-2 py-1 rounded text-xs">
-                        {user.username || '-'}
-                      </code>
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.phone || '-'}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={user.status === 'active' ? 'default' : user.status === 'inactive' ? 'secondary' : 'destructive'}
+          <DataTable 
+            data={filteredUsers}
+            columns={[
+              {
+                header: 'User ID',
+                cell: (user) => (
+                  <Badge variant="outline" className="font-mono">
+                    {user.user_code || 'N/A'}
+                  </Badge>
+                )
+              },
+              {
+                header: 'Name',
+                cell: (user) => `${user.first_name} ${user.last_name}`.trim() || 'Unnamed User'
+              },
+              {
+                header: 'Username',
+                cell: (user) => (
+                  <code className="bg-muted px-2 py-1 rounded text-xs">
+                    {user.username || '-'}
+                  </code>
+                )
+              },
+              {
+                header: 'Email',
+                accessorKey: 'email'
+              },
+              {
+                header: 'Phone',
+                cell: (user) => user.phone || '-'
+              },
+              {
+                header: 'Status',
+                cell: (user) => (
+                  <Badge variant={getStatusBadgeVariant(user.status)}>
+                    {getStatusDisplay(user.status)}
+                  </Badge>
+                )
+              },
+              {
+                header: 'Role',
+                cell: (user) => {
+                  const currentRole = user.user_roles?.[0]?.role || 'user';
+                  const displayRole = getRoleDisplayName(currentRole);
+                  return (
+                    <Badge 
+                      variant={getRoleBadgeVariant(currentRole)}
+                      className="flex items-center gap-1 w-fit"
+                    >
+                      {getRoleIcon(currentRole)}
+                      {displayRole}
+                    </Badge>
+                  );
+                }
+              },
+              {
+                header: 'Access Level',
+                cell: (user) => {
+                  const displayRole = getRoleDisplayName(user.user_roles?.[0]?.role || 'user');
+                  return (
+                    <div className="text-xs text-muted-foreground">
+                      {displayRole === 'Admin' && 'Full System Control'}
+                      {displayRole === 'Manager' && 'Administrative Access'}
+                      {displayRole === 'Supervisor' && 'Supervisory Access'}
+                      {displayRole === 'Clerk' && 'Operational Access'}
+                    </div>
+                  );
+                }
+              },
+              {
+                header: 'Member Since',
+                cell: (user) => new Date(user.created_at).toLocaleDateString()
+              },
+              {
+                header: 'Actions',
+                cell: (user) => {
+                  const currentRole = user.user_roles?.[0]?.role || 'user';
+                  const displayRole = getRoleDisplayName(currentRole);
+                  return (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditUser(user)}
                       >
-                        {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={getRoleBadgeVariant(currentRole)}
-                        className="flex items-center gap-1 w-fit"
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleResetPassword(user)}
                       >
-                        {getRoleIcon(currentRole)}
-                        {displayRole}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-xs text-muted-foreground">
-                        {displayRole === 'Admin' && 'Full System Control'}
-                        {displayRole === 'Manager' && 'Administrative Access'}
-                        {displayRole === 'Supervisor' && 'Supervisory Access'}
-                        {displayRole === 'Clerk' && 'Operational Access'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditUser(user)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleResetPassword(user)}
-                        >
-                          <KeyRound className="h-4 w-4" />
-                        </Button>
-                        <Select
-                          value={displayRole}
-                          onValueChange={(newRole) => handleRoleChange(user.user_id, newRole)}
-                        >
-                          <SelectTrigger className="w-24">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Master">Master</SelectItem>
-                            <SelectItem value="Admin">Admin</SelectItem>
-                            <SelectItem value="Manager">Manager</SelectItem>
-                            <SelectItem value="Clerk">Clerk</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                        <KeyRound className="h-4 w-4" />
+                      </Button>
+                      <Select
+                        value={displayRole}
+                        onValueChange={(newRole) => handleRoleChange(user.user_id, newRole)}
+                      >
+                        <SelectTrigger className="w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Master">Master</SelectItem>
+                          <SelectItem value="Admin">Admin</SelectItem>
+                          <SelectItem value="Manager">Manager</SelectItem>
+                          <SelectItem value="Clerk">Clerk</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  );
+                }
+              }
+            ]}
+            pageSize={10}
+          />
         </CardContent>
       </Card>
 
