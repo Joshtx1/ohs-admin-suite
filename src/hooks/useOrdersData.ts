@@ -10,6 +10,7 @@ export interface Order {
   total_amount: number;
   service_date: string;
   notes: string | null;
+  reason_for_test?: string | null;
   created_at: string;
   updated_at: string;
   created_by: string;
@@ -37,6 +38,8 @@ export interface Order {
       name: string;
       service_code: string;
       category: string;
+      department?: string;
+      room?: string;
     };
   }>;
 }
@@ -75,7 +78,9 @@ export function useOrdersData() {
             services (
               name,
               service_code,
-              category
+              category,
+              department,
+              room
             )
           )
         `)

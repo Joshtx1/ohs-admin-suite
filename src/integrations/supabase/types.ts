@@ -360,6 +360,7 @@ export type Database = {
           created_by: string
           id: string
           notes: string | null
+          reason_for_test: string | null
           service_date: string | null
           status: string
           total_amount: number | null
@@ -372,6 +373,7 @@ export type Database = {
           created_by: string
           id?: string
           notes?: string | null
+          reason_for_test?: string | null
           service_date?: string | null
           status?: string
           total_amount?: number | null
@@ -384,6 +386,7 @@ export type Database = {
           created_by?: string
           id?: string
           notes?: string | null
+          reason_for_test?: string | null
           service_date?: string | null
           status?: string
           total_amount?: number | null
@@ -588,6 +591,7 @@ export type Database = {
           category: string
           created_at: string
           created_by: string | null
+          department: string | null
           description: string | null
           duration_minutes: number
           id: string
@@ -595,6 +599,7 @@ export type Database = {
           member_price: number | null
           name: string
           non_member_price: number | null
+          room: string | null
           service_code: string
           status: string | null
           updated_at: string
@@ -604,6 +609,7 @@ export type Database = {
           category: string
           created_at?: string
           created_by?: string | null
+          department?: string | null
           description?: string | null
           duration_minutes?: number
           id?: string
@@ -611,6 +617,7 @@ export type Database = {
           member_price?: number | null
           name: string
           non_member_price?: number | null
+          room?: string | null
           service_code: string
           status?: string | null
           updated_at?: string
@@ -620,6 +627,7 @@ export type Database = {
           category?: string
           created_at?: string
           created_by?: string | null
+          department?: string | null
           description?: string | null
           duration_minutes?: number
           id?: string
@@ -627,6 +635,7 @@ export type Database = {
           member_price?: number | null
           name?: string
           non_member_price?: number | null
+          room?: string | null
           service_code?: string
           status?: string | null
           updated_at?: string

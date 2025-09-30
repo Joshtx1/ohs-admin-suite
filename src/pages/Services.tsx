@@ -26,6 +26,8 @@ const serviceSchema = z.object({
   valid_for_days: z.number().min(0, 'Valid for days must be 0 or greater'),
   status: z.string().min(1, 'Status is required'),
   is_active: z.boolean().default(true),
+  department: z.string().optional(),
+  room: z.string().optional(),
 });
 
 interface Service {
@@ -40,6 +42,8 @@ interface Service {
   valid_for_days: number;
   status: string;
   is_active: boolean;
+  department?: string;
+  room?: string;
   created_at: string;
   updated_at: string;
 }
@@ -62,6 +66,8 @@ const Services = () => {
     valid_for_days: '0',
     status: 'active',
     is_active: true,
+    department: '',
+    room: '',
   });
   
   // Filter states
@@ -78,6 +84,17 @@ const Services = () => {
     'PHYSICAL FCE',
     'RESPIRATOR FIT',
     'VISION'
+  ];
+
+  const departmentOptions = [
+    'Admin',
+    'Drug&Alcohol',
+    'Vitals',
+    'Fit/PFT',
+    'Audio',
+    'Labs',
+    'Physical/FCE',
+    'Training'
   ];
 
   useEffect(() => {
@@ -148,6 +165,8 @@ const Services = () => {
       non_member_price: '30',
       valid_for_days: '0',
       status: 'active',
+      department: '',
+      room: '',
       is_active: true,
     });
     setEditingService(null);
@@ -238,6 +257,8 @@ const Services = () => {
       valid_for_days: service.valid_for_days?.toString() || '0',
       status: service.status || 'active',
       is_active: service.is_active,
+      department: service.department || '',
+      room: service.room || '',
     });
     setDialogOpen(true);
   };
@@ -441,6 +462,36 @@ const Services = () => {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department</Label>
+                  <Select
+                    value={formData.department}
+                    onValueChange={(value) => setFormData({ ...formData, department: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      {departmentOptions.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="room">Room</Label>
+                  <Input
+                    id="room"
+                    value={formData.room}
+                    onChange={(e) => setFormData({ ...formData, room: e.target.value })}
+                    placeholder="e.g., Room 101"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center space-x-2">

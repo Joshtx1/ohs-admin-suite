@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Search, X, Check, CalendarIcon, Eye } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,6 +80,7 @@ export default function Orders() {
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [serviceDate, setServiceDate] = useState<Date>(new Date());
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
+  const [reasonForTest, setReasonForTest] = useState<string>("");
   
   // Loading states
   const [loading, setLoading] = useState(true);
@@ -266,7 +268,8 @@ export default function Orders() {
             status: "created",
             total_amount: totalAmount,
             service_date: selectedServices[0]?.date || new Date().toISOString().split('T')[0],
-            notes: registrationType === "client" ? `PO: ${orderPO}` : "Self Pay"
+            notes: registrationType === "client" ? `PO: ${orderPO}` : "Self Pay",
+            reason_for_test: reasonForTest
           })
           .select()
           .single();
@@ -658,6 +661,25 @@ export default function Orders() {
                       </Popover>
                     </div>
 
+                    <div>
+                      <Label className="text-sm font-semibold mb-2 block">REASON FOR TEST *</Label>
+                      <Select value={reasonForTest} onValueChange={setReasonForTest}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select reason for test" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          <SelectItem value="Pre-Employment">Pre-Employment</SelectItem>
+                          <SelectItem value="Pre-Access">Pre-Access</SelectItem>
+                          <SelectItem value="Random">Random</SelectItem>
+                          <SelectItem value="Follow-up">Follow-up</SelectItem>
+                          <SelectItem value="Return to Duty">Return to Duty</SelectItem>
+                          <SelectItem value="Post-Accident">Post-Accident</SelectItem>
+                          <SelectItem value="Reasonable Suspicion">Reasonable Suspicion</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div className="flex justify-between items-center">
                       <Label className="text-sm font-semibold">SERVICES</Label>
                       <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
@@ -771,7 +793,7 @@ export default function Orders() {
                     <Button variant="outline" onClick={() => setCurrentStep(2)}>
                       Back
                     </Button>
-                    <Button onClick={() => setCurrentStep(4)} disabled={!canProceedToStep4}>
+                    <Button onClick={() => setCurrentStep(4)} disabled={!canProceedToStep4 || !reasonForTest}>
                       Next
                     </Button>
                   </div>

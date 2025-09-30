@@ -13,13 +13,13 @@ interface RoutingSlipProps {
 export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipProps) {
   if (!order) return null;
 
-  // Group services by category
-  const servicesByCategory = (order.order_items || []).reduce((acc, item) => {
-    const category = item.services.category || "Other";
-    if (!acc[category]) {
-      acc[category] = [];
+  // Group services by department (fallback to category if no department)
+  const servicesByDepartment = (order.order_items || []).reduce((acc, item) => {
+    const department = item.services.department || item.services.category || "Other";
+    if (!acc[department]) {
+      acc[department] = [];
     }
-    acc[category].push(item);
+    acc[department].push(item);
     return acc;
   }, {} as Record<string, any[]>);
 
@@ -145,23 +145,37 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
 
           <Separator />
 
-          {/* Services by Category */}
+          {/* Reason for Test */}
+          {order.reason_for_test && (
+            <>
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Reason for Test</h3>
+                <div className="p-4 border rounded-lg bg-muted/30">
+                  <p className="font-medium">{order.reason_for_test}</p>
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
+
+          {/* Services by Department */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">Scheduled Services</h3>
+            <h3 className="text-lg font-semibold mb-3">Scheduled Services by Department</h3>
             <div className="space-y-4">
-              {Object.entries(servicesByCategory).map(([category, items]) => (
-                <div key={category} className="border rounded-lg overflow-hidden">
+              {Object.entries(servicesByDepartment).map(([department, items]) => (
+                <div key={department} className="border rounded-lg overflow-hidden">
                   <div className="bg-primary/10 px-4 py-2 border-b">
-                    <h4 className="font-semibold">{category}</h4>
+                    <h4 className="font-semibold">{department}</h4>
                   </div>
                   <div className="divide-y">
                     {items.map((item, idx) => (
                       <div key={idx} className="flex items-center justify-between p-4 hover:bg-muted/50">
                         <div className="flex-1">
                           <p className="font-medium">{item.services.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Code: {item.services.service_code}
-                          </p>
+                          <div className="flex gap-4 text-sm text-muted-foreground mt-1">
+                            <span>Code: {item.services.service_code}</span>
+                            {item.services.room && <span>Room: {item.services.room}</span>}
+                          </div>
                         </div>
                         <div className="text-right">
                           <p className="font-semibold">${item.price.toFixed(2)}</p>
