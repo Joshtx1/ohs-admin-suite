@@ -23,7 +23,6 @@ type InsertClient = Database["public"]["Tables"]["clients"]["Insert"];
 
 const clientSchema = z.object({
   profile: z.string().min(1, "Profile is required"),
-  client_name: z.string().min(1, "Client name is required"),
   company_name: z.string().min(1, "Company name is required"),
   contact_person: z.string().min(1, "Contact person is required"),
   email: z.string().email("Invalid email address"),
@@ -36,6 +35,7 @@ const clientSchema = z.object({
   bill_to: z.string().optional(),
   comments: z.string().optional(),
   payment_status: z.string().optional(),
+  payment_terms: z.string().optional(),
   status: z.enum(["active", "inactive", "suspended"]).default("active"),
 });
 
@@ -56,7 +56,6 @@ export default function Clients() {
     resolver: zodResolver(clientSchema),
     defaultValues: {
       profile: "",
-      client_name: "",
       company_name: "",
       contact_person: "",
       email: "",
@@ -69,6 +68,7 @@ export default function Clients() {
       bill_to: "",
       comments: "",
       payment_status: "Check",
+      payment_terms: "Bill",
       status: "active",
     },
   });
@@ -107,7 +107,6 @@ export default function Clients() {
     try {
       const clientData: InsertClient = {
         profile: values.profile,
-        client_name: values.client_name,
         company_name: values.company_name,
         contact_person: values.contact_person,
         email: values.email,
@@ -120,6 +119,7 @@ export default function Clients() {
         bill_to: values.bill_to || null,
         comments: values.comments || null,
         payment_status: values.payment_status || null,
+        payment_terms: values.payment_terms || null,
         status: values.status,
       };
 
@@ -157,7 +157,6 @@ export default function Clients() {
     setEditingClient(client);
     form.reset({
       profile: client.profile || "",
-      client_name: client.client_name || "",
       company_name: client.company_name || "",
       contact_person: client.contact_person || "",
       email: client.email || "",
@@ -170,6 +169,7 @@ export default function Clients() {
       bill_to: client.bill_to || "",
       comments: client.comments || "",
       payment_status: client.payment_status || "Check",
+      payment_terms: client.payment_terms || "Bill",
       status: (client.status === "active" || client.status === "inactive" || client.status === "suspended") ? client.status : "active",
     });
     setIsDialogOpen(true);
@@ -292,19 +292,6 @@ export default function Clients() {
                 />
                 <FormField
                   control={form.control}
-                  name="client_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Client Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
                   name="company_name"
                   render={({ field }) => (
                     <FormItem>
@@ -370,6 +357,8 @@ export default function Clients() {
                         <SelectContent>
                           <SelectItem value="member">Member</SelectItem>
                           <SelectItem value="non-member">Non-Member</SelectItem>
+                          <SelectItem value="Owner">Owner</SelectItem>
+                          <SelectItem value="TPA">TPA</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -427,6 +416,28 @@ export default function Clients() {
                           <SelectItem value="Check">Check</SelectItem>
                           <SelectItem value="ACH">ACH</SelectItem>
                           <SelectItem value="Credit Card">Credit Card</SelectItem>
+                          <SelectItem value="Cash">Cash</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="payment_terms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Payment Terms</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select payment terms" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Bill">Bill</SelectItem>
+                          <SelectItem value="Cash">Cash</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

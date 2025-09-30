@@ -91,6 +91,7 @@ export type Database = {
           mem_status: string | null
           mem_type: string | null
           payment_status: string | null
+          payment_terms: string | null
           phone: string
           postal_code: string | null
           profile: string | null
@@ -120,6 +121,7 @@ export type Database = {
           mem_status?: string | null
           mem_type?: string | null
           payment_status?: string | null
+          payment_terms?: string | null
           phone: string
           postal_code?: string | null
           profile?: string | null
@@ -149,6 +151,7 @@ export type Database = {
           mem_status?: string | null
           mem_type?: string | null
           payment_status?: string | null
+          payment_terms?: string | null
           phone?: string
           postal_code?: string | null
           profile?: string | null
