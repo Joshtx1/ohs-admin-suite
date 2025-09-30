@@ -103,7 +103,7 @@ const Trainees = () => {
     photo_url: '',
     signature_url: '',
     medical_history: '',
-    status: 'Active'
+    status: 'active'
   });
 
   useEffect(() => {
@@ -181,7 +181,7 @@ const Trainees = () => {
       photo_url: '',
       signature_url: '',
       medical_history: '',
-      status: 'Active'
+      status: 'active'
     });
     setEditingTrainee(null);
   };
@@ -221,7 +221,7 @@ const Trainees = () => {
       photo_url: trainee.photo_url || '',
       signature_url: trainee.signature_url || '',
       medical_history: trainee.medical_history || '',
-      status: trainee.status || 'Active'
+      status: trainee.status || 'active'
     });
     setDialogOpen(true);
   };
@@ -893,9 +893,9 @@ const Trainees = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
-                      <SelectItem value="Suspended">Suspended</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="suspended">Suspended</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -943,9 +943,9 @@ const Trainees = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                  <SelectItem value="Suspended">Suspended</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1002,11 +1002,11 @@ const Trainees = () => {
                     <TableCell>
                       <Badge 
                         variant={
-                          trainee.status === 'Active' ? 'default' : 
-                          trainee.status === 'Suspended' ? 'destructive' : 'outline'
+                          trainee.status === 'active' ? 'default' : 
+                          trainee.status === 'suspended' ? 'destructive' : 'outline'
                         }
                       >
-                        {trainee.status}
+                        {trainee.status.charAt(0).toUpperCase() + trainee.status.slice(1)}
                       </Badge>
                     </TableCell>
                     <TableCell>{trainee.phone || trainee.mobile_number || 'N/A'}</TableCell>

@@ -59,7 +59,7 @@ const Services = () => {
     member_price: '20',
     non_member_price: '30',
     valid_for_days: '0',
-    status: 'A',
+    status: 'active',
     is_active: true,
   });
   
@@ -146,7 +146,7 @@ const Services = () => {
       member_price: '20',
       non_member_price: '30',
       valid_for_days: '0',
-      status: 'A',
+      status: 'active',
       is_active: true,
     });
     setEditingService(null);
@@ -235,7 +235,7 @@ const Services = () => {
       member_price: service.member_price?.toString() || '20',
       non_member_price: service.non_member_price?.toString() || '30',
       valid_for_days: service.valid_for_days?.toString() || '0',
-      status: service.status || 'A',
+      status: service.status || 'active',
       is_active: service.is_active,
     });
     setDialogOpen(true);
@@ -253,7 +253,7 @@ const Services = () => {
         service.member_price || 0,
         service.non_member_price || 0,
         service.valid_for_days || 0,
-        service.status === 'A' ? 'Active' : 'Inactive'
+        service.status === 'active' ? 'Active' : 'Inactive'
       ].join(','))
     ].join('\n');
 
@@ -425,8 +425,8 @@ const Services = () => {
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="A">Active</SelectItem>
-                      <SelectItem value="I">Inactive</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -577,10 +577,10 @@ const Services = () => {
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge 
-                      variant={service.status === 'A' ? 'default' : 'secondary'}
-                      className={service.status === 'A' ? 'bg-green-600 text-white' : ''}
+                      variant={service.status === 'active' ? 'default' : 'secondary'}
+                      className={service.status === 'active' ? 'bg-green-600 text-white' : ''}
                     >
-                      {service.status === 'A' ? 'ACTIVE' : 'INACTIVE'}
+                      {service.status === 'active' ? 'ACTIVE' : 'INACTIVE'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center">
