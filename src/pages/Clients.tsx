@@ -15,6 +15,7 @@ import { Pencil, Plus, Search, Download, SlidersHorizontal } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext";
 import ClientDetail from "@/components/ClientDetail";
 import { getStatusBadgeVariant, getStatusDisplay } from "@/lib/status";
+import { US_STATES } from "@/lib/constants/us-states";
 
 import { Database } from "@/integrations/supabase/types";
 
@@ -31,9 +32,17 @@ const clientSchema = z.object({
   mem_status: z.string().min(1, "Client type is required"),
   mem_type: z.string().min(1, "Membership type is required"),
   billing_street_address: z.string().optional(),
-  billing_city_state_zip: z.string().optional(),
+  billing_city: z.string().optional(),
+  billing_state: z.string().optional(),
+  billing_zip: z.string().optional().refine((val) => !val || /^\d{5}(-\d{4})?$/.test(val), {
+    message: "Invalid ZIP code format (use 12345 or 12345-6789)",
+  }),
   physical_street_address: z.string().optional(),
-  physical_city_state_zip: z.string().optional(),
+  physical_city: z.string().optional(),
+  physical_state: z.string().optional(),
+  physical_zip: z.string().optional().refine((val) => !val || /^\d{5}(-\d{4})?$/.test(val), {
+    message: "Invalid ZIP code format (use 12345 or 12345-6789)",
+  }),
   bill_to: z.string().optional(),
   comments: z.string().optional(),
   payment_status: z.string().optional(),
@@ -67,9 +76,13 @@ export default function Clients() {
       mem_status: "member",
       mem_type: "Contractor",
       billing_street_address: "",
-      billing_city_state_zip: "",
+      billing_city: "",
+      billing_state: "",
+      billing_zip: "",
       physical_street_address: "",
-      physical_city_state_zip: "",
+      physical_city: "",
+      physical_state: "",
+      physical_zip: "",
       bill_to: "",
       comments: "",
       payment_status: "Check",
@@ -132,9 +145,13 @@ export default function Clients() {
         mem_status: values.mem_status,
         mem_type: values.mem_type,
         billing_street_address: values.billing_street_address || null,
-        billing_city_state_zip: values.billing_city_state_zip || null,
+        billing_city: values.billing_city || null,
+        billing_state: values.billing_state || null,
+        billing_zip: values.billing_zip || null,
         physical_street_address: values.physical_street_address || null,
-        physical_city_state_zip: values.physical_city_state_zip || null,
+        physical_city: values.physical_city || null,
+        physical_state: values.physical_state || null,
+        physical_zip: values.physical_zip || null,
         bill_to: values.bill_to || null,
         comments: values.comments || null,
         payment_status: values.payment_status || null,
@@ -197,9 +214,13 @@ export default function Clients() {
       mem_status: client.mem_status || "member",
       mem_type: client.mem_type || "Contractor",
       billing_street_address: client.billing_street_address || "",
-      billing_city_state_zip: client.billing_city_state_zip || "",
+      billing_city: client.billing_city || "",
+      billing_state: client.billing_state || "",
+      billing_zip: client.billing_zip || "",
       physical_street_address: client.physical_street_address || "",
-      physical_city_state_zip: client.physical_city_state_zip || "",
+      physical_city: client.physical_city || "",
+      physical_state: client.physical_state || "",
+      physical_zip: client.physical_zip || "",
       bill_to: client.bill_to || "",
       comments: client.comments || "",
       payment_status: client.payment_status || "Check",
@@ -506,7 +527,7 @@ export default function Clients() {
                 {/* Billing Address Section */}
                 <div className="col-span-2">
                   <h3 className="text-lg font-semibold mb-3">Billing Address</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <FormField
                       control={form.control}
                       name="billing_street_address"
@@ -520,26 +541,65 @@ export default function Clients() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="billing_city_state_zip"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>City, State, Zip</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="billing_city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>City</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="City" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="billing_state"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>State</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="State" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {US_STATES.map((state) => (
+                                  <SelectItem key={state.value} value={state.value}>
+                                    {state.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="billing_zip"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ZIP Code</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="12345" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* Physical Address Section */}
                 <div className="col-span-2">
                   <h3 className="text-lg font-semibold mb-3">Physical Address</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <FormField
                       control={form.control}
                       name="physical_street_address"
@@ -553,19 +613,58 @@ export default function Clients() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="physical_city_state_zip"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>City, State, Zip</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="physical_city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>City</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="City" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="physical_state"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>State</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="State" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {US_STATES.map((state) => (
+                                  <SelectItem key={state.value} value={state.value}>
+                                    {state.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="physical_zip"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ZIP Code</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="12345" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
                 <FormField

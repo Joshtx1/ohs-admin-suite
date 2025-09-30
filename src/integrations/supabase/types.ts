@@ -94,10 +94,13 @@ export type Database = {
           address: string | null
           admin_der: string | null
           bill_to: string | null
+          billing_city: string | null
           billing_city_state_zip: string | null
           billing_der: string | null
+          billing_state: string | null
           billing_street_address: string | null
           billing_temp_company_name: string | null
+          billing_zip: string | null
           city: string | null
           client_name: string | null
           comments: string | null
@@ -117,8 +120,11 @@ export type Database = {
           payment_status: string | null
           payment_terms: string | null
           phone: string
+          physical_city: string | null
           physical_city_state_zip: string | null
+          physical_state: string | null
           physical_street_address: string | null
+          physical_zip: string | null
           postal_code: string | null
           profile: string | null
           short_code: string | null
@@ -129,10 +135,13 @@ export type Database = {
           address?: string | null
           admin_der?: string | null
           bill_to?: string | null
+          billing_city?: string | null
           billing_city_state_zip?: string | null
           billing_der?: string | null
+          billing_state?: string | null
           billing_street_address?: string | null
           billing_temp_company_name?: string | null
+          billing_zip?: string | null
           city?: string | null
           client_name?: string | null
           comments?: string | null
@@ -152,8 +161,11 @@ export type Database = {
           payment_status?: string | null
           payment_terms?: string | null
           phone: string
+          physical_city?: string | null
           physical_city_state_zip?: string | null
+          physical_state?: string | null
           physical_street_address?: string | null
+          physical_zip?: string | null
           postal_code?: string | null
           profile?: string | null
           short_code?: string | null
@@ -164,10 +176,13 @@ export type Database = {
           address?: string | null
           admin_der?: string | null
           bill_to?: string | null
+          billing_city?: string | null
           billing_city_state_zip?: string | null
           billing_der?: string | null
+          billing_state?: string | null
           billing_street_address?: string | null
           billing_temp_company_name?: string | null
+          billing_zip?: string | null
           city?: string | null
           client_name?: string | null
           comments?: string | null
@@ -187,8 +202,11 @@ export type Database = {
           payment_status?: string | null
           payment_terms?: string | null
           phone?: string
+          physical_city?: string | null
           physical_city_state_zip?: string | null
+          physical_state?: string | null
           physical_street_address?: string | null
+          physical_zip?: string | null
           postal_code?: string | null
           profile?: string | null
           short_code?: string | null

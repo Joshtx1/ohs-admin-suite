@@ -15,6 +15,7 @@ import { ArrowLeft, Plus, Eye, Pencil } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
+import { US_STATES } from "@/lib/constants/us-states";
 
 type Client = Database["public"]["Tables"]["clients"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -165,9 +166,13 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
           payment_status: editedClient.payment_status,
           net_terms: editedClient.net_terms,
           billing_street_address: editedClient.billing_street_address,
-          billing_city_state_zip: editedClient.billing_city_state_zip,
+          billing_city: editedClient.billing_city,
+          billing_state: editedClient.billing_state,
+          billing_zip: editedClient.billing_zip,
           physical_street_address: editedClient.physical_street_address,
-          physical_city_state_zip: editedClient.physical_city_state_zip,
+          physical_city: editedClient.physical_city,
+          physical_state: editedClient.physical_state,
+          physical_zip: editedClient.physical_zip,
           comments: editedClient.comments,
         })
         .eq("id", client.id);
@@ -329,7 +334,7 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
         {/* Billing Address Section */}
         <div>
           <h3 className="text-lg font-semibold mb-3">Billing Address</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div>
               <Label>Street Address</Label>
               <Input 
@@ -337,12 +342,41 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
                 onChange={(e) => setEditedClient({...editedClient, billing_street_address: e.target.value})}
               />
             </div>
-            <div>
-              <Label>City, State, Zip</Label>
-              <Input 
-                value={editedClient.billing_city_state_zip || ""} 
-                onChange={(e) => setEditedClient({...editedClient, billing_city_state_zip: e.target.value})}
-              />
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>City</Label>
+                <Input 
+                  value={editedClient.billing_city || ""} 
+                  onChange={(e) => setEditedClient({...editedClient, billing_city: e.target.value})}
+                  placeholder="City"
+                />
+              </div>
+              <div>
+                <Label>State</Label>
+                <Select 
+                  value={editedClient.billing_state || ""} 
+                  onValueChange={(value) => setEditedClient({...editedClient, billing_state: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="State" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {US_STATES.map((state) => (
+                      <SelectItem key={state.value} value={state.value}>
+                        {state.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>ZIP Code</Label>
+                <Input 
+                  value={editedClient.billing_zip || ""} 
+                  onChange={(e) => setEditedClient({...editedClient, billing_zip: e.target.value})}
+                  placeholder="12345"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -350,7 +384,7 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
         {/* Physical Address Section */}
         <div>
           <h3 className="text-lg font-semibold mb-3">Physical Address</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div>
               <Label>Street Address</Label>
               <Input 
@@ -358,12 +392,41 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
                 onChange={(e) => setEditedClient({...editedClient, physical_street_address: e.target.value})}
               />
             </div>
-            <div>
-              <Label>City, State, Zip</Label>
-              <Input 
-                value={editedClient.physical_city_state_zip || ""} 
-                onChange={(e) => setEditedClient({...editedClient, physical_city_state_zip: e.target.value})}
-              />
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>City</Label>
+                <Input 
+                  value={editedClient.physical_city || ""} 
+                  onChange={(e) => setEditedClient({...editedClient, physical_city: e.target.value})}
+                  placeholder="City"
+                />
+              </div>
+              <div>
+                <Label>State</Label>
+                <Select 
+                  value={editedClient.physical_state || ""} 
+                  onValueChange={(value) => setEditedClient({...editedClient, physical_state: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="State" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {US_STATES.map((state) => (
+                      <SelectItem key={state.value} value={state.value}>
+                        {state.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>ZIP Code</Label>
+                <Input 
+                  value={editedClient.physical_zip || ""} 
+                  onChange={(e) => setEditedClient({...editedClient, physical_zip: e.target.value})}
+                  placeholder="12345"
+                />
+              </div>
             </div>
           </div>
         </div>
