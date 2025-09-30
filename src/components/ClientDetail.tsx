@@ -163,8 +163,11 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
           status: editedClient.status,
           mem_type: editedClient.mem_type,
           payment_status: editedClient.payment_status,
-          mailing_street_address: editedClient.mailing_street_address,
-          mailing_city_state_zip: editedClient.mailing_city_state_zip,
+          net_terms: editedClient.net_terms,
+          billing_street_address: editedClient.billing_street_address,
+          billing_city_state_zip: editedClient.billing_city_state_zip,
+          physical_street_address: editedClient.physical_street_address,
+          physical_city_state_zip: editedClient.physical_city_state_zip,
           comments: editedClient.comments,
         })
         .eq("id", client.id);
@@ -210,116 +213,179 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <Label>Profile ID</Label>
-                  <Input value={client.profile || ""} readOnly />
-                </div>
-                <div>
-                  <Label>Client Code</Label>
-                  <Input value={client.short_code || ""} readOnly />
-                </div>
-                <div>
-                  <Label>Company Name</Label>
-                  <Input 
-                    value={editedClient.company_name || ""} 
-                    onChange={(e) => setEditedClient({...editedClient, company_name: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Contact Person</Label>
-                  <Input 
-                    value={editedClient.contact_person || ""} 
-                    onChange={(e) => setEditedClient({...editedClient, contact_person: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input 
-                    value={editedClient.email || ""} 
-                    onChange={(e) => setEditedClient({...editedClient, email: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Phone</Label>
-                  <Input 
-                    value={editedClient.phone || ""} 
-                    onChange={(e) => setEditedClient({...editedClient, phone: e.target.value})}
-                  />
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <Label>Client Type</Label>
-                  <Input 
-                    value={editedClient.mem_status || ""} 
-                    onChange={(e) => setEditedClient({...editedClient, mem_status: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Status</Label>
-                  <Select 
-                    value={editedClient.status || ""} 
-                    onValueChange={(value) => setEditedClient({...editedClient, status: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover z-50">
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Membership Type</Label>
-                  <Input 
-                    value={editedClient.mem_type || ""} 
-                    onChange={(e) => setEditedClient({...editedClient, mem_type: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Payment Status</Label>
-                  <Input 
-                    value={editedClient.payment_status || ""} 
-                    onChange={(e) => setEditedClient({...editedClient, payment_status: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Street Address</Label>
-                  <Input 
-                    value={editedClient.mailing_street_address || ""} 
-                    onChange={(e) => setEditedClient({...editedClient, mailing_street_address: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>City, State, Zip</Label>
-                  <Input 
-                    value={editedClient.mailing_city_state_zip || ""} 
-                    onChange={(e) => setEditedClient({...editedClient, mailing_city_state_zip: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Comments</Label>
-                  <Input 
-                    value={editedClient.comments || ""} 
-                    onChange={(e) => setEditedClient({...editedClient, comments: e.target.value})}
-                  />
-                </div>
-              </div>
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div>
+              <Label>Profile ID</Label>
+              <Input value={client.profile || ""} readOnly />
             </div>
-            <div className="flex justify-end">
-              <Button 
-                onClick={handleSaveClient}
-                disabled={isSaving}
-                className="bg-green-500 hover:bg-green-600"
-              >
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
+            <div>
+              <Label>Company Name</Label>
+              <Input 
+                value={editedClient.company_name || ""} 
+                onChange={(e) => setEditedClient({...editedClient, company_name: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label>Contact Person</Label>
+              <Input 
+                value={editedClient.contact_person || ""} 
+                onChange={(e) => setEditedClient({...editedClient, contact_person: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input 
+                value={editedClient.email || ""} 
+                onChange={(e) => setEditedClient({...editedClient, email: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label>Phone</Label>
+              <Input 
+                value={editedClient.phone || ""} 
+                onChange={(e) => setEditedClient({...editedClient, phone: e.target.value})}
+              />
             </div>
           </div>
+          <div className="space-y-4">
+            <div>
+              <Label>Client Type</Label>
+              <Select 
+                value={editedClient.mem_status || ""} 
+                onValueChange={(value) => setEditedClient({...editedClient, mem_status: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select client type" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="member">Member</SelectItem>
+                  <SelectItem value="non-member">Non-Member</SelectItem>
+                  <SelectItem value="Owner">Owner</SelectItem>
+                  <SelectItem value="TPA">TPA</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select 
+                value={editedClient.status || ""} 
+                onValueChange={(value) => setEditedClient({...editedClient, status: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Membership Type</Label>
+              <Input 
+                value={editedClient.mem_type || ""} 
+                onChange={(e) => setEditedClient({...editedClient, mem_type: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label>Payment Method</Label>
+              <Select 
+                value={editedClient.payment_status || ""} 
+                onValueChange={(value) => setEditedClient({...editedClient, payment_status: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="Check">Check</SelectItem>
+                  <SelectItem value="ACH">ACH</SelectItem>
+                  <SelectItem value="Credit Card">Credit Card</SelectItem>
+                  <SelectItem value="Cash">Cash</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Net Terms</Label>
+              <Select 
+                value={editedClient.net_terms || "30"} 
+                onValueChange={(value) => setEditedClient({...editedClient, net_terms: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select net terms" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="30">30 Days</SelectItem>
+                  <SelectItem value="45">45 Days</SelectItem>
+                  <SelectItem value="60">60 Days</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Billing Address Section */}
+        <div>
+          <h3 className="text-lg font-semibold mb-3">Billing Address</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Street Address</Label>
+              <Input 
+                value={editedClient.billing_street_address || ""} 
+                onChange={(e) => setEditedClient({...editedClient, billing_street_address: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label>City, State, Zip</Label>
+              <Input 
+                value={editedClient.billing_city_state_zip || ""} 
+                onChange={(e) => setEditedClient({...editedClient, billing_city_state_zip: e.target.value})}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Physical Address Section */}
+        <div>
+          <h3 className="text-lg font-semibold mb-3">Physical Address</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Street Address</Label>
+              <Input 
+                value={editedClient.physical_street_address || ""} 
+                onChange={(e) => setEditedClient({...editedClient, physical_street_address: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label>City, State, Zip</Label>
+              <Input 
+                value={editedClient.physical_city_state_zip || ""} 
+                onChange={(e) => setEditedClient({...editedClient, physical_city_state_zip: e.target.value})}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <Label>Comments</Label>
+          <Input 
+            value={editedClient.comments || ""} 
+            onChange={(e) => setEditedClient({...editedClient, comments: e.target.value})}
+          />
+        </div>
+
+        <div className="flex justify-end">
+          <Button 
+            onClick={handleSaveClient}
+            disabled={isSaving}
+            className="bg-green-500 hover:bg-green-600"
+          >
+            {isSaving ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+      </div>
         </TabsContent>
 
         <TabsContent value="notes" className="mt-6">

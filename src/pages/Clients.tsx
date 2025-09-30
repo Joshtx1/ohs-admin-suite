@@ -11,7 +11,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Plus, Trash2, Search, Download, SlidersHorizontal } from "lucide-react";
+import { Pencil, Plus, Search, Download, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import ClientDetail from "@/components/ClientDetail";
 import { getStatusBadgeVariant, getStatusDisplay } from "@/lib/status";
@@ -30,12 +30,15 @@ const clientSchema = z.object({
   short_code: z.string().min(1, "Short code is required"),
   mem_status: z.string().min(1, "Client type is required"),
   mem_type: z.string().min(1, "Membership type is required"),
-  mailing_street_address: z.string().optional(),
-  mailing_city_state_zip: z.string().optional(),
+  billing_street_address: z.string().optional(),
+  billing_city_state_zip: z.string().optional(),
+  physical_street_address: z.string().optional(),
+  physical_city_state_zip: z.string().optional(),
   bill_to: z.string().optional(),
   comments: z.string().optional(),
   payment_status: z.string().optional(),
   payment_terms: z.string().optional(),
+  net_terms: z.string().optional(),
   status: z.enum(["active", "inactive", "suspended"]).default("active"),
 });
 
@@ -63,12 +66,15 @@ export default function Clients() {
       short_code: "",
       mem_status: "member",
       mem_type: "Contractor",
-      mailing_street_address: "",
-      mailing_city_state_zip: "",
+      billing_street_address: "",
+      billing_city_state_zip: "",
+      physical_street_address: "",
+      physical_city_state_zip: "",
       bill_to: "",
       comments: "",
       payment_status: "Check",
       payment_terms: "Bill",
+      net_terms: "30",
       status: "active",
     },
   });
@@ -125,12 +131,15 @@ export default function Clients() {
         short_code: values.short_code,
         mem_status: values.mem_status,
         mem_type: values.mem_type,
-        mailing_street_address: values.mailing_street_address || null,
-        mailing_city_state_zip: values.mailing_city_state_zip || null,
+        billing_street_address: values.billing_street_address || null,
+        billing_city_state_zip: values.billing_city_state_zip || null,
+        physical_street_address: values.physical_street_address || null,
+        physical_city_state_zip: values.physical_city_state_zip || null,
         bill_to: values.bill_to || null,
         comments: values.comments || null,
         payment_status: values.payment_status || null,
         payment_terms: values.payment_terms || null,
+        net_terms: values.net_terms || null,
         status: values.status,
         created_by: user.id,
       };
@@ -187,12 +196,15 @@ export default function Clients() {
       short_code: client.short_code || "",
       mem_status: client.mem_status || "member",
       mem_type: client.mem_type || "Contractor",
-      mailing_street_address: client.mailing_street_address || "",
-      mailing_city_state_zip: client.mailing_city_state_zip || "",
+      billing_street_address: client.billing_street_address || "",
+      billing_city_state_zip: client.billing_city_state_zip || "",
+      physical_street_address: client.physical_street_address || "",
+      physical_city_state_zip: client.physical_city_state_zip || "",
       bill_to: client.bill_to || "",
       comments: client.comments || "",
       payment_status: client.payment_status || "Check",
       payment_terms: client.payment_terms || "Bill",
+      net_terms: client.net_terms || "30",
       status: (client.status === "active" || client.status === "inactive" || client.status === "suspended") ? client.status : "active",
     });
     setIsDialogOpen(true);
@@ -231,15 +243,15 @@ export default function Clients() {
   });
 
   const exportToCSV = () => {
-    const headers = ["Profile", "Client Code", "Company Name", "Status", "Address"];
+    const headers = ["Profile", "Client Type", "Company Name", "Status", "Payment Method"];
     const csvContent = [
       headers.join(","),
       ...filteredClients.map(client => [
         client.profile || "",
-        client.short_code || "",
+        client.mem_status || "",
         client.company_name || "",
         client.status || "",
-        client.mailing_street_address || ""
+        client.payment_status || ""
       ].map(field => `"${field}"`).join(","))
     ].join("\n");
     
@@ -428,7 +440,7 @@ export default function Clients() {
                   name="payment_status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Payment Status</FormLabel>
+                      <FormLabel>Payment Method</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -440,6 +452,29 @@ export default function Clients() {
                           <SelectItem value="ACH">ACH</SelectItem>
                           <SelectItem value="Credit Card">Credit Card</SelectItem>
                           <SelectItem value="Cash">Cash</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="net_terms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Net Terms</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select net terms" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="30">30 Days</SelectItem>
+                          <SelectItem value="45">45 Days</SelectItem>
+                          <SelectItem value="60">60 Days</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -467,32 +502,72 @@ export default function Clients() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="mailing_street_address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Street Address</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="mailing_city_state_zip"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>City, State, Zip</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
+                {/* Billing Address Section */}
+                <div className="col-span-2">
+                  <h3 className="text-lg font-semibold mb-3">Billing Address</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="billing_street_address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Street Address</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="billing_city_state_zip"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City, State, Zip</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Physical Address Section */}
+                <div className="col-span-2">
+                  <h3 className="text-lg font-semibold mb-3">Physical Address</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="physical_street_address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Street Address</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="physical_city_state_zip"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City, State, Zip</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
                 <FormField
                   control={form.control}
                   name="comments"
@@ -572,16 +647,6 @@ export default function Clients() {
                   <Pencil className="w-4 h-4" />
                   Details
                 </Button>
-                {userRole === "admin" && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(client.id)}
-                    className="text-red-500 hover:text-red-600"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
               </div>
             )
           },
@@ -590,8 +655,8 @@ export default function Clients() {
             accessorKey: 'profile'
           },
           {
-            header: 'Client Code',
-            accessorKey: 'short_code'
+            header: 'Client Type',
+            accessorKey: 'mem_status'
           },
           {
             header: 'Company Name',
@@ -604,10 +669,6 @@ export default function Clients() {
                 {getStatusDisplay(client.status)}
               </Badge>
             )
-          },
-          {
-            header: 'Address',
-            accessorKey: 'mailing_street_address'
           },
           {
             header: 'Contact',
