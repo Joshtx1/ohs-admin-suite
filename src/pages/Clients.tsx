@@ -60,7 +60,9 @@ export default function Clients() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [clientTypeFilter, setClientTypeFilter] = useState("all");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showAdditionalFilters, setShowAdditionalFilters] = useState(false);
   const { userRole } = useAuth();
   const { toast } = useToast();
 
@@ -259,8 +261,9 @@ export default function Clients() {
       client.short_code?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || client.status === statusFilter;
+    const matchesClientType = clientTypeFilter === "all" || client.mem_status === clientTypeFilter;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesClientType;
   });
 
   const exportToCSV = () => {
@@ -312,7 +315,7 @@ export default function Clients() {
               Add Client
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingClient ? "Edit Client" : "Add New Client"}
@@ -708,25 +711,64 @@ export default function Clients() {
               />
             </div>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
           <Button onClick={exportToCSV} className="bg-cyan-500 hover:bg-cyan-600">
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button variant="outline" className="text-cyan-500 border-cyan-500 hover:bg-cyan-50">
+          <Button 
+            variant="outline" 
+            className="text-cyan-500 border-cyan-500 hover:bg-cyan-50"
+            onClick={() => setShowAdditionalFilters(!showAdditionalFilters)}
+          >
             <SlidersHorizontal className="w-4 h-4 mr-2" />
-            View Optional Filters
+            Additional Filters
           </Button>
         </div>
+        
+        {showAdditionalFilters && (
+          <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">Client Type</label>
+              <Select value={clientTypeFilter} onValueChange={setClientTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="member">Member</SelectItem>
+                  <SelectItem value="non-member">Non-Member</SelectItem>
+                  <SelectItem value="Owner">Owner</SelectItem>
+                  <SelectItem value="TPA">TPA</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">Status</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Button 
+                variant="ghost" 
+                onClick={() => {
+                  setClientTypeFilter("all");
+                  setStatusFilter("all");
+                }}
+              >
+                Clear Filters
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Table */}
