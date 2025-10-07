@@ -29,8 +29,11 @@ const clientSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().min(1, "Phone is required"),
   short_code: z.string().min(1, "Short code is required"),
-  mem_status: z.string().min(1, "Client type is required"),
-  mem_type: z.string().min(1, "Membership type is required"),
+  mem_status: z.string().min(1, "Account type is required"),
+  mem_type: z.string().min(1, "Account type is required"),
+  po_required: z.boolean().default(false),
+  billing_name: z.string().optional(),
+  billing_emails: z.string().optional(),
   billing_street_address: z.string().optional(),
   billing_city: z.string().optional(),
   billing_state: z.string().optional(),
@@ -77,6 +80,9 @@ export default function Clients() {
       short_code: "",
       mem_status: "member",
       mem_type: "Contractor",
+      po_required: false,
+      billing_name: "",
+      billing_emails: "",
       billing_street_address: "",
       billing_city: "",
       billing_state: "",
@@ -146,6 +152,9 @@ export default function Clients() {
         short_code: values.short_code,
         mem_status: values.mem_status,
         mem_type: values.mem_type,
+        po_required: values.po_required,
+        billing_name: values.billing_name || null,
+        billing_emails: values.billing_emails ? values.billing_emails.split(',').map(e => e.trim()).filter(e => e) : null,
         billing_street_address: values.billing_street_address || null,
         billing_city: values.billing_city || null,
         billing_state: values.billing_state || null,
@@ -215,6 +224,9 @@ export default function Clients() {
       short_code: client.short_code || "",
       mem_status: client.mem_status || "member",
       mem_type: client.mem_type || "Contractor",
+      po_required: client.po_required || false,
+      billing_name: client.billing_name || "",
+      billing_emails: Array.isArray(client.billing_emails) ? client.billing_emails.join(', ') : "",
       billing_street_address: client.billing_street_address || "",
       billing_city: client.billing_city || "",
       billing_state: client.billing_state || "",
@@ -406,18 +418,17 @@ export default function Clients() {
                   name="mem_status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Client Type</FormLabel>
+                      <FormLabel>Account Type</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select client type" />
+                            <SelectValue placeholder="Select account type" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="member">Member</SelectItem>
                           <SelectItem value="non-member">Non-Member</SelectItem>
-                          <SelectItem value="Owner">Owner</SelectItem>
-                          <SelectItem value="TPA">TPA</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -451,10 +462,20 @@ export default function Clients() {
                   name="mem_type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Membership Type</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
+                      <FormLabel>Account Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select account type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Contractor">Contractor</SelectItem>
+                          <SelectItem value="TPA">TPA</SelectItem>
+                          <SelectItem value="Owner">Owner</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -526,11 +547,57 @@ export default function Clients() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="po_required"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel>PO Required</FormLabel>
+                      </div>
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                          className="h-4 w-4"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
 
-                {/* Billing Address Section */}
+                {/* Billing Remit Info Section */}
                 <div className="col-span-2">
-                  <h3 className="text-lg font-semibold mb-3">Billing Address</h3>
+                  <h3 className="text-lg font-semibold mb-3">Billing Remit Info</h3>
                   <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="billing_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Billing Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Name on invoice" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="billing_emails"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Billing Email(s)</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="email1@example.com, email2@example.com" />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground">Separate multiple emails with commas</p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="billing_street_address"

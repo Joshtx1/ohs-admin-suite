@@ -97,6 +97,8 @@ export type Database = {
           billing_city: string | null
           billing_city_state_zip: string | null
           billing_der: string | null
+          billing_emails: string[] | null
+          billing_name: string | null
           billing_state: string | null
           billing_street_address: string | null
           billing_temp_company_name: string | null
@@ -125,6 +127,7 @@ export type Database = {
           physical_state: string | null
           physical_street_address: string | null
           physical_zip: string | null
+          po_required: boolean | null
           postal_code: string | null
           profile: string | null
           short_code: string | null
@@ -138,6 +141,8 @@ export type Database = {
           billing_city?: string | null
           billing_city_state_zip?: string | null
           billing_der?: string | null
+          billing_emails?: string[] | null
+          billing_name?: string | null
           billing_state?: string | null
           billing_street_address?: string | null
           billing_temp_company_name?: string | null
@@ -166,6 +171,7 @@ export type Database = {
           physical_state?: string | null
           physical_street_address?: string | null
           physical_zip?: string | null
+          po_required?: boolean | null
           postal_code?: string | null
           profile?: string | null
           short_code?: string | null
@@ -179,6 +185,8 @@ export type Database = {
           billing_city?: string | null
           billing_city_state_zip?: string | null
           billing_der?: string | null
+          billing_emails?: string[] | null
+          billing_name?: string | null
           billing_state?: string | null
           billing_street_address?: string | null
           billing_temp_company_name?: string | null
@@ -207,6 +215,7 @@ export type Database = {
           physical_state?: string | null
           physical_street_address?: string | null
           physical_zip?: string | null
+          po_required?: boolean | null
           postal_code?: string | null
           profile?: string | null
           short_code?: string | null
