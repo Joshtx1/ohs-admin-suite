@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,6 +36,8 @@ interface Client {
   company_name: string;
   contact_person: string;
   profile?: string;
+  po_required?: boolean;
+  mem_status?: string;
 }
 
 interface Service {
@@ -127,7 +130,7 @@ export default function Orders() {
     try {
       const { data, error } = await supabase
         .from("clients")
-        .select("id, company_name, contact_person, profile")
+        .select("id, company_name, contact_person, profile, po_required, mem_status")
         .eq("status", "active")
         .order("company_name");
 
@@ -319,8 +322,12 @@ export default function Orders() {
   };
 
   const canProceedToStep2 = selectedTrainees.length > 0;
+  
+  const selectedClient = clients.find(c => c.id === selectedClientId);
   const canProceedToStep3 = registrationType === "selfpay" || 
-    (registrationType === "client" && selectedClientId);
+    (registrationType === "client" && selectedClientId && 
+      (!selectedClient?.po_required || (selectedClient?.po_required && orderPO.trim() !== "")));
+  
   const canProceedToStep4 = selectedServices.length > 0;
 
   const filteredTrainees = allTrainees.filter(trainee => {
@@ -594,28 +601,61 @@ export default function Orders() {
                         </Dialog>
                         
                         {selectedClientId && (
-                          <div className="mt-4 p-4 border rounded-lg flex items-center justify-between">
-                            <div className="font-medium">
-                              {clients.find(c => c.id === selectedClientId)?.company_name}
+                          <div className="mt-4 p-4 border rounded-lg space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">
+                                  {clients.find(c => c.id === selectedClientId)?.company_name}
+                                </span>
+                                {selectedClient?.mem_status && (
+                                  <Badge 
+                                    variant={
+                                      selectedClient.mem_status.toLowerCase() === 'member' ? 'default' : 
+                                      selectedClient.mem_status.toLowerCase() === 'tpa' ? 'secondary' : 
+                                      'outline'
+                                    }
+                                    className={cn(
+                                      "capitalize",
+                                      selectedClient.mem_status.toLowerCase() === 'member' && "bg-green-600 hover:bg-green-700",
+                                      selectedClient.mem_status.toLowerCase() === 'tpa' && "bg-blue-600 hover:bg-blue-700"
+                                    )}
+                                  >
+                                    {selectedClient.mem_status}
+                                  </Badge>
+                                )}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedClientId("")}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setSelectedClientId("")}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
                           </div>
                         )}
                       </div>
                       
                       <div>
-                        <Label className="text-sm mb-2 block">ORDER PO Number</Label>
+                        <Label className="text-sm mb-2 block">
+                          ORDER PO Number
+                          {selectedClient?.po_required && (
+                            <span className="text-destructive ml-1">*</span>
+                          )}
+                        </Label>
                         <Input
                           placeholder="Enter PO number"
                           value={orderPO}
                           onChange={(e) => setOrderPO(e.target.value)}
+                          className={cn(
+                            selectedClient?.po_required && orderPO.trim() === "" && "border-destructive focus-visible:ring-destructive"
+                          )}
                         />
+                        {selectedClient?.po_required && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            This client requires a PO number
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
