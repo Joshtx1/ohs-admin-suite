@@ -30,7 +30,7 @@ const clientSchema = z.object({
   phone: z.string().min(1, "Phone is required"),
   short_code: z.string().min(1, "Short code is required"),
   mem_status: z.string().min(1, "Account type is required"),
-  mem_type: z.string().min(1, "Account type is required"),
+  mem_type: z.string().min(1, "Member type is required"),
   po_required: z.boolean().default(false),
   billing_name: z.string().optional(),
   billing_emails: z.string().optional(),
@@ -281,7 +281,7 @@ export default function Clients() {
   });
 
   const exportToCSV = () => {
-    const headers = ["Profile", "Membership Status", "Member Type", "Company Name", "Status", "Payment Method"];
+    const headers = ["Profile", "Account Type", "Member Type", "Company Name", "Status", "Payment Method"];
     const csvContent = [
       headers.join(","),
       ...filteredClients.map(client => [
@@ -421,17 +421,16 @@ export default function Clients() {
                   name="mem_status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Membership Status</FormLabel>
+                      <FormLabel>Account Type</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select membership status" />
+                            <SelectValue placeholder="Select account type" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="member">Member</SelectItem>
-                          <SelectItem value="non-member">Non-Member</SelectItem>
-                          <SelectItem value="TPA">TPA</SelectItem>
+                          <SelectItem value="Member">Member</SelectItem>
+                          <SelectItem value="Non-member">Non-member</SelectItem>
                           <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
@@ -799,16 +798,15 @@ export default function Clients() {
         {showAdditionalFilters && (
           <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
             <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">Membership Status</label>
+              <label className="text-sm font-medium mb-2 block">Account Type</label>
               <Select value={membershipStatusFilter} onValueChange={setMembershipStatusFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="member">Member</SelectItem>
-                  <SelectItem value="non-member">Non-Member</SelectItem>
-                  <SelectItem value="TPA">TPA</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="Member">Member</SelectItem>
+                  <SelectItem value="Non-member">Non-member</SelectItem>
                   <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
@@ -883,7 +881,7 @@ export default function Clients() {
             accessorKey: 'profile'
           },
           {
-            header: 'Membership Status',
+            header: 'Account Type',
             accessorKey: 'mem_status'
           },
           {
