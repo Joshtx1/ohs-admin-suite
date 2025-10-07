@@ -79,7 +79,7 @@ export default function Clients() {
       email: "",
       phone: "",
       short_code: "",
-      mem_status: "member",
+      mem_status: "Member",
       mem_type: "Contractor",
       po_required: false,
       billing_name: "",
@@ -223,7 +223,7 @@ export default function Clients() {
       email: client.email || "",
       phone: client.phone || "",
       short_code: client.short_code || "",
-      mem_status: client.mem_status || "member",
+      mem_status: client.mem_status || "Member",
       mem_type: client.mem_type || "Contractor",
       po_required: client.po_required || false,
       billing_name: client.billing_name || "",
@@ -267,15 +267,16 @@ export default function Clients() {
   };
 
   const filteredClients = clients.filter((client) => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
-      client.profile?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.short_code?.toLowerCase().includes(searchTerm.toLowerCase());
+      client.profile?.toLowerCase().includes(searchLower) ||
+      client.client_name?.toLowerCase().includes(searchLower) ||
+      client.company_name?.toLowerCase().includes(searchLower) ||
+      client.short_code?.toLowerCase().includes(searchLower);
     
-    const matchesStatus = statusFilter === "all" || client.status === statusFilter;
-    const matchesMembershipStatus = membershipStatusFilter === "all" || client.mem_status === membershipStatusFilter;
-    const matchesMemberType = memberTypeFilter === "all" || client.mem_type === memberTypeFilter;
+    const matchesStatus = statusFilter === "all" || client.status?.toLowerCase() === statusFilter.toLowerCase();
+    const matchesMembershipStatus = membershipStatusFilter === "all" || client.mem_status?.toLowerCase() === membershipStatusFilter.toLowerCase();
+    const matchesMemberType = memberTypeFilter === "all" || client.mem_type?.toLowerCase() === memberTypeFilter.toLowerCase();
     
     return matchesSearch && matchesStatus && matchesMembershipStatus && matchesMemberType;
   });

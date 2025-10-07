@@ -85,7 +85,7 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
       contact_person: client.contact_person || "",
       email: client.email || "",
       phone: client.phone || "",
-      mem_status: client.mem_status || "member",
+      mem_status: client.mem_status || "Member",
       mem_type: client.mem_type || "Contractor",
       po_required: client.po_required || false,
       billing_name: client.billing_name || "",
