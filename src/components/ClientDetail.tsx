@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -129,9 +128,9 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
   };
 
   const DetailField = ({ label, value }: { label: string; value: string | null | undefined }) => (
-    <div className="space-y-1">
-      <p className="text-sm font-medium text-muted-foreground">{label}</p>
-      <p className="text-base">{value || "-"}</p>
+    <div className="space-y-1.5">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
+      <p className="text-sm">{value || "-"}</p>
     </div>
   );
 
@@ -143,10 +142,9 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <h1 className="text-2xl font-bold">Client Details: {client.company_name}</h1>
+          <h1 className="text-3xl font-bold">{client.company_name}</h1>
         </div>
         <Button 
-          className="bg-cyan-500 hover:bg-cyan-600"
           onClick={() => setIsEditMode(true)}
         >
           <Pencil className="w-4 h-4 mr-2" />
@@ -154,89 +152,114 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
         </Button>
       </div>
 
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="general">GENERAL</TabsTrigger>
-          <TabsTrigger value="notes">NOTES</TabsTrigger>
-        </TabsList>
+      <div className="grid gap-6 max-w-5xl">
+        {/* Internal */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Internal</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <DetailField label="Account ID" value={client.profile} />
+            <DetailField label="Short Code" value={client.short_code} />
+          </CardContent>
+        </Card>
 
-        <TabsContent value="general" className="mt-6">
-          <div className="space-y-8">
-            {/* Basic Information */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 border-b pb-2">Basic Information</h3>
-              <div className="grid grid-cols-2 gap-6">
-                <DetailField label="Profile ID" value={client.profile} />
-                <DetailField label="Client Code" value={client.short_code} />
-                <DetailField label="Company Name" value={client.company_name} />
-                <DetailField label="Contact Person" value={client.contact_person} />
-                <DetailField label="Email" value={client.email} />
-                <DetailField label="Phone" value={client.phone} />
-                <DetailField label="Account Type" value={client.mem_status} />
-                <DetailField label="Account Type" value={client.mem_type} />
-                <DetailField label="Status" value={client.status} />
-                <DetailField label="PO Required" value={client.po_required ? "Yes" : "No"} />
-              </div>
+        {/* Company Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Company Information</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <DetailField label="Company Name" value={client.company_name} />
+            <DetailField label="Contact Person" value={client.contact_person} />
+            <DetailField label="Contact Email" value={client.email} />
+            <DetailField label="Phone" value={client.phone} />
+          </CardContent>
+        </Card>
+
+        {/* Billing Address */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Billing Address</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <DetailField label="Street Address" value={client.billing_street_address} />
+            <DetailField 
+              label="City, State, ZIP" 
+              value={[client.billing_city, client.billing_state, client.billing_zip].filter(Boolean).join(', ')} 
+            />
+          </CardContent>
+        </Card>
+
+        {/* Physical Address */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Physical Address</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <DetailField label="Street Address" value={client.physical_street_address} />
+            <DetailField 
+              label="City, State, ZIP" 
+              value={[client.physical_city, client.physical_state, client.physical_zip].filter(Boolean).join(', ')} 
+            />
+          </CardContent>
+        </Card>
+
+        {/* Account Info */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Account Info</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <DetailField label="Account Type" value={client.mem_status} />
+            <DetailField label="Status" value={client.status} />
+            <DetailField label="Account Type" value={client.mem_type} />
+            <DetailField label="PO Required" value={client.po_required ? "Yes" : "No"} />
+          </CardContent>
+        </Card>
+
+        {/* Billing Remit Info */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Billing Remit Info</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <DetailField label="Payment Method" value={client.payment_status} />
+            <DetailField label="Net Terms" value={client.net_terms ? `${client.net_terms} Days` : null} />
+            <DetailField label="Billing Title" value={client.billing_name} />
+          </CardContent>
+        </Card>
+
+        {/* Billing Email(s) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Billing Email(s)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {Array.isArray(client.billing_emails) && client.billing_emails.length > 0 ? (
+                client.billing_emails.map((email, idx) => (
+                  <p key={idx} className="text-sm">{email}</p>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">-</p>
+              )}
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Payment Information */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 border-b pb-2">Payment Information</h3>
-              <div className="grid grid-cols-2 gap-6">
-                <DetailField label="Payment Method" value={client.payment_status} />
-                <DetailField label="Net Terms" value={client.net_terms ? `${client.net_terms} Days` : null} />
-              </div>
-            </div>
-
-            {/* Billing Remit Info */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 border-b pb-2">Billing Remit Info</h3>
-              <div className="space-y-4">
-                <DetailField label="Billing Name" value={client.billing_name} />
-                <DetailField 
-                  label="Billing Email(s)" 
-                  value={Array.isArray(client.billing_emails) ? client.billing_emails.join(', ') : client.billing_emails} 
-                />
-                <DetailField label="Street Address" value={client.billing_street_address} />
-                <div className="grid grid-cols-3 gap-6">
-                  <DetailField label="City" value={client.billing_city} />
-                  <DetailField label="State" value={client.billing_state} />
-                  <DetailField label="ZIP Code" value={client.billing_zip} />
-                </div>
-              </div>
-            </div>
-
-            {/* Physical Address */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 border-b pb-2">Physical Address</h3>
-              <div className="space-y-4">
-                <DetailField label="Street Address" value={client.physical_street_address} />
-                <div className="grid grid-cols-3 gap-6">
-                  <DetailField label="City" value={client.physical_city} />
-                  <DetailField label="State" value={client.physical_state} />
-                  <DetailField label="ZIP Code" value={client.physical_zip} />
-                </div>
-              </div>
-            </div>
-
-            {/* Comments */}
-            {client.comments && (
-              <div>
-                <h3 className="text-lg font-semibold mb-4 border-b pb-2">Comments</h3>
-                <p className="text-base">{client.comments}</p>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="notes" className="mt-6">
-          <div className="space-y-4">
-            <div className="border rounded-lg p-4">
-              <p className="text-muted-foreground">No notes available for this client.</p>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+        {/* Comments */}
+        {client.comments && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Comments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm whitespace-pre-wrap">{client.comments}</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Edit Dialog */}
       <Dialog open={isEditMode} onOpenChange={setIsEditMode}>
