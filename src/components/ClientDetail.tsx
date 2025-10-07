@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -52,7 +52,31 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [isAddingComment, setIsAddingComment] = useState(false);
+  const [currentUserName, setCurrentUserName] = useState("");
+  const [localClient, setLocalClient] = useState(client);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("first_name, last_name")
+          .eq("user_id", user.id)
+          .single();
+        
+        if (profile) {
+          setCurrentUserName(`${profile.first_name} ${profile.last_name}`);
+        }
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
+  useEffect(() => {
+    setLocalClient(client);
+  }, [client]);
 
   const form = useForm<z.infer<typeof clientSchema>>({
     resolver: zodResolver(clientSchema),
@@ -109,7 +133,7 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
           net_terms: values.net_terms || null,
           status: values.status,
         })
-        .eq("id", client.id);
+        .eq("id", localClient.id);
 
       if (error) throw error;
 
@@ -147,25 +171,37 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
     
     try {
       setIsAddingComment(true);
-      const existingComments = client.comments || "";
-      const timestamp = new Date().toLocaleString();
+      const existingComments = localClient.comments || "";
+      const timestamp = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      const commentPrefix = `- ${currentUserName} ${timestamp}`;
+      const newCommentText = `${commentPrefix}\n${newComment}`;
+      
+      // Add new comment at the beginning (newest on top)
       const updatedComments = existingComments 
-        ? `${existingComments}\n\n[${timestamp}]\n${newComment}`
-        : `[${timestamp}]\n${newComment}`;
+        ? `${newCommentText}\n\n${existingComments}`
+        : newCommentText;
 
       const { error } = await supabase
         .from("clients")
         .update({ comments: updatedComments })
-        .eq("id", client.id);
+        .eq("id", localClient.id);
 
       if (error) throw error;
+
+      // Update local state to show the new comment immediately
+      setLocalClient({ ...localClient, comments: updatedComments });
 
       toast({
         title: "Success",
         description: "Comment added successfully",
       });
       setNewComment("");
-      onBack(); // Refresh the parent view
     } catch (error) {
       console.error("Error adding comment:", error);
       toast({
@@ -180,6 +216,13 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Client Detail</CardTitle>
+          <CardDescription>Manage Client Information and Billing Details</CardDescription>
+        </CardHeader>
+      </Card>
+
       <div className="flex items-center justify-between mb-6">
         <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -215,73 +258,73 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
             <div className="bg-card rounded-lg border p-6">
               {/* Internal */}
               <SectionHeader title="Internal" />
-              <DetailField label="Account ID" value={client.profile} />
-              <DetailField label="Short Code" value={client.short_code} />
+              <DetailField label="Account ID" value={localClient.profile} />
+              <DetailField label="Short Code" value={localClient.short_code} />
 
               {/* Company Information */}
               <SectionHeader title="Company Information" />
-              <DetailField label="Company Name" value={client.company_name} />
-              <DetailField label="Contact Person" value={client.contact_person} />
-              <DetailField label="Contact Email" value={client.email} />
-              <DetailField label="Phone" value={client.phone} />
+              <DetailField label="Company Name" value={localClient.company_name} />
+              <DetailField label="Contact Person" value={localClient.contact_person} />
+              <DetailField label="Contact Email" value={localClient.email} />
+              <DetailField label="Phone" value={localClient.phone} />
               
               <div className="mt-4 pl-4 border-l-2 border-muted">
                 <p className="font-semibold text-sm mb-2">Billing Address:</p>
                 <div className="text-sm mb-2">
-                  {client.billing_street_address && <div>{client.billing_street_address}</div>}
-                  {(client.billing_city || client.billing_state || client.billing_zip) && (
-                    <div>{[client.billing_city, client.billing_state, client.billing_zip].filter(Boolean).join(', ')}</div>
+                  {localClient.billing_street_address && <div>{localClient.billing_street_address}</div>}
+                  {(localClient.billing_city || localClient.billing_state || localClient.billing_zip) && (
+                    <div>{[localClient.billing_city, localClient.billing_state, localClient.billing_zip].filter(Boolean).join(', ')}</div>
                   )}
-                  {!client.billing_street_address && !client.billing_city && <div className="text-muted-foreground">-</div>}
+                  {!localClient.billing_street_address && !localClient.billing_city && <div className="text-muted-foreground">-</div>}
                 </div>
 
                 <p className="font-semibold text-sm mb-2 mt-3">Mailing Address:</p>
                 <div className="text-sm mb-2">
-                  {client.mailing_street_address && <div>{client.mailing_street_address}</div>}
-                  {(client.billing_city || client.billing_state || client.billing_zip) && (
-                    <div>{[client.billing_city, client.billing_state, client.billing_zip].filter(Boolean).join(', ')}</div>
+                  {localClient.mailing_street_address && <div>{localClient.mailing_street_address}</div>}
+                  {(localClient.billing_city || localClient.billing_state || localClient.billing_zip) && (
+                    <div>{[localClient.billing_city, localClient.billing_state, localClient.billing_zip].filter(Boolean).join(', ')}</div>
                   )}
-                  {!client.mailing_street_address && !client.billing_city && <div className="text-muted-foreground">-</div>}
+                  {!localClient.mailing_street_address && !localClient.billing_city && <div className="text-muted-foreground">-</div>}
                 </div>
 
                 <p className="font-semibold text-sm mb-2 mt-3">Physical Address:</p>
                 <div className="text-sm">
-                  {client.physical_street_address && <div>{client.physical_street_address}</div>}
-                  {(client.physical_city || client.physical_state || client.physical_zip) && (
-                    <div>{[client.physical_city, client.physical_state, client.physical_zip].filter(Boolean).join(', ')}</div>
+                  {localClient.physical_street_address && <div>{localClient.physical_street_address}</div>}
+                  {(localClient.physical_city || localClient.physical_state || localClient.physical_zip) && (
+                    <div>{[localClient.physical_city, localClient.physical_state, localClient.physical_zip].filter(Boolean).join(', ')}</div>
                   )}
-                  {!client.physical_street_address && !client.physical_city && <div className="text-muted-foreground">-</div>}
+                  {!localClient.physical_street_address && !localClient.physical_city && <div className="text-muted-foreground">-</div>}
                 </div>
               </div>
 
               {/* Account Info */}
               <SectionHeader title="Account Info" />
-              <DetailField label="Account Type" value={client.mem_status} />
-              <DetailField label="Status" value={client.status} />
-              <DetailField label="Member Type" value={client.mem_type} />
-              <DetailField label="PO Required" value={client.po_required ? "Yes" : "No"} />
+              <DetailField label="Account Type" value={localClient.mem_status} />
+              <DetailField label="Status" value={localClient.status} />
+              <DetailField label="Member Type" value={localClient.mem_type} />
+              <DetailField label="PO Required" value={localClient.po_required ? "Yes" : "No"} />
 
               {/* Billing Remit Info */}
               <SectionHeader title="Billing Remit Info" />
               <div className="mb-2 pl-4 border-l-2 border-muted">
                 <p className="font-semibold text-sm mb-2">Billing Address (managed in Company Information):</p>
                 <div className="text-sm mb-3 text-muted-foreground">
-                  {client.billing_street_address && <div>{client.billing_street_address}</div>}
-                  {(client.billing_city || client.billing_state || client.billing_zip) && (
-                    <div>{[client.billing_city, client.billing_state, client.billing_zip].filter(Boolean).join(', ')}</div>
+                  {localClient.billing_street_address && <div>{localClient.billing_street_address}</div>}
+                  {(localClient.billing_city || localClient.billing_state || localClient.billing_zip) && (
+                    <div>{[localClient.billing_city, localClient.billing_state, localClient.billing_zip].filter(Boolean).join(', ')}</div>
                   )}
-                  {!client.billing_street_address && !client.billing_city && <div>-</div>}
+                  {!localClient.billing_street_address && !localClient.billing_city && <div>-</div>}
                 </div>
               </div>
-              <DetailField label="Payment Method" value={client.payment_status} />
-              <DetailField label="Net Terms" value={client.net_terms ? `${client.net_terms} Days` : null} />
-              <DetailField label="Billing Title" value={client.billing_name} />
+              <DetailField label="Payment Method" value={localClient.payment_status} />
+              <DetailField label="Net Terms" value={localClient.net_terms ? `${localClient.net_terms} Days` : null} />
+              <DetailField label="Billing Title" value={localClient.billing_name} />
 
               {/* Billing Email(s) */}
               <SectionHeader title="Billing Email(s)" />
               <div className="mb-2">
-                {Array.isArray(client.billing_emails) && client.billing_emails.length > 0 ? (
-                  client.billing_emails.map((email, idx) => (
+                {Array.isArray(localClient.billing_emails) && localClient.billing_emails.length > 0 ? (
+                  localClient.billing_emails.map((email, idx) => (
                     <div key={idx}>{email}</div>
                   ))
                 ) : (
@@ -704,11 +747,11 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
                     </Button>
                   </div>
 
-                  {client.comments && (
+                  {localClient.comments && (
                     <div className="border-t pt-4">
-                      <h4 className="font-semibold mb-2">Previous Comments:</h4>
+                      <h4 className="font-semibold mb-2">Comments History (Newest First):</h4>
                       <div className="whitespace-pre-wrap text-sm bg-muted p-4 rounded-md">
-                        {client.comments}
+                        {localClient.comments}
                       </div>
                     </div>
                   )}
