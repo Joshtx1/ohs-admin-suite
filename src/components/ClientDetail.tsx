@@ -23,8 +23,8 @@ const clientSchema = z.object({
   contact_person: z.string().min(1, "Contact person is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(1, "Phone is required"),
-  mem_status: z.string().min(1, "Account type is required"),
-  mem_type: z.string().min(1, "Account type is required"),
+  mem_status: z.string().min(1, "Membership status is required"),
+  mem_type: z.string().min(1, "Member type is required"),
   po_required: z.boolean().default(false),
   billing_name: z.string().optional(),
   billing_emails: z.string().optional(),
@@ -299,7 +299,7 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
 
               {/* Account Info */}
               <SectionHeader title="Account Info" />
-              <DetailField label="Account Type" value={localClient.mem_status} />
+              <DetailField label="Membership Status" value={localClient.mem_status} />
               <DetailField label="Status" value={localClient.status} />
               <DetailField label="Member Type" value={localClient.mem_type} />
               <DetailField label="PO Required" value={localClient.po_required ? "Yes" : "No"} />
@@ -397,16 +397,17 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
                 name="mem_status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Account Type</FormLabel>
+                    <FormLabel>Membership Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select account type" />
+                          <SelectValue placeholder="Select membership status" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="member">Member</SelectItem>
                         <SelectItem value="non-member">Non-Member</SelectItem>
+                        <SelectItem value="TPA">TPA</SelectItem>
                         <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
@@ -441,11 +442,11 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
                 name="mem_type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Account Type</FormLabel>
+                    <FormLabel>Member Type</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select account type" />
+                          <SelectValue placeholder="Select member type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

@@ -63,7 +63,8 @@ export default function Clients() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [clientTypeFilter, setClientTypeFilter] = useState("all");
+  const [membershipStatusFilter, setMembershipStatusFilter] = useState("all");
+  const [memberTypeFilter, setMemberTypeFilter] = useState("all");
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showAdditionalFilters, setShowAdditionalFilters] = useState(false);
   const { userRole } = useAuth();
@@ -273,18 +274,20 @@ export default function Clients() {
       client.short_code?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || client.status === statusFilter;
-    const matchesClientType = clientTypeFilter === "all" || client.mem_status === clientTypeFilter;
+    const matchesMembershipStatus = membershipStatusFilter === "all" || client.mem_status === membershipStatusFilter;
+    const matchesMemberType = memberTypeFilter === "all" || client.mem_type === memberTypeFilter;
     
-    return matchesSearch && matchesStatus && matchesClientType;
+    return matchesSearch && matchesStatus && matchesMembershipStatus && matchesMemberType;
   });
 
   const exportToCSV = () => {
-    const headers = ["Profile", "Client Type", "Company Name", "Status", "Payment Method"];
+    const headers = ["Profile", "Membership Status", "Member Type", "Company Name", "Status", "Payment Method"];
     const csvContent = [
       headers.join(","),
       ...filteredClients.map(client => [
         client.profile || "",
         client.mem_status || "",
+        client.mem_type || "",
         client.company_name || "",
         client.status || "",
         client.payment_status || ""
@@ -418,11 +421,11 @@ export default function Clients() {
                   name="mem_status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Account Type</FormLabel>
+                      <FormLabel>Membership Status</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select account type" />
+                            <SelectValue placeholder="Select membership status" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -463,11 +466,11 @@ export default function Clients() {
                   name="mem_type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Account Type</FormLabel>
+                      <FormLabel>Member Type</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select account type" />
+                            <SelectValue placeholder="Select member type" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -796,17 +799,32 @@ export default function Clients() {
         {showAdditionalFilters && (
           <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
             <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">Client Type</label>
-              <Select value={clientTypeFilter} onValueChange={setClientTypeFilter}>
+              <label className="text-sm font-medium mb-2 block">Membership Status</label>
+              <Select value={membershipStatusFilter} onValueChange={setMembershipStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="member">Member</SelectItem>
+                  <SelectItem value="non-member">Non-Member</SelectItem>
+                  <SelectItem value="TPA">TPA</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">Member Type</label>
+              <Select value={memberTypeFilter} onValueChange={setMemberTypeFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="member">Member</SelectItem>
-                  <SelectItem value="non-member">Non-Member</SelectItem>
-                  <SelectItem value="Owner">Owner</SelectItem>
+                  <SelectItem value="Contractor">Contractor</SelectItem>
                   <SelectItem value="TPA">TPA</SelectItem>
+                  <SelectItem value="Owner">Owner</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -828,7 +846,8 @@ export default function Clients() {
               <Button 
                 variant="ghost" 
                 onClick={() => {
-                  setClientTypeFilter("all");
+                  setMembershipStatusFilter("all");
+                  setMemberTypeFilter("all");
                   setStatusFilter("all");
                 }}
               >
@@ -864,8 +883,12 @@ export default function Clients() {
             accessorKey: 'profile'
           },
           {
-            header: 'Client Type',
+            header: 'Membership Status',
             accessorKey: 'mem_status'
+          },
+          {
+            header: 'Member Type',
+            accessorKey: 'mem_type'
           },
           {
             header: 'Company Name',
