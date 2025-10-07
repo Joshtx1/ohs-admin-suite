@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -128,136 +127,103 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
   };
 
   const DetailField = ({ label, value }: { label: string; value: string | null | undefined }) => (
-    <div className="space-y-1.5">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
-      <p className="text-sm">{value || "-"}</p>
+    <div className="mb-2">
+      <span className="font-semibold">{label}: </span>
+      <span>{value || "-"}</span>
     </div>
   );
 
+  const SectionHeader = ({ title }: { title: string }) => (
+    <h2 className="text-xl font-bold mb-3 mt-6 pb-2 border-b-2 border-border">{title}</h2>
+  );
+
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container mx-auto p-6 max-w-4xl">
+      <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={onBack}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <h1 className="text-3xl font-bold">{client.company_name}</h1>
         </div>
-        <Button 
-          onClick={() => setIsEditMode(true)}
-        >
+        <Button onClick={() => setIsEditMode(true)}>
           <Pencil className="w-4 h-4 mr-2" />
           Edit Client
         </Button>
       </div>
 
-      <div className="grid gap-6 max-w-5xl">
+      <div className="bg-card rounded-lg border p-8">
         {/* Internal */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Internal</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <DetailField label="Account ID" value={client.profile} />
-            <DetailField label="Short Code" value={client.short_code} />
-          </CardContent>
-        </Card>
+        <SectionHeader title="Internal" />
+        <DetailField label="Account ID" value={client.profile} />
+        <DetailField label="Short Code" value={client.short_code} />
 
         {/* Company Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Company Information</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <DetailField label="Company Name" value={client.company_name} />
-            <DetailField label="Contact Person" value={client.contact_person} />
-            <DetailField label="Contact Email" value={client.email} />
-            <DetailField label="Phone" value={client.phone} />
-          </CardContent>
-        </Card>
+        <SectionHeader title="Company Information" />
+        <DetailField label="Company Name" value={client.company_name} />
+        <DetailField label="Contact Person" value={client.contact_person} />
+        <DetailField label="Contact Email" value={client.email} />
+        <DetailField label="Phone" value={client.phone} />
 
         {/* Billing Address */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Billing Address</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <DetailField label="Street Address" value={client.billing_street_address} />
-            <DetailField 
-              label="City, State, ZIP" 
-              value={[client.billing_city, client.billing_state, client.billing_zip].filter(Boolean).join(', ')} 
-            />
-          </CardContent>
-        </Card>
+        <SectionHeader title="Billing Address" />
+        <div className="mb-2">
+          {client.billing_street_address && <div>{client.billing_street_address}</div>}
+          {(client.billing_city || client.billing_state || client.billing_zip) && (
+            <div>{[client.billing_city, client.billing_state, client.billing_zip].filter(Boolean).join(', ')}</div>
+          )}
+        </div>
+
+        {/* Mailing Address */}
+        <SectionHeader title="Mailing Address" />
+        <div className="mb-2">
+          {client.billing_street_address && <div>{client.billing_street_address}</div>}
+          {(client.billing_city || client.billing_state || client.billing_zip) && (
+            <div>{[client.billing_city, client.billing_state, client.billing_zip].filter(Boolean).join(', ')}</div>
+          )}
+        </div>
 
         {/* Physical Address */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Physical Address</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <DetailField label="Street Address" value={client.physical_street_address} />
-            <DetailField 
-              label="City, State, ZIP" 
-              value={[client.physical_city, client.physical_state, client.physical_zip].filter(Boolean).join(', ')} 
-            />
-          </CardContent>
-        </Card>
+        <SectionHeader title="Physical Address" />
+        <div className="mb-2">
+          {client.physical_street_address && <div>{client.physical_street_address}</div>}
+          {(client.physical_city || client.physical_state || client.physical_zip) && (
+            <div>{[client.physical_city, client.physical_state, client.physical_zip].filter(Boolean).join(', ')}</div>
+          )}
+        </div>
 
         {/* Account Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Account Info</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <DetailField label="Account Type" value={client.mem_status} />
-            <DetailField label="Status" value={client.status} />
-            <DetailField label="Account Type" value={client.mem_type} />
-            <DetailField label="PO Required" value={client.po_required ? "Yes" : "No"} />
-          </CardContent>
-        </Card>
+        <SectionHeader title="Account Info" />
+        <DetailField label="Account Type" value={client.mem_status} />
+        <DetailField label="Status" value={client.status} />
+        <DetailField label="Account Type" value={client.mem_type} />
+        <DetailField label="Status" value={client.status} />
+        <DetailField label="PO Required" value={client.po_required ? "Yes" : "No"} />
 
         {/* Billing Remit Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Billing Remit Info</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <DetailField label="Payment Method" value={client.payment_status} />
-            <DetailField label="Net Terms" value={client.net_terms ? `${client.net_terms} Days` : null} />
-            <DetailField label="Billing Title" value={client.billing_name} />
-          </CardContent>
-        </Card>
+        <SectionHeader title="Billing Remit Info" />
+        <DetailField label="Payment Method" value={client.payment_status} />
+        <DetailField label="Net Terms" value={client.net_terms ? `${client.net_terms} Days` : null} />
+        <DetailField label="Billing Title" value={client.billing_name} />
 
         {/* Billing Email(s) */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Billing Email(s)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {Array.isArray(client.billing_emails) && client.billing_emails.length > 0 ? (
-                client.billing_emails.map((email, idx) => (
-                  <p key={idx} className="text-sm">{email}</p>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">-</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <SectionHeader title="Billing Email(s)" />
+        <div className="mb-2">
+          {Array.isArray(client.billing_emails) && client.billing_emails.length > 0 ? (
+            client.billing_emails.map((email, idx) => (
+              <div key={idx}>{email}</div>
+            ))
+          ) : (
+            <div className="text-muted-foreground">-</div>
+          )}
+        </div>
 
         {/* Comments */}
         {client.comments && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Comments</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm whitespace-pre-wrap">{client.comments}</p>
-            </CardContent>
-          </Card>
+          <>
+            <SectionHeader title="Comments" />
+            <div className="mb-2 whitespace-pre-wrap">{client.comments}</div>
+          </>
         )}
       </div>
 
