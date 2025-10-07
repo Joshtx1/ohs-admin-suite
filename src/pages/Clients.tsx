@@ -428,6 +428,7 @@ export default function Clients() {
                         <SelectContent>
                           <SelectItem value="member">Member</SelectItem>
                           <SelectItem value="non-member">Non-Member</SelectItem>
+                          <SelectItem value="TPA">TPA</SelectItem>
                           <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
