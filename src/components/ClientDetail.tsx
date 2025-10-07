@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, Save, X, Plus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +50,8 @@ interface ClientDetailProps {
 export default function ClientDetail({ client, onBack }: ClientDetailProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [isAddingComment, setIsAddingComment] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof clientSchema>>({
@@ -114,6 +118,7 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
         description: "Client updated successfully",
       });
       setIsEditMode(false);
+      onBack(); // Refresh the parent view
     } catch (error) {
       console.error("Error updating client:", error);
       toast({
@@ -134,107 +139,164 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
   );
 
   const SectionHeader = ({ title }: { title: string }) => (
-    <h2 className="text-xl font-bold mb-3 mt-6 pb-2 border-b-2 border-border">{title}</h2>
+    <h3 className="text-lg font-bold mb-3 mt-4">{title}</h3>
   );
 
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+    
+    try {
+      setIsAddingComment(true);
+      const existingComments = client.comments || "";
+      const timestamp = new Date().toLocaleString();
+      const updatedComments = existingComments 
+        ? `${existingComments}\n\n[${timestamp}]\n${newComment}`
+        : `[${timestamp}]\n${newComment}`;
+
+      const { error } = await supabase
+        .from("clients")
+        .update({ comments: updatedComments })
+        .eq("id", client.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Comment added successfully",
+      });
+      setNewComment("");
+      onBack(); // Refresh the parent view
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add comment",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingComment(false);
+    }
+  };
+
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={onBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-        </div>
-        <Button onClick={() => setIsEditMode(true)}>
-          <Pencil className="w-4 h-4 mr-2" />
-          Edit Client
+    <div className="container mx-auto p-6 max-w-6xl">
+      <div className="flex items-center justify-between mb-6">
+        <Button variant="outline" onClick={onBack}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
         </Button>
-      </div>
-
-      <div className="bg-card rounded-lg border p-8">
-        {/* Internal */}
-        <SectionHeader title="Internal" />
-        <DetailField label="Account ID" value={client.profile} />
-        <DetailField label="Short Code" value={client.short_code} />
-
-        {/* Company Information */}
-        <SectionHeader title="Company Information" />
-        <DetailField label="Company Name" value={client.company_name} />
-        <DetailField label="Contact Person" value={client.contact_person} />
-        <DetailField label="Contact Email" value={client.email} />
-        <DetailField label="Phone" value={client.phone} />
-
-        {/* Billing Address */}
-        <SectionHeader title="Billing Address" />
-        <div className="mb-2">
-          {client.billing_street_address && <div>{client.billing_street_address}</div>}
-          {(client.billing_city || client.billing_state || client.billing_zip) && (
-            <div>{[client.billing_city, client.billing_state, client.billing_zip].filter(Boolean).join(', ')}</div>
-          )}
-        </div>
-
-        {/* Mailing Address */}
-        <SectionHeader title="Mailing Address" />
-        <div className="mb-2">
-          {client.billing_street_address && <div>{client.billing_street_address}</div>}
-          {(client.billing_city || client.billing_state || client.billing_zip) && (
-            <div>{[client.billing_city, client.billing_state, client.billing_zip].filter(Boolean).join(', ')}</div>
-          )}
-        </div>
-
-        {/* Physical Address */}
-        <SectionHeader title="Physical Address" />
-        <div className="mb-2">
-          {client.physical_street_address && <div>{client.physical_street_address}</div>}
-          {(client.physical_city || client.physical_state || client.physical_zip) && (
-            <div>{[client.physical_city, client.physical_state, client.physical_zip].filter(Boolean).join(', ')}</div>
-          )}
-        </div>
-
-        {/* Account Info */}
-        <SectionHeader title="Account Info" />
-        <DetailField label="Account Type" value={client.mem_status} />
-        <DetailField label="Status" value={client.status} />
-        <DetailField label="Account Type" value={client.mem_type} />
-        <DetailField label="Status" value={client.status} />
-        <DetailField label="PO Required" value={client.po_required ? "Yes" : "No"} />
-
-        {/* Billing Remit Info */}
-        <SectionHeader title="Billing Remit Info" />
-        <DetailField label="Payment Method" value={client.payment_status} />
-        <DetailField label="Net Terms" value={client.net_terms ? `${client.net_terms} Days` : null} />
-        <DetailField label="Billing Title" value={client.billing_name} />
-
-        {/* Billing Email(s) */}
-        <SectionHeader title="Billing Email(s)" />
-        <div className="mb-2">
-          {Array.isArray(client.billing_emails) && client.billing_emails.length > 0 ? (
-            client.billing_emails.map((email, idx) => (
-              <div key={idx}>{email}</div>
-            ))
-          ) : (
-            <div className="text-muted-foreground">-</div>
-          )}
-        </div>
-
-        {/* Comments */}
-        {client.comments && (
-          <>
-            <SectionHeader title="Comments" />
-            <div className="mb-2 whitespace-pre-wrap">{client.comments}</div>
-          </>
+        {!isEditMode ? (
+          <Button onClick={() => setIsEditMode(true)}>
+            <Pencil className="w-4 h-4 mr-2" />
+            Edit Client
+          </Button>
+        ) : (
+          <div className="flex gap-2">
+            <Button onClick={() => setIsEditMode(false)} variant="outline">
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+            <Button onClick={form.handleSubmit(handleSave)} disabled={isSaving}>
+              <Save className="w-4 h-4 mr-2" />
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
         )}
       </div>
 
-      {/* Edit Dialog */}
-      <Dialog open={isEditMode} onOpenChange={setIsEditMode}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Client</DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSave)} className="grid grid-cols-2 gap-4">
+      <Tabs defaultValue="general" className="w-full">
+        <TabsList>
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="notes">Notes</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="general" className="mt-6">
+          {!isEditMode ? (
+            <div className="bg-card rounded-lg border p-6">
+              {/* Internal */}
+              <SectionHeader title="Internal" />
+              <DetailField label="Account ID" value={client.profile} />
+              <DetailField label="Short Code" value={client.short_code} />
+
+              {/* Company Information */}
+              <SectionHeader title="Company Information" />
+              <DetailField label="Company Name" value={client.company_name} />
+              <DetailField label="Contact Person" value={client.contact_person} />
+              <DetailField label="Contact Email" value={client.email} />
+              <DetailField label="Phone" value={client.phone} />
+              
+              <div className="mt-4 pl-4 border-l-2 border-muted">
+                <p className="font-semibold text-sm mb-2">Billing Address:</p>
+                <div className="text-sm mb-2">
+                  {client.billing_street_address && <div>{client.billing_street_address}</div>}
+                  {(client.billing_city || client.billing_state || client.billing_zip) && (
+                    <div>{[client.billing_city, client.billing_state, client.billing_zip].filter(Boolean).join(', ')}</div>
+                  )}
+                  {!client.billing_street_address && !client.billing_city && <div className="text-muted-foreground">-</div>}
+                </div>
+
+                <p className="font-semibold text-sm mb-2 mt-3">Mailing Address:</p>
+                <div className="text-sm mb-2">
+                  {client.mailing_street_address && <div>{client.mailing_street_address}</div>}
+                  {(client.billing_city || client.billing_state || client.billing_zip) && (
+                    <div>{[client.billing_city, client.billing_state, client.billing_zip].filter(Boolean).join(', ')}</div>
+                  )}
+                  {!client.mailing_street_address && !client.billing_city && <div className="text-muted-foreground">-</div>}
+                </div>
+
+                <p className="font-semibold text-sm mb-2 mt-3">Physical Address:</p>
+                <div className="text-sm">
+                  {client.physical_street_address && <div>{client.physical_street_address}</div>}
+                  {(client.physical_city || client.physical_state || client.physical_zip) && (
+                    <div>{[client.physical_city, client.physical_state, client.physical_zip].filter(Boolean).join(', ')}</div>
+                  )}
+                  {!client.physical_street_address && !client.physical_city && <div className="text-muted-foreground">-</div>}
+                </div>
+              </div>
+
+              {/* Account Info */}
+              <SectionHeader title="Account Info" />
+              <DetailField label="Account Type" value={client.mem_status} />
+              <DetailField label="Status" value={client.status} />
+              <DetailField label="Member Type" value={client.mem_type} />
+              <DetailField label="PO Required" value={client.po_required ? "Yes" : "No"} />
+
+              {/* Billing Remit Info */}
+              <SectionHeader title="Billing Remit Info" />
+              <div className="mb-2 pl-4 border-l-2 border-muted">
+                <p className="font-semibold text-sm mb-2">Billing Address (managed in Company Information):</p>
+                <div className="text-sm mb-3 text-muted-foreground">
+                  {client.billing_street_address && <div>{client.billing_street_address}</div>}
+                  {(client.billing_city || client.billing_state || client.billing_zip) && (
+                    <div>{[client.billing_city, client.billing_state, client.billing_zip].filter(Boolean).join(', ')}</div>
+                  )}
+                  {!client.billing_street_address && !client.billing_city && <div>-</div>}
+                </div>
+              </div>
+              <DetailField label="Payment Method" value={client.payment_status} />
+              <DetailField label="Net Terms" value={client.net_terms ? `${client.net_terms} Days` : null} />
+              <DetailField label="Billing Title" value={client.billing_name} />
+
+              {/* Billing Email(s) */}
+              <SectionHeader title="Billing Email(s)" />
+              <div className="mb-2">
+                {Array.isArray(client.billing_emails) && client.billing_emails.length > 0 ? (
+                  client.billing_emails.map((email, idx) => (
+                    <div key={idx}>{email}</div>
+                  ))
+                ) : (
+                  <div className="text-muted-foreground">-</div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Edit Client Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="company_name"
@@ -611,10 +673,50 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
                   {isSaving ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="notes" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Notes & Comments</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <Textarea
+                      placeholder="Add a new comment..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      rows={4}
+                    />
+                    <Button 
+                      onClick={handleAddComment} 
+                      disabled={isAddingComment || !newComment.trim()}
+                      className="mt-2"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Comment
+                    </Button>
+                  </div>
+
+                  {client.comments && (
+                    <div className="border-t pt-4">
+                      <h4 className="font-semibold mb-2">Previous Comments:</h4>
+                      <div className="whitespace-pre-wrap text-sm bg-muted p-4 rounded-md">
+                        {client.comments}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
