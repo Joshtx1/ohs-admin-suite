@@ -71,12 +71,17 @@ export function OrdersTable({ orders, onViewOrder }: OrdersTableProps) {
     },
     {
       header: 'Service Date',
-      cell: (order: Order) => format(new Date(order.service_date), 'MMM dd, yyyy'),
+      cell: (order: Order) => format(new Date(order.service_date), 'MM/dd/yy'),
     },
     {
-      header: 'Services',
+      header: 'Billing ID',
       cell: (order: Order) => (
-        <span className="font-medium">{order.order_items?.length || 0}</span>
+        <div>
+          <div className="font-medium">{order.clients?.company_name || 'Self-Pay'}</div>
+          {order.clients?.short_code && (
+            <div className="text-sm text-muted-foreground">{order.clients.short_code}</div>
+          )}
+        </div>
       ),
     },
     {
@@ -94,10 +99,6 @@ export function OrdersTable({ orders, onViewOrder }: OrdersTableProps) {
           {order.payment_status || 'Payment Due'}
         </Badge>
       ),
-    },
-    {
-      header: 'Created',
-      cell: (order: Order) => format(new Date(order.created_at), 'MMM dd, yyyy'),
     },
     {
       header: 'Actions',
@@ -192,6 +193,14 @@ export function OrdersTable({ orders, onViewOrder }: OrdersTableProps) {
                 <div>
                   <div className="text-sm text-muted-foreground">Client</div>
                   <div className="font-medium">{selectedOrderDetails.clients?.company_name || 'Self-Pay'}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Service Date</div>
+                  <div className="font-medium">{format(new Date(selectedOrderDetails.service_date), 'MM/dd/yy')}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Created Date</div>
+                  <div className="font-medium">{format(new Date(selectedOrderDetails.created_at), 'MM/dd/yy')}</div>
                 </div>
               </div>
               
