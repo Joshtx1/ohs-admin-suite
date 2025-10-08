@@ -21,7 +21,7 @@ export interface Order {
     contact_person: string;
     phone?: string;
     email?: string;
-    short_code?: string;
+    profile?: string;
   } | null;
   trainees?: {
     id: string;
@@ -63,7 +63,7 @@ export function useOrdersData() {
             contact_person,
             phone,
             email,
-            short_code
+            profile
           ),
           trainees (
             id,

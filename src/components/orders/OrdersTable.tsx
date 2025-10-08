@@ -78,8 +78,8 @@ export function OrdersTable({ orders, onViewOrder }: OrdersTableProps) {
       cell: (order: Order) => (
         <div>
           <div className="font-medium">{order.clients?.company_name || 'Self-Pay'}</div>
-          {order.clients?.short_code && (
-            <div className="text-sm text-muted-foreground">{order.clients.short_code}</div>
+          {order.clients?.profile && (
+            <div className="text-sm text-muted-foreground">{order.clients.profile}</div>
           )}
         </div>
       ),
