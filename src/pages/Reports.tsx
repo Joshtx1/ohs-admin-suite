@@ -74,19 +74,18 @@ const Reports = () => {
   const totalRevenue = filteredData.reduce((sum, row) => sum + row.rate, 0);
 
   const columns = [
-    { header: "Order ID", accessor: "orderId" as keyof BillingExportRow },
-    { header: "Billing ID", accessor: "billingId" as keyof BillingExportRow },
-    { header: "Client Name", accessor: "clientName" as keyof BillingExportRow },
-    { header: "PO", accessor: "po" as keyof BillingExportRow },
-    { header: "Service Code", accessor: "serviceCode" as keyof BillingExportRow },
-    { header: "Service", accessor: "service" as keyof BillingExportRow },
-    { header: "Date", accessor: "date" as keyof BillingExportRow },
-    { header: "SSN", accessor: "ssn" as keyof BillingExportRow },
-    { header: "Trainee Name", accessor: "traineeName" as keyof BillingExportRow },
-    { header: "Receipt", accessor: "receipt" as keyof BillingExportRow },
+    { header: "Order ID", accessorKey: "orderId" as keyof BillingExportRow },
+    { header: "Billing ID", accessorKey: "billingId" as keyof BillingExportRow },
+    { header: "Client Name", accessorKey: "clientName" as keyof BillingExportRow },
+    { header: "PO", accessorKey: "po" as keyof BillingExportRow },
+    { header: "Service Code", accessorKey: "serviceCode" as keyof BillingExportRow },
+    { header: "Service", accessorKey: "service" as keyof BillingExportRow },
+    { header: "Date", accessorKey: "date" as keyof BillingExportRow },
+    { header: "SSN", accessorKey: "ssn" as keyof BillingExportRow },
+    { header: "Trainee Name", accessorKey: "traineeName" as keyof BillingExportRow },
+    { header: "Receipt", accessorKey: "receipt" as keyof BillingExportRow },
     {
       header: "Rate",
-      accessor: "rate" as keyof BillingExportRow,
       cell: (row: BillingExportRow) => `$${row.rate.toFixed(2)}`,
     },
   ];
