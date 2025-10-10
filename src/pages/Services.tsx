@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DataTable } from '@/components/common/DataTable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,6 +56,9 @@ const Services = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     service_code: '',
     name: '',
@@ -288,14 +292,35 @@ const Services = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  const handleDelete = async (serviceId: string) => {
-    if (!window.confirm('Are you sure you want to delete this service?')) return;
+  const handleDelete = async (service: Service) => {
+    setServiceToDelete(service);
+    setDeleteError(null);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!serviceToDelete) return;
 
     try {
+      // First check if service is used in any order_items
+      const { data: orderItems, error: checkError } = await supabase
+        .from('order_items')
+        .select('id')
+        .eq('service_id', serviceToDelete.id)
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (orderItems && orderItems.length > 0) {
+        setDeleteError('This service cannot be deleted because it is used in existing orders. You can deactivate it instead.');
+        return;
+      }
+
+      // If not used, proceed with deletion
       const { error } = await supabase
         .from('services')
         .delete()
-        .eq('id', serviceId);
+        .eq('id', serviceToDelete.id);
 
       if (error) throw error;
 
@@ -303,12 +328,41 @@ const Services = () => {
         title: 'Success',
         description: 'Service deleted successfully',
       });
+      
+      setDeleteDialogOpen(false);
+      setServiceToDelete(null);
       fetchServices();
     } catch (error) {
       console.error('Error deleting service:', error);
+      setDeleteError('Failed to delete service. Please try again.');
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!serviceToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('services')
+        .update({ is_active: false })
+        .eq('id', serviceToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Service deactivated successfully',
+      });
+      
+      setDeleteDialogOpen(false);
+      setServiceToDelete(null);
+      setDeleteError(null);
+      fetchServices();
+    } catch (error) {
+      console.error('Error deactivating service:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete service',
+        description: 'Failed to deactivate service',
         variant: 'destructive',
       });
     }
@@ -652,7 +706,7 @@ const Services = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(service.id)}
+                        onClick={() => handleDelete(service)}
                         className="text-destructive h-auto p-1"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -666,6 +720,43 @@ const Services = () => {
           />
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Service?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteError ? (
+                <div className="space-y-3">
+                  <p className="text-destructive font-medium">{deleteError}</p>
+                  <p>Would you like to deactivate this service instead? It will be hidden from new orders but preserved in existing order history.</p>
+                </div>
+              ) : (
+                <p>Are you sure you want to delete "{serviceToDelete?.name}"? This action cannot be undone.</p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setDeleteDialogOpen(false);
+              setServiceToDelete(null);
+              setDeleteError(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            {deleteError ? (
+              <AlertDialogAction onClick={handleDeactivate}>
+                Deactivate Service
+              </AlertDialogAction>
+            ) : (
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete Service
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
