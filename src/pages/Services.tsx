@@ -302,7 +302,12 @@ const Services = () => {
     if (!serviceToDelete) return;
 
     try {
-      // First check if service is used in any order_items
+      // Check if service is already inactive
+      if (!serviceToDelete.is_active) {
+        setDeleteError('This service is already inactive. To completely remove it, ensure it is not used in any existing orders.');
+      }
+
+      // Check if service is used in any order_items
       const { data: orderItems, error: checkError } = await supabase
         .from('order_items')
         .select('id')
@@ -312,11 +317,15 @@ const Services = () => {
       if (checkError) throw checkError;
 
       if (orderItems && orderItems.length > 0) {
-        setDeleteError('This service cannot be deleted because it is used in existing orders. You can deactivate it instead.');
+        if (serviceToDelete.is_active) {
+          setDeleteError('This service cannot be deleted because it is used in existing orders. You can deactivate it instead.');
+        } else {
+          setDeleteError('This service is inactive but cannot be deleted because it is used in existing order history.');
+        }
         return;
       }
 
-      // If not used, proceed with deletion
+      // If not used and active, proceed with deletion
       const { error } = await supabase
         .from('services')
         .delete()
@@ -685,8 +694,8 @@ const Services = () => {
               {
                 header: 'Status',
                 cell: (service) => (
-                  <Badge variant={getStatusBadgeVariant(service.status)}>
-                    {getStatusDisplay(service.status)}
+                  <Badge variant={service.is_active ? 'default' : 'secondary'}>
+                    {service.is_active ? 'Active' : 'Inactive'}
                   </Badge>
                 )
               },
@@ -746,9 +755,11 @@ const Services = () => {
               Cancel
             </AlertDialogCancel>
             {deleteError ? (
-              <AlertDialogAction onClick={handleDeactivate}>
-                Deactivate Service
-              </AlertDialogAction>
+              serviceToDelete?.is_active ? (
+                <AlertDialogAction onClick={handleDeactivate}>
+                  Deactivate Service
+                </AlertDialogAction>
+              ) : null
             ) : (
               <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                 Delete Service
