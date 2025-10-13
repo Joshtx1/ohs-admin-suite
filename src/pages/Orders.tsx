@@ -38,6 +38,7 @@ interface Client {
   profile?: string;
   po_required?: boolean;
   mem_status?: string;
+  short_code?: string;
 }
 
 interface Service {
@@ -130,7 +131,7 @@ export default function Orders() {
     try {
       const { data, error } = await supabase
         .from("clients")
-        .select("id, company_name, contact_person, profile, po_required, mem_status")
+        .select("id, company_name, contact_person, profile, po_required, mem_status, short_code")
         .eq("status", "active")
         .order("company_name");
 
@@ -845,30 +846,33 @@ export default function Orders() {
               {currentStep === 4 && (
                 <div className="space-y-4">
                   <Label className="text-sm font-semibold">Review</Label>
-                  <ScrollArea className="h-[400px]">
-                    {selectedTrainees.map((trainee) => (
-                      <div key={trainee.id} className="mb-6 border-b pb-4">
-                        <div className="font-semibold mb-2">{trainee.name}</div>
-                        <div className="space-y-1">
-                          {selectedServices.map((service, idx) => (
-                            <div key={idx} className="flex justify-between text-sm p-2 bg-muted/50 rounded">
-                              <div className="flex gap-4">
-                                <span>{service.service_code}</span>
-                                <span>{service.name}</span>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-auto p-0 text-destructive"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
+                  
+                  <div className="border rounded-lg">
+                    <div className="bg-muted p-2 grid grid-cols-5 gap-2 text-sm font-semibold">
+                      <div>Name</div>
+                      <div>Code</div>
+                      <div>Service</div>
+                      <div>Billing Short Code</div>
+                      <div>Date</div>
+                    </div>
+                    <ScrollArea className="h-[400px]">
+                      {selectedTrainees.map((trainee) => (
+                        selectedServices.map((service, idx) => (
+                          <div key={`${trainee.id}-${idx}`} className="p-2 grid grid-cols-5 gap-2 text-sm border-b items-center">
+                            <div>{trainee.name}</div>
+                            <div>{trainee.unique_id}</div>
+                            <div>{service.name}</div>
+                            <div>
+                              {registrationType === "client" 
+                                ? clients.find(c => c.id === selectedClientId)?.short_code || "N/A"
+                                : "Self Pay"}
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </ScrollArea>
+                            <div>{service.date}</div>
+                          </div>
+                        ))
+                      ))}
+                    </ScrollArea>
+                  </div>
 
                   <div className="bg-primary/10 p-4 rounded-lg">
                     <div className="flex justify-between items-center">
@@ -876,7 +880,7 @@ export default function Orders() {
                         <div className="font-semibold">Add {totalRegistrations} Registrations</div>
                         <div className="text-sm text-muted-foreground">
                           Employer: {registrationType === "client" 
-                            ? clients.find(c => c.id === selectedClientId)?.company_name 
+                            ? `${clients.find(c => c.id === selectedClientId)?.short_code || "N/A"} ${clients.find(c => c.id === selectedClientId)?.company_name}`
                             : "SELF PAY"}
                         </div>
                       </div>
