@@ -864,7 +864,7 @@ export default function Orders() {
                           {selectedServices.map((service, idx) => {
                             const client = clients.find(c => c.id === selectedClientId);
                             const billTo = registrationType === "client" 
-                              ? client?.short_code || "N/A"
+                              ? client?.profile || "N/A"
                               : "Self Pay";
                             
                             return (
@@ -888,7 +888,7 @@ export default function Orders() {
                         <div className="font-semibold">Add {totalRegistrations} Registrations</div>
                         <div className="text-sm text-muted-foreground">
                           Employer: {registrationType === "client" 
-                            ? `${clients.find(c => c.id === selectedClientId)?.short_code} ${clients.find(c => c.id === selectedClientId)?.company_name}`
+                            ? `${clients.find(c => c.id === selectedClientId)?.profile} ${clients.find(c => c.id === selectedClientId)?.short_code} ${clients.find(c => c.id === selectedClientId)?.company_name}`
                             : "SELF PAY"}
                         </div>
                       </div>
