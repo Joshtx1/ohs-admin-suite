@@ -40,6 +40,7 @@ interface Client {
   mem_status?: string;
   short_code?: string;
   bill_to?: string;
+  payment_terms?: string;
 }
 
 interface Service {
@@ -696,8 +697,9 @@ export default function Orders() {
                               <ScrollArea className="h-[300px] border rounded-lg">
                                 {clients
                                   .filter(c => 
-                                    c.company_name.toLowerCase().includes(billingClientSearchQuery.toLowerCase()) ||
-                                    c.billing_id?.toLowerCase().includes(billingClientSearchQuery.toLowerCase())
+                                    c.payment_terms === 'TPA' &&
+                                    (c.company_name.toLowerCase().includes(billingClientSearchQuery.toLowerCase()) ||
+                                    c.billing_id?.toLowerCase().includes(billingClientSearchQuery.toLowerCase()))
                                   )
                                   .map((client) => (
                                     <div
