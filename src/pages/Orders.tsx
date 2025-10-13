@@ -909,7 +909,7 @@ export default function Orders() {
                     <ScrollArea className="h-[300px]">
                       {selectedServices.map((service, index) => (
                         <div key={index} className="p-2 grid grid-cols-4 gap-2 text-sm border-b items-center">
-                          <div>{service.date}</div>
+                          <div>{format(new Date(service.date), "MM/dd/yyyy")}</div>
                           <div>{service.service_code}</div>
                           <div>{service.name}</div>
                           <div className="flex justify-end">
@@ -950,31 +950,37 @@ export default function Orders() {
                     {selectedTrainees.map((trainee) => (
                       <div key={trainee.id} className="mb-6 border rounded-lg overflow-hidden">
                         <div className="font-semibold mb-2 bg-muted p-2">{trainee.name} {trainee.ssn && `- ${trainee.ssn}`}</div>
-                        <div className="bg-muted/50 p-2 grid grid-cols-6 gap-2 text-xs font-semibold">
+                        <div className="bg-muted/50 p-2 grid grid-cols-[2fr_0.8fr_2.5fr_1fr_1fr_1fr_0.5fr] gap-2 text-xs font-semibold">
                           <div>Name</div>
                           <div>Code</div>
                           <div>Service</div>
+                          <div>Employer</div>
                           <div>Bill To</div>
                           <div>Date</div>
                           <div></div>
                         </div>
                         <div className="space-y-1">
                           {selectedServices.map((service, idx) => {
+                            const registrantClient = clients.find(c => c.id === selectedClientId);
                             const billingClient = clients.find(c => c.id === (billingClientId || selectedClientId));
+                            const employer = registrationType === "client" 
+                              ? registrantClient?.short_code || ""
+                              : "Self Pay";
                             const billTo = registrationType === "client" 
-                              ? `${billingClient?.profile || ""} ${billingClient?.short_code || ""} ${billingClient?.company_name || ""}`.trim()
+                              ? billingClient?.short_code || ""
                               : "Self Pay";
                             
                             const isExcluded = isServiceExcluded(trainee.id, service.id);
                             if (isExcluded) return null;
                             
                             return (
-                              <div key={idx} className="p-2 grid grid-cols-6 gap-2 text-sm border-b items-center">
+                              <div key={idx} className="p-2 grid grid-cols-[2fr_0.8fr_2.5fr_1fr_1fr_1fr_0.5fr] gap-2 text-sm border-b items-center">
                                 <div>{trainee.name}</div>
                                 <div>{service.service_code}</div>
                                 <div>{service.name}</div>
+                                <div>{employer}</div>
                                 <div>{billTo}</div>
-                                <div>{service.date}</div>
+                                <div>{format(new Date(service.date), "MM/dd/yyyy")}</div>
                                 <div className="flex justify-end">
                                   <Button
                                     type="button"

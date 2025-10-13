@@ -71,7 +71,7 @@ export function OrdersTable({ orders, onViewOrder }: OrdersTableProps) {
     },
     {
       header: 'Service Date',
-      cell: (order: Order) => format(new Date(order.service_date), 'MM/dd/yy'),
+      cell: (order: Order) => format(new Date(order.service_date), 'MM/dd/yyyy'),
     },
     {
       header: 'Billing ID',
@@ -196,11 +196,11 @@ export function OrdersTable({ orders, onViewOrder }: OrdersTableProps) {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Service Date</div>
-                  <div className="font-medium">{format(new Date(selectedOrderDetails.service_date), 'MM/dd/yy')}</div>
+                  <div className="font-medium">{format(new Date(selectedOrderDetails.service_date), 'MM/dd/yyyy')}</div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Created Date</div>
-                  <div className="font-medium">{format(new Date(selectedOrderDetails.created_at), 'MM/dd/yy')}</div>
+                  <div className="font-medium">{format(new Date(selectedOrderDetails.created_at), 'MM/dd/yyyy')}</div>
                 </div>
               </div>
               

@@ -45,11 +45,11 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
             </div>
             <div>
               <p className="text-sm font-semibold text-muted-foreground">Service Date</p>
-              <p className="font-medium">{format(new Date(order.service_date), "MMMM dd, yyyy")}</p>
+              <p className="font-medium">{format(new Date(order.service_date), "MM/dd/yyyy")}</p>
             </div>
             <div>
               <p className="text-sm font-semibold text-muted-foreground">Created</p>
-              <p className="text-sm">{format(new Date(order.created_at), "MMM dd, yyyy HH:mm")}</p>
+              <p className="text-sm">{format(new Date(order.created_at), "MM/dd/yyyy HH:mm")}</p>
             </div>
             <div>
               <p className="text-sm font-semibold text-muted-foreground">Status</p>
@@ -89,7 +89,7 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                 {order.trainees.date_of_birth && (
                   <div>
                     <p className="text-sm font-semibold text-muted-foreground">Date of Birth</p>
-                    <p className="text-sm">{format(new Date(order.trainees.date_of_birth), "MMM dd, yyyy")}</p>
+                    <p className="text-sm">{format(new Date(order.trainees.date_of_birth), "MM/dd/yyyy")}</p>
                   </div>
                 )}
                 {order.trainees.ssn && (
