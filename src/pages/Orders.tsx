@@ -576,7 +576,7 @@ export default function Orders() {
                     <RadioGroup value={registrationType} onValueChange={(v) => setRegistrationType(v as "client" | "selfpay")}>
                       <div className="flex items-center space-x-2 mb-2">
                         <RadioGroupItem value="client" id="client" />
-                        <Label htmlFor="client" className="cursor-pointer">CLIENT TO PAY</Label>
+                        <Label htmlFor="client" className="cursor-pointer">ASSIGN TO CLIENT</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="selfpay" id="selfpay" />
@@ -666,74 +666,6 @@ export default function Orders() {
                                 <X className="h-4 w-4" />
                               </Button>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <Label className="text-sm mb-2 block">Bill To (Optional)</Label>
-                        <Dialog open={isBillingClientOpen} onOpenChange={setIsBillingClientOpen}>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" className="w-full justify-start">
-                              {billingClientId 
-                                ? clients.find(c => c.id === billingClientId)?.company_name 
-                                : "Same as Client"}
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-md">
-                            <DialogHeader>
-                              <DialogTitle>Select Billing Client</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div className="relative">
-                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  placeholder="Search by company name or billing ID"
-                                  value={billingClientSearchQuery}
-                                  onChange={(e) => setBillingClientSearchQuery(e.target.value)}
-                                  className="pl-8"
-                                />
-                              </div>
-                              <ScrollArea className="h-[300px] border rounded-lg">
-                                {clients
-                                  .filter(c => 
-                                    c.payment_terms === 'TPA' &&
-                                    (c.company_name.toLowerCase().includes(billingClientSearchQuery.toLowerCase()) ||
-                                    c.billing_id?.toLowerCase().includes(billingClientSearchQuery.toLowerCase()))
-                                  )
-                                  .map((client) => (
-                                    <div
-                                      key={client.id}
-                                      onClick={() => {
-                                        setBillingClientId(client.id);
-                                        setIsBillingClientOpen(false);
-                                        setBillingClientSearchQuery("");
-                                      }}
-                                      className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
-                                    >
-                                      <div className="font-medium">{client.company_name}</div>
-                                      {client.billing_id && (
-                                        <div className="text-sm text-muted-foreground">Billing ID: {client.billing_id}</div>
-                                      )}
-                                    </div>
-                                  ))}
-                              </ScrollArea>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                        
-                        {billingClientId && (
-                          <div className="mt-2 p-2 border rounded-lg flex items-center justify-between">
-                            <span className="text-sm">
-                              {clients.find(c => c.id === billingClientId)?.company_name}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setBillingClientId("")}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
                           </div>
                         )}
                       </div>
