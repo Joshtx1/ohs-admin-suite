@@ -964,10 +964,10 @@ export default function Orders() {
                             const registrantClient = clients.find(c => c.id === selectedClientId);
                             const billingClient = clients.find(c => c.id === (billingClientId || selectedClientId));
                             const employer = registrationType === "client" 
-                              ? registrantClient?.short_code || ""
+                              ? registrantClient?.billing_id || ""
                               : "Self Pay";
                             const billTo = registrationType === "client" 
-                              ? billingClient?.short_code || ""
+                              ? billingClient?.billing_id || ""
                               : "Self Pay";
                             
                             const isExcluded = isServiceExcluded(trainee.id, service.id);

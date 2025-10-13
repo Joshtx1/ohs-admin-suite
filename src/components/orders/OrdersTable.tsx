@@ -76,12 +76,7 @@ export function OrdersTable({ orders, onViewOrder }: OrdersTableProps) {
     {
       header: 'Billing ID',
       cell: (order: Order) => (
-        <div>
-          <div className="font-medium">{order.clients?.company_name || 'Self-Pay'}</div>
-          {order.clients?.billing_id && (
-            <div className="text-sm text-muted-foreground">{order.clients.billing_id}</div>
-          )}
-        </div>
+        <span>{order.billing_clients?.billing_id || order.clients?.billing_id || 'Self-Pay'}</span>
       ),
     },
     {
