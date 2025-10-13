@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 export interface Order {
   id: string;
   client_id: string;
+  billing_client_id: string | null;
   trainee_id: string;
   status: string;
   total_amount: number;
@@ -22,6 +23,16 @@ export interface Order {
     phone?: string;
     email?: string;
     profile?: string;
+    short_code?: string;
+  } | null;
+  billing_clients?: {
+    id: string;
+    company_name: string;
+    contact_person: string;
+    phone?: string;
+    email?: string;
+    profile?: string;
+    short_code?: string;
   } | null;
   trainees?: {
     id: string;
@@ -57,13 +68,23 @@ export function useOrdersData() {
         .from('orders')
         .select(`
           *,
-          clients (
+          clients!client_id (
             id,
             company_name,
             contact_person,
             phone,
             email,
-            profile
+            profile,
+            short_code
+          ),
+          billing_clients:clients!billing_client_id (
+            id,
+            company_name,
+            contact_person,
+            phone,
+            email,
+            profile,
+            short_code
           ),
           trainees (
             id,

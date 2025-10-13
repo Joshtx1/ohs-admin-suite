@@ -93,7 +93,6 @@ export type Database = {
         Row: {
           address: string | null
           admin_der: string | null
-          bill_to: string | null
           billing_city: string | null
           billing_city_state_zip: string | null
           billing_der: string | null
@@ -101,10 +100,8 @@ export type Database = {
           billing_name: string | null
           billing_state: string | null
           billing_street_address: string | null
-          billing_temp_company_name: string | null
           billing_zip: string | null
           city: string | null
-          client_name: string | null
           comments: string | null
           company_name: string
           contact_person: string
@@ -137,7 +134,6 @@ export type Database = {
         Insert: {
           address?: string | null
           admin_der?: string | null
-          bill_to?: string | null
           billing_city?: string | null
           billing_city_state_zip?: string | null
           billing_der?: string | null
@@ -145,10 +141,8 @@ export type Database = {
           billing_name?: string | null
           billing_state?: string | null
           billing_street_address?: string | null
-          billing_temp_company_name?: string | null
           billing_zip?: string | null
           city?: string | null
-          client_name?: string | null
           comments?: string | null
           company_name: string
           contact_person: string
@@ -181,7 +175,6 @@ export type Database = {
         Update: {
           address?: string | null
           admin_der?: string | null
-          bill_to?: string | null
           billing_city?: string | null
           billing_city_state_zip?: string | null
           billing_der?: string | null
@@ -189,10 +182,8 @@ export type Database = {
           billing_name?: string | null
           billing_state?: string | null
           billing_street_address?: string | null
-          billing_temp_company_name?: string | null
           billing_zip?: string | null
           city?: string | null
-          client_name?: string | null
           comments?: string | null
           company_name?: string
           contact_person?: string
@@ -397,6 +388,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          billing_client_id: string | null
           client_id: string | null
           created_at: string
           created_by: string
@@ -411,6 +403,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billing_client_id?: string | null
           client_id?: string | null
           created_at?: string
           created_by: string
@@ -425,6 +418,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billing_client_id?: string | null
           client_id?: string | null
           created_at?: string
           created_by?: string
@@ -451,6 +445,13 @@ export type Database = {
             columns: ["trainee_id"]
             isOneToOne: false
             referencedRelation: "trainees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_billing_client_id_fkey"
+            columns: ["billing_client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]

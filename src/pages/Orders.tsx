@@ -75,9 +75,12 @@ export default function Orders() {
   const [registrationType, setRegistrationType] = useState<"client" | "selfpay">("client");
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState("");
+  const [billingClientId, setBillingClientId] = useState("");
   const [orderPO, setOrderPO] = useState("");
   const [clientSearchQuery, setClientSearchQuery] = useState("");
   const [isSelectClientOpen, setIsSelectClientOpen] = useState(false);
+  const [isBillingClientOpen, setIsBillingClientOpen] = useState(false);
+  const [billingClientSearchQuery, setBillingClientSearchQuery] = useState("");
   
   // Step 3: Service Selection
   const [services, setServices] = useState<Service[]>([]);
@@ -135,7 +138,7 @@ export default function Orders() {
     try {
       const { data, error } = await supabase
         .from("clients")
-        .select("id, company_name, contact_person, profile, po_required, mem_status, short_code, bill_to")
+        .select("id, company_name, contact_person, profile, po_required, mem_status, short_code")
         .eq("status", "active")
         .order("company_name");
 
@@ -288,6 +291,7 @@ export default function Orders() {
           .from("orders")
           .insert({
             client_id: registrationType === "client" ? selectedClientId : null,
+            billing_client_id: registrationType === "client" ? (billingClientId || selectedClientId) : null,
             trainee_id: trainee.id,
             created_by: user.user.id,
             status: "created",
@@ -330,6 +334,7 @@ export default function Orders() {
       setSelectedTrainees([]);
       setSelectedServices([]);
       setSelectedClientId("");
+      setBillingClientId("");
       setOrderPO("");
       setRegistrationType("client");
       setExcludedCombinations(new Set());
@@ -665,6 +670,73 @@ export default function Orders() {
                       </div>
                       
                       <div>
+                        <Label className="text-sm mb-2 block">Bill To (Optional)</Label>
+                        <Dialog open={isBillingClientOpen} onOpenChange={setIsBillingClientOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start">
+                              {billingClientId 
+                                ? clients.find(c => c.id === billingClientId)?.company_name 
+                                : "Same as Client"}
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Select Billing Client</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="relative">
+                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  placeholder="Search by company name or profile ID"
+                                  value={billingClientSearchQuery}
+                                  onChange={(e) => setBillingClientSearchQuery(e.target.value)}
+                                  className="pl-8"
+                                />
+                              </div>
+                              <ScrollArea className="h-[300px] border rounded-lg">
+                                {clients
+                                  .filter(c => 
+                                    c.company_name.toLowerCase().includes(billingClientSearchQuery.toLowerCase()) ||
+                                    c.profile?.toLowerCase().includes(billingClientSearchQuery.toLowerCase())
+                                  )
+                                  .map((client) => (
+                                    <div
+                                      key={client.id}
+                                      onClick={() => {
+                                        setBillingClientId(client.id);
+                                        setIsBillingClientOpen(false);
+                                        setBillingClientSearchQuery("");
+                                      }}
+                                      className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                                    >
+                                      <div className="font-medium">{client.company_name}</div>
+                                      {client.profile && (
+                                        <div className="text-sm text-muted-foreground">Profile: {client.profile}</div>
+                                      )}
+                                    </div>
+                                  ))}
+                              </ScrollArea>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        
+                        {billingClientId && (
+                          <div className="mt-2 p-2 border rounded-lg flex items-center justify-between">
+                            <span className="text-sm">
+                              {clients.find(c => c.id === billingClientId)?.company_name}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setBillingClientId("")}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div>
                         <Label className="text-sm mb-2 block">
                           ORDER PO Number
                           {selectedClient?.po_required && (
@@ -888,9 +960,9 @@ export default function Orders() {
                         </div>
                         <div className="space-y-1">
                           {selectedServices.map((service, idx) => {
-                            const client = clients.find(c => c.id === selectedClientId);
+                            const billingClient = clients.find(c => c.id === (billingClientId || selectedClientId));
                             const billTo = registrationType === "client" 
-                              ? client?.profile || "N/A"
+                              ? `${billingClient?.profile || ""} ${billingClient?.short_code || ""} ${billingClient?.company_name || ""}`.trim()
                               : "Self Pay";
                             
                             const isExcluded = isServiceExcluded(trainee.id, service.id);

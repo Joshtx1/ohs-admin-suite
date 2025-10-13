@@ -164,7 +164,6 @@ export default function Clients() {
         physical_city: values.physical_city || null,
         physical_state: values.physical_state || null,
         physical_zip: values.physical_zip || null,
-        bill_to: values.bill_to || null,
         comments: values.comments || null,
         payment_status: values.payment_status || null,
         payment_terms: values.payment_terms || null,
@@ -236,7 +235,6 @@ export default function Clients() {
       physical_city: client.physical_city || "",
       physical_state: client.physical_state || "",
       physical_zip: client.physical_zip || "",
-      bill_to: client.bill_to || "",
       comments: client.comments || "",
       payment_status: client.payment_status || "Check",
       payment_terms: client.payment_terms || "Bill",
@@ -270,7 +268,6 @@ export default function Clients() {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
       client.profile?.toLowerCase().includes(searchLower) ||
-      client.client_name?.toLowerCase().includes(searchLower) ||
       client.company_name?.toLowerCase().includes(searchLower) ||
       client.short_code?.toLowerCase().includes(searchLower);
     
