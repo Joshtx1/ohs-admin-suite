@@ -877,7 +877,7 @@ export default function Orders() {
                   <ScrollArea className="h-[400px]">
                     {selectedTrainees.map((trainee) => (
                       <div key={trainee.id} className="mb-6 border rounded-lg overflow-hidden">
-                        <div className="font-semibold mb-2 bg-muted p-2">{trainee.name}</div>
+                        <div className="font-semibold mb-2 bg-muted p-2">{trainee.name} {trainee.ssn && `- ${trainee.ssn}`}</div>
                         <div className="bg-muted/50 p-2 grid grid-cols-6 gap-2 text-xs font-semibold">
                           <div>Name</div>
                           <div>Code</div>
