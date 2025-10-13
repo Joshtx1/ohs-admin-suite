@@ -29,7 +29,11 @@ export const useBillingExportData = () => {
             id,
             service_date,
             notes,
-            clients (
+            client:clients!orders_client_id_fkey (
+              company_name,
+              billing_id
+            ),
+            billing_client:clients!orders_billing_client_id_fkey (
               company_name,
               billing_id
             ),
@@ -50,7 +54,10 @@ export const useBillingExportData = () => {
       // Transform data into flat structure for report
       const rows: BillingExportRow[] = (data || []).map((item: any) => {
         const order = item.orders;
-        const client = order?.clients;
+        // Prioritize billing client, fallback to registrant client
+        const billingClient = order?.billing_client;
+        const client = order?.client;
+        const effectiveClient = billingClient || client;
         const trainee = order?.trainees;
         const service = item.services;
 
@@ -60,8 +67,8 @@ export const useBillingExportData = () => {
 
         return {
           orderId: order?.id || "",
-          billingId: client?.billing_id || "Self-Pay",
-          clientName: client?.company_name || "Self-Pay",
+          billingId: effectiveClient?.billing_id || "Self-Pay",
+          clientName: effectiveClient?.company_name || "Self-Pay",
           po,
           serviceCode: service?.service_code || "",
           service: service?.name || "",
