@@ -3,24 +3,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Eye, FileText, List } from 'lucide-react';
+import { Search, FileText, MoreVertical, FileSpreadsheet, Pencil, Trash2 } from 'lucide-react';
 import { DataTable } from '@/components/common/DataTable';
 import { Order } from '@/hooks/useOrdersData';
 import { getStatusBadgeVariant, getStatusDisplay } from '@/lib/status';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface OrdersTableProps {
   orders: Order[];
   onViewOrder: (order: Order) => void;
+  onEditOrder?: (order: Order) => void;
+  onDeleteOrder?: (orderId: string) => void;
 }
 
-export function OrdersTable({ orders, onViewOrder }: OrdersTableProps) {
+export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }: OrdersTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all');
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<Order | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
 
   const filteredOrders = orders.filter(order => {
     // Search filter
@@ -98,24 +103,38 @@ export function OrdersTable({ orders, onViewOrder }: OrdersTableProps) {
     {
       header: 'Actions',
       cell: (order: Order) => (
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onViewOrder(order)}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            View
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSelectedOrderDetails(order)}
-          >
-            <List className="h-4 w-4 mr-2" />
-            Details
-          </Button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => onViewOrder(order)}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Routing Slip
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSelectedOrderDetails(order)}>
+              <FileText className="h-4 w-4 mr-2" />
+              Details
+            </DropdownMenuItem>
+            {onEditOrder && (
+              <DropdownMenuItem onClick={() => onEditOrder(order)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
+            )}
+            {onDeleteOrder && (
+              <DropdownMenuItem 
+                onClick={() => setOrderToDelete(order)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];
@@ -238,6 +257,32 @@ export function OrdersTable({ orders, onViewOrder }: OrdersTableProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!orderToDelete} onOpenChange={() => setOrderToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Order</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this order? This will permanently delete the order and all associated service items. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (orderToDelete && onDeleteOrder) {
+                  onDeleteOrder(orderToDelete.id);
+                  setOrderToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

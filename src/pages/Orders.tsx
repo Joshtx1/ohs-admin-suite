@@ -118,6 +118,49 @@ export default function Orders() {
     setIsRoutingSlipOpen(true);
   };
 
+  const handleEditOrder = (order: Order) => {
+    // TODO: Implement edit functionality
+    toast({
+      title: "Edit Order",
+      description: "Edit functionality coming soon",
+    });
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      // First delete all order items
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', orderId);
+
+      if (itemsError) throw itemsError;
+
+      // Then delete the order
+      const { error: orderError } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+
+      if (orderError) throw orderError;
+
+      toast({
+        title: "Success",
+        description: "Order deleted successfully",
+      });
+
+      // Refresh orders list
+      refetchOrders();
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete order",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchTrainees = async () => {
     try {
       const { data, error } = await supabase
@@ -429,6 +472,8 @@ export default function Orders() {
           <OrdersTable 
             orders={orders}
             onViewOrder={handleViewOrder}
+            onEditOrder={handleEditOrder}
+            onDeleteOrder={handleDeleteOrder}
           />
         </TabsContent>
 
