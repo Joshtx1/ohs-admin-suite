@@ -258,7 +258,7 @@ export default function ClientDetail({ client, onBack }: ClientDetailProps) {
             <div className="bg-card rounded-lg border p-6">
               {/* Internal */}
               <SectionHeader title="Internal" />
-              <DetailField label="Account ID" value={localClient.profile} />
+              <DetailField label="Billing ID" value={localClient.billing_id} />
               <DetailField label="Short Code" value={localClient.short_code} />
 
               {/* Company Information */}

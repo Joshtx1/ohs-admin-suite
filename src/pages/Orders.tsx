@@ -35,7 +35,7 @@ interface Client {
   id: string;
   company_name: string;
   contact_person: string;
-  profile?: string;
+  billing_id?: string;
   po_required?: boolean;
   mem_status?: string;
   short_code?: string;
@@ -138,7 +138,7 @@ export default function Orders() {
     try {
       const { data, error } = await supabase
         .from("clients")
-        .select("id, company_name, contact_person, profile, po_required, mem_status, short_code")
+        .select("id, company_name, contact_person, billing_id, po_required, mem_status, short_code")
         .eq("status", "active")
         .order("company_name");
 
@@ -374,8 +374,8 @@ export default function Orders() {
     if (!clientSearchQuery.trim()) return true;
     const query = clientSearchQuery.toLowerCase();
     const companyName = client.company_name?.toLowerCase() || '';
-    const profile = client.profile?.toLowerCase() || '';
-    return companyName.includes(query) || profile.includes(query);
+    const billingId = client.billing_id?.toLowerCase() || '';
+    return companyName.includes(query) || billingId.includes(query);
   });
 
   const filteredServices = services.filter(service => {
@@ -599,7 +599,7 @@ export default function Orders() {
                               <div className="relative">
                                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                  placeholder="Search by company name or profile ID"
+                                  placeholder="Search by company name or billing ID"
                                   value={clientSearchQuery}
                                   onChange={(e) => setClientSearchQuery(e.target.value)}
                                   className="pl-8"
@@ -618,8 +618,8 @@ export default function Orders() {
                                       className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
                                     >
                                       <div className="font-medium">{client.company_name}</div>
-                                      {client.profile && (
-                                        <div className="text-sm text-muted-foreground">Profile: {client.profile}</div>
+                                      {client.billing_id && (
+                                        <div className="text-sm text-muted-foreground">Billing ID: {client.billing_id}</div>
                                       )}
                                     </div>
                                   ))
@@ -687,7 +687,7 @@ export default function Orders() {
                               <div className="relative">
                                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                  placeholder="Search by company name or profile ID"
+                                  placeholder="Search by company name or billing ID"
                                   value={billingClientSearchQuery}
                                   onChange={(e) => setBillingClientSearchQuery(e.target.value)}
                                   className="pl-8"
@@ -697,7 +697,7 @@ export default function Orders() {
                                 {clients
                                   .filter(c => 
                                     c.company_name.toLowerCase().includes(billingClientSearchQuery.toLowerCase()) ||
-                                    c.profile?.toLowerCase().includes(billingClientSearchQuery.toLowerCase())
+                                    c.billing_id?.toLowerCase().includes(billingClientSearchQuery.toLowerCase())
                                   )
                                   .map((client) => (
                                     <div
@@ -710,8 +710,8 @@ export default function Orders() {
                                       className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
                                     >
                                       <div className="font-medium">{client.company_name}</div>
-                                      {client.profile && (
-                                        <div className="text-sm text-muted-foreground">Profile: {client.profile}</div>
+                                      {client.billing_id && (
+                                        <div className="text-sm text-muted-foreground">Billing ID: {client.billing_id}</div>
                                       )}
                                     </div>
                                   ))}
@@ -1006,7 +1006,7 @@ export default function Orders() {
                         <div className="font-semibold">Add {totalRegistrations} Registrations</div>
                         <div className="text-sm text-muted-foreground">
                           Employer: {registrationType === "client" 
-                            ? `${clients.find(c => c.id === selectedClientId)?.profile} ${clients.find(c => c.id === selectedClientId)?.short_code} ${clients.find(c => c.id === selectedClientId)?.company_name}`
+                            ? `${clients.find(c => c.id === selectedClientId)?.billing_id} ${clients.find(c => c.id === selectedClientId)?.short_code} ${clients.find(c => c.id === selectedClientId)?.company_name}`
                             : "SELF PAY"}
                         </div>
                       </div>

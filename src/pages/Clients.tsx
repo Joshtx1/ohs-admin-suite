@@ -23,7 +23,7 @@ type DatabaseClient = Database["public"]["Tables"]["clients"]["Row"];
 type InsertClient = Database["public"]["Tables"]["clients"]["Insert"];
 
 const clientSchema = z.object({
-  profile: z.string().min(1, "Profile is required"),
+  billing_id: z.string().min(1, "Billing ID is required"),
   company_name: z.string().min(1, "Company name is required"),
   contact_person: z.string().min(1, "Contact person is required"),
   email: z.string().email("Invalid email address"),
@@ -73,7 +73,7 @@ export default function Clients() {
   const form = useForm<z.infer<typeof clientSchema>>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
-      profile: "",
+      billing_id: "",
       company_name: "",
       contact_person: "",
       email: "",
@@ -110,7 +110,7 @@ export default function Clients() {
       const { data, error } = await supabase
         .from("clients")
         .select("*")
-        .order("profile", { ascending: true });
+        .order("billing_id", { ascending: true });
 
       if (error) throw error;
       setClients(data || []);
@@ -145,7 +145,7 @@ export default function Clients() {
       }
 
       const clientData: InsertClient = {
-        profile: values.profile,
+        billing_id: values.billing_id,
         company_name: values.company_name,
         contact_person: values.contact_person,
         email: values.email,
@@ -200,7 +200,7 @@ export default function Clients() {
       if (error?.message) {
         errorMessage = error.message;
       } else if (error?.code === "23505") {
-        errorMessage = "A client with this profile ID or code already exists";
+        errorMessage = "A client with this billing ID or code already exists";
       } else if (error?.code === "23502") {
         errorMessage = "Missing required field. Please fill in all required fields";
       }
@@ -216,7 +216,7 @@ export default function Clients() {
   const handleEdit = (client: Client) => {
     setEditingClient(client);
     form.reset({
-      profile: client.profile || "",
+      billing_id: client.billing_id || "",
       company_name: client.company_name || "",
       contact_person: client.contact_person || "",
       email: client.email || "",
@@ -267,7 +267,7 @@ export default function Clients() {
   const filteredClients = clients.filter((client) => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
-      client.profile?.toLowerCase().includes(searchLower) ||
+      client.billing_id?.toLowerCase().includes(searchLower) ||
       client.company_name?.toLowerCase().includes(searchLower) ||
       client.short_code?.toLowerCase().includes(searchLower);
     
@@ -279,11 +279,11 @@ export default function Clients() {
   });
 
   const exportToCSV = () => {
-    const headers = ["Profile", "Account Type", "Member Type", "Company Name", "Status", "Payment Method"];
+    const headers = ["Billing ID", "Account Type", "Member Type", "Company Name", "Status", "Payment Method"];
     const csvContent = [
       headers.join(","),
       ...filteredClients.map(client => [
-        client.profile || "",
+        client.billing_id || "",
         client.mem_status || "",
         client.mem_type || "",
         client.company_name || "",
@@ -338,10 +338,10 @@ export default function Clients() {
               <form onSubmit={form.handleSubmit(handleSubmit)} className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="profile"
+                  name="billing_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Profile (Billing ID)</FormLabel>
+                      <FormLabel>Billing ID</FormLabel>
                       <FormControl>
                         <Input placeholder="RP-00001" {...field} />
                       </FormControl>
@@ -875,8 +875,8 @@ export default function Clients() {
             )
           },
           {
-            header: 'Profile ID',
-            accessorKey: 'profile'
+            header: 'Billing ID',
+            accessorKey: 'billing_id'
           },
           {
             header: 'Account Type',

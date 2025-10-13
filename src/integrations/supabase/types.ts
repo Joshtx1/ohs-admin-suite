@@ -97,6 +97,7 @@ export type Database = {
           billing_city_state_zip: string | null
           billing_der: string | null
           billing_emails: string[] | null
+          billing_id: string | null
           billing_name: string | null
           billing_state: string | null
           billing_street_address: string | null
@@ -126,7 +127,6 @@ export type Database = {
           physical_zip: string | null
           po_required: boolean | null
           postal_code: string | null
-          profile: string | null
           short_code: string | null
           status: string
           updated_at: string
@@ -138,6 +138,7 @@ export type Database = {
           billing_city_state_zip?: string | null
           billing_der?: string | null
           billing_emails?: string[] | null
+          billing_id?: string | null
           billing_name?: string | null
           billing_state?: string | null
           billing_street_address?: string | null
@@ -167,7 +168,6 @@ export type Database = {
           physical_zip?: string | null
           po_required?: boolean | null
           postal_code?: string | null
-          profile?: string | null
           short_code?: string | null
           status?: string
           updated_at?: string
@@ -179,6 +179,7 @@ export type Database = {
           billing_city_state_zip?: string | null
           billing_der?: string | null
           billing_emails?: string[] | null
+          billing_id?: string | null
           billing_name?: string | null
           billing_state?: string | null
           billing_street_address?: string | null
@@ -208,7 +209,6 @@ export type Database = {
           physical_zip?: string | null
           po_required?: boolean | null
           postal_code?: string | null
-          profile?: string | null
           short_code?: string | null
           status?: string
           updated_at?: string

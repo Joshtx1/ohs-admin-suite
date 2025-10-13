@@ -22,7 +22,7 @@ export interface Order {
     contact_person: string;
     phone?: string;
     email?: string;
-    profile?: string;
+    billing_id?: string;
     short_code?: string;
   } | null;
   billing_clients?: {
@@ -31,7 +31,7 @@ export interface Order {
     contact_person: string;
     phone?: string;
     email?: string;
-    profile?: string;
+    billing_id?: string;
     short_code?: string;
   } | null;
   trainees?: {
@@ -74,7 +74,7 @@ export function useOrdersData() {
             contact_person,
             phone,
             email,
-            profile,
+            billing_id,
             short_code
           ),
           billing_clients:clients!billing_client_id (
@@ -83,7 +83,7 @@ export function useOrdersData() {
             contact_person,
             phone,
             email,
-            profile,
+            billing_id,
             short_code
           ),
           trainees (

@@ -31,7 +31,7 @@ export const useBillingExportData = () => {
             notes,
             clients (
               company_name,
-              profile
+              billing_id
             ),
             trainees (
               name,
@@ -60,7 +60,7 @@ export const useBillingExportData = () => {
 
         return {
           orderId: order?.id || "",
-          billingId: client?.profile || "Self-Pay",
+          billingId: client?.billing_id || "Self-Pay",
           clientName: client?.company_name || "Self-Pay",
           po,
           serviceCode: service?.service_code || "",
