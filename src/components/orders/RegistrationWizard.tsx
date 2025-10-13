@@ -48,30 +48,29 @@ export function RegistrationWizard({ children, onComplete, onCancel }: Registrat
 
   return (
     <div className="space-y-6">
-      {/* Progress Steps */}
-      <div className="flex items-center justify-between">
-        {steps.map((step, index) => (
-          <div key={step.number} className="flex items-center flex-1">
-            <div className="flex flex-col items-center flex-1">
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                  currentStep >= step.number
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                {step.number}
-              </div>
-              <span className="text-sm mt-2 text-center">{step.label}</span>
-            </div>
-            {index < steps.length - 1 && (
-              <div
-                className={`h-1 flex-1 mx-2 ${
-                  currentStep > step.number ? 'bg-primary' : 'bg-muted'
-                }`}
-              />
-            )}
-          </div>
+      {/* Progress Steps - Horizontal Tabs */}
+      <div className="flex items-center gap-1 border-b">
+        {steps.map((step) => (
+          <button
+            key={step.number}
+            type="button"
+            onClick={() => {
+              // Only allow navigation to completed steps
+              if (step.number < currentStep) {
+                setCurrentStep(step.number);
+              }
+            }}
+            className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+              currentStep === step.number
+                ? 'bg-primary text-primary-foreground'
+                : currentStep > step.number
+                ? 'bg-muted/50 text-foreground hover:bg-muted cursor-pointer'
+                : 'bg-muted/30 text-muted-foreground cursor-not-allowed'
+            }`}
+          >
+            <span>{step.number}</span>
+            <span>{step.label}</span>
+          </button>
         ))}
       </div>
 

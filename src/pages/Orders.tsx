@@ -863,7 +863,7 @@ export default function Orders() {
                           {selectedServices.map((service, idx) => {
                             const client = clients.find(c => c.id === selectedClientId);
                             const billTo = registrationType === "client" 
-                              ? `${client?.bill_to || client?.profile || ""}-${client?.short_code || ""}`.replace(/^-|-$/g, '')
+                              ? client?.short_code || "N/A"
                               : "Self Pay";
                             
                             return (
