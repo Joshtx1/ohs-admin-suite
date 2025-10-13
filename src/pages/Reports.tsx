@@ -30,8 +30,8 @@ const Reports = () => {
   const handleExportCSV = () => {
     const headers = [
       "Order ID",
-      "Billing ID",
-      "Client Name",
+      "Bill To",
+      "Employer",
       "PO",
       "Service Code",
       "Service",
@@ -75,8 +75,8 @@ const Reports = () => {
 
   const columns = [
     { header: "Order ID", accessorKey: "orderId" as keyof BillingExportRow },
-    { header: "Billing ID", accessorKey: "billingId" as keyof BillingExportRow },
-    { header: "Client Name", accessorKey: "clientName" as keyof BillingExportRow },
+    { header: "Bill To", accessorKey: "billingId" as keyof BillingExportRow },
+    { header: "Employer", accessorKey: "clientName" as keyof BillingExportRow },
     { header: "PO", accessorKey: "po" as keyof BillingExportRow },
     { header: "Service Code", accessorKey: "serviceCode" as keyof BillingExportRow },
     { header: "Service", accessorKey: "service" as keyof BillingExportRow },
