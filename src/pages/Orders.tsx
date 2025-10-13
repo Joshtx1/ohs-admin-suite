@@ -404,41 +404,42 @@ export default function Orders() {
         {/* Create Registration Tab */}
         <TabsContent value="create" className="mt-6">
 
-        <div className="grid grid-cols-4 gap-6">
-        {/* Step Navigation */}
-        <div className="col-span-1 space-y-2">
-          {[
-            { num: 1, label: "Trainees" },
-            { num: 2, label: "Registration Type" },
-            { num: 3, label: "Service" },
-            { num: 4, label: "Review" }
-          ].map((step) => (
-            <button
-              key={step.num}
-              onClick={() => {
-                if (step.num === 1 || 
-                    (step.num === 2 && canProceedToStep2) ||
-                    (step.num === 3 && canProceedToStep3) ||
-                    (step.num === 4 && canProceedToStep4)) {
-                  setCurrentStep(step.num);
-                }
-              }}
-              className={`w-full text-left p-3 rounded-lg transition-colors ${
-                currentStep === step.num
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted hover:bg-muted/80"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-semibold">{step.num}</span>
+        {/* Step Navigation - Horizontal Tabs */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-1 border-b">
+            {[
+              { num: 1, label: "Trainees" },
+              { num: 2, label: "Registration Type" },
+              { num: 3, label: "Service" },
+              { num: 4, label: "Review" }
+            ].map((step) => (
+              <button
+                key={step.num}
+                type="button"
+                onClick={() => {
+                  if (step.num === 1 || 
+                      (step.num === 2 && canProceedToStep2) ||
+                      (step.num === 3 && canProceedToStep3) ||
+                      (step.num === 4 && canProceedToStep4)) {
+                    setCurrentStep(step.num);
+                  }
+                }}
+                className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+                  currentStep === step.num
+                    ? 'bg-primary text-primary-foreground'
+                    : currentStep > step.num
+                    ? 'bg-muted/50 text-foreground hover:bg-muted cursor-pointer'
+                    : 'bg-muted/30 text-muted-foreground cursor-not-allowed'
+                }`}
+              >
+                <span>{step.num}</span>
                 <span>{step.label}</span>
-              </div>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
 
-        {/* Step Content */}
-        <div className="col-span-3">
+          {/* Step Content */}
+          <div>
           <Card>
             <CardContent className="p-6">
               {/* Step 1: Trainee Selection */}
@@ -907,8 +908,8 @@ export default function Orders() {
               )}
             </CardContent>
           </Card>
+          </div>
         </div>
-      </div>
 
         {/* Create Trainee Dialog */}
         <Dialog open={isCreateTraineeOpen} onOpenChange={setIsCreateTraineeOpen}>
