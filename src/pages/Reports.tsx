@@ -46,7 +46,7 @@ const Reports = () => {
       headers.join(","),
       ...filteredData.map((row) =>
         [
-          row.orderId,
+          row.orderId.split('-')[0],
           row.billingId,
           `"${row.clientName}"`,
           row.po,
@@ -74,7 +74,10 @@ const Reports = () => {
   const totalRevenue = filteredData.reduce((sum, row) => sum + row.rate, 0);
 
   const columns = [
-    { header: "Order ID", accessorKey: "orderId" as keyof BillingExportRow },
+    { 
+      header: "Order ID", 
+      cell: (row: BillingExportRow) => row.orderId.split('-')[0]
+    },
     { header: "Bill To", accessorKey: "billingId" as keyof BillingExportRow },
     { header: "Employer", accessorKey: "clientName" as keyof BillingExportRow },
     { header: "PO", accessorKey: "po" as keyof BillingExportRow },
