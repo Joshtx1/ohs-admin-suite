@@ -87,6 +87,9 @@ export default function Orders() {
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
   const [reasonForTest, setReasonForTest] = useState<string>("");
   
+  // Track excluded trainee-service combinations
+  const [excludedCombinations, setExcludedCombinations] = useState<Set<string>>(new Set());
+  
   // Loading states
   const [loading, setLoading] = useState(true);
   
@@ -177,6 +180,15 @@ export default function Orders() {
     setSelectedServices(selectedServices.filter((_, i) => i !== index));
   };
 
+  const removeServiceFromTrainee = (traineeId: string, serviceId: string) => {
+    const key = `${traineeId}-${serviceId}`;
+    setExcludedCombinations(prev => new Set([...prev, key]));
+  };
+
+  const isServiceExcluded = (traineeId: string, serviceId: string) => {
+    return excludedCombinations.has(`${traineeId}-${serviceId}`);
+  };
+
   const createTrainee = async () => {
     if (!newTrainee.first_name || !newTrainee.last_name) {
       toast({
@@ -260,7 +272,15 @@ export default function Orders() {
 
       // Create one order per trainee
       for (const trainee of selectedTrainees) {
-        const totalAmount = selectedServices.reduce((sum, service) => 
+        // Filter out excluded services for this trainee
+        const traineeServices = selectedServices.filter(service => 
+          !isServiceExcluded(trainee.id, service.id)
+        );
+        
+        // Skip if no services for this trainee
+        if (traineeServices.length === 0) continue;
+        
+        const totalAmount = traineeServices.reduce((sum, service) => 
           sum + (service.member_price || 0), 0
         );
 
@@ -272,7 +292,7 @@ export default function Orders() {
             created_by: user.user.id,
             status: "created",
             total_amount: totalAmount,
-            service_date: selectedServices[0]?.date || new Date().toISOString().split('T')[0],
+            service_date: traineeServices[0]?.date || new Date().toISOString().split('T')[0],
             notes: registrationType === "client" ? `PO: ${orderPO}` : "Self Pay",
             reason_for_test: reasonForTest,
             payment_status: registrationType === "client" ? "Billed" : "Payment Due"
@@ -283,7 +303,7 @@ export default function Orders() {
         if (orderError) throw orderError;
 
         // Create order items for each service
-        const orderItems = selectedServices.map(service => ({
+        const orderItems = traineeServices.map(service => ({
           order_id: orderData.id,
           service_id: service.id,
           price: service.member_price || 0,
@@ -312,6 +332,7 @@ export default function Orders() {
       setSelectedClientId("");
       setOrderPO("");
       setRegistrationType("client");
+      setExcludedCombinations(new Set());
       setCurrentTab("view");
     } catch (error) {
       console.error("Error creating registrations:", error);
@@ -368,7 +389,11 @@ export default function Orders() {
     return acc;
   }, {} as Record<string, Service[]>);
 
-  const totalRegistrations = selectedTrainees.length * selectedServices.length;
+  const totalRegistrations = selectedTrainees.reduce((total, trainee) => {
+    return total + selectedServices.filter(service => 
+      !isServiceExcluded(trainee.id, service.id)
+    ).length;
+  }, 0);
 
   if (loading) {
     return (
@@ -853,12 +878,13 @@ export default function Orders() {
                     {selectedTrainees.map((trainee) => (
                       <div key={trainee.id} className="mb-6 border rounded-lg overflow-hidden">
                         <div className="font-semibold mb-2 bg-muted p-2">{trainee.name}</div>
-                        <div className="bg-muted/50 p-2 grid grid-cols-5 gap-2 text-xs font-semibold">
+                        <div className="bg-muted/50 p-2 grid grid-cols-6 gap-2 text-xs font-semibold">
                           <div>Name</div>
                           <div>Code</div>
                           <div>Service</div>
                           <div>Bill To</div>
                           <div>Date</div>
+                          <div></div>
                         </div>
                         <div className="space-y-1">
                           {selectedServices.map((service, idx) => {
@@ -867,13 +893,27 @@ export default function Orders() {
                               ? client?.profile || "N/A"
                               : "Self Pay";
                             
+                            const isExcluded = isServiceExcluded(trainee.id, service.id);
+                            if (isExcluded) return null;
+                            
                             return (
-                              <div key={idx} className="p-2 grid grid-cols-5 gap-2 text-sm border-b items-center">
+                              <div key={idx} className="p-2 grid grid-cols-6 gap-2 text-sm border-b items-center">
                                 <div>{trainee.name}</div>
                                 <div>{service.service_code}</div>
                                 <div>{service.name}</div>
                                 <div>{billTo}</div>
                                 <div>{service.date}</div>
+                                <div className="flex justify-end">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeServiceFromTrainee(trainee.id, service.id)}
+                                    className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             );
                           })}
