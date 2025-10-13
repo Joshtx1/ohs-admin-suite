@@ -29,11 +29,11 @@ export const useBillingExportData = () => {
             id,
             service_date,
             notes,
-            client:clients!orders_client_id_fkey (
+            client:clients!client_id (
               company_name,
               billing_id
             ),
-            billing_client:clients!orders_billing_client_id_fkey (
+            billing_client:clients!billing_client_id (
               company_name,
               billing_id
             ),
@@ -47,7 +47,7 @@ export const useBillingExportData = () => {
             name
           )
         `)
-        .order("orders(service_date)", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
 
