@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import RoutingSlip from "@/components/RoutingSlip";
 import { OrdersTable } from "@/components/orders/OrdersTable";
 import { useOrdersData, Order } from "@/hooks/useOrdersData";
+import { ServiceSelector } from "@/components/orders/ServiceSelector";
 
 interface Trainee {
   id: string;
@@ -806,73 +807,29 @@ export default function Orders() {
                         <DialogTrigger asChild>
                           <Button>SELECT SERVICES</Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[80vh]">
+                        <DialogContent className="max-w-3xl max-h-[90vh]">
                           <DialogHeader>
                             <DialogTitle>Select Services</DialogTitle>
                           </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="relative">
-                              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                placeholder="Search services by name, code, or category"
-                                value={serviceSearchQuery}
-                                onChange={(e) => setServiceSearchQuery(e.target.value)}
-                                className="pl-8"
-                              />
-                            </div>
-                            <Tabs defaultValue={Object.keys(servicesByCategory)[0]} className="w-full">
-                              <TabsList className="w-full justify-start overflow-x-auto">
-                                {Object.keys(servicesByCategory).map((category) => (
-                                  <TabsTrigger key={category} value={category}>
-                                    {category} ({servicesByCategory[category].length})
-                                  </TabsTrigger>
-                                ))}
-                              </TabsList>
-                              {Object.entries(servicesByCategory).map(([category, categoryServices]) => (
-                                <TabsContent key={category} value={category}>
-                                  <ScrollArea className="h-[400px]">
-                                    <div className="space-y-2 p-2">
-                                      {categoryServices.map((service) => {
-                                        const isSelected = selectedServices.some(s => s.id === service.id);
-                                        return (
-                                          <div
-                                            key={service.id}
-                                            className={cn(
-                                              "flex items-center justify-between p-3 border rounded-lg cursor-pointer transition-colors",
-                                              isSelected 
-                                                ? "bg-primary/10 border-primary" 
-                                                : "hover:bg-muted"
-                                            )}
-                                            onClick={() => {
-                                              const date = format(serviceDate, "yyyy-MM-dd");
-                                              if (!isSelected) {
-                                                addService(service, date);
-                                              }
-                                            }}
-                                          >
-                                            <div className="flex-1">
-                                              <div className="font-medium flex items-center gap-2">
-                                                {service.name}
-                                                {isSelected && (
-                                                  <Check className="h-4 w-4 text-primary" />
-                                                )}
-                                              </div>
-                                              <div className="text-sm text-muted-foreground">
-                                                {service.service_code}
-                                              </div>
-                                            </div>
-                                            <div className="text-sm font-medium">
-                                              ${service.member_price}
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </ScrollArea>
-                                </TabsContent>
-                              ))}
-                            </Tabs>
-                          </div>
+                          <ServiceSelector
+                            services={services}
+                            selectedServiceIds={selectedServices.map(s => s.id)}
+                            onServiceToggle={(serviceId) => {
+                              const service = services.find(s => s.id === serviceId);
+                              if (!service) return;
+                              
+                              const date = format(serviceDate, "yyyy-MM-dd");
+                              const isCurrentlySelected = selectedServices.some(s => s.id === serviceId);
+                              
+                              if (isCurrentlySelected) {
+                                // Remove service
+                                setSelectedServices(selectedServices.filter(s => s.id !== serviceId));
+                              } else {
+                                // Add service
+                                addService(service, date);
+                              }
+                            }}
+                          />
                         </DialogContent>
                       </Dialog>
                     </div>
