@@ -836,29 +836,38 @@ export default function Orders() {
                   </div>
 
                   <div className="border rounded-lg">
-                    <div className="bg-muted p-2 grid grid-cols-4 gap-2 text-sm font-semibold">
+                    <div className="bg-muted p-2 grid grid-cols-6 gap-2 text-sm font-semibold">
                       <div>Date</div>
                       <div>Code</div>
                       <div>Name</div>
+                      <div>Employer ID</div>
+                      <div>Billing ID</div>
                       <div></div>
                     </div>
                     <ScrollArea className="h-[300px]">
-                      {selectedServices.map((service, index) => (
-                        <div key={index} className="p-2 grid grid-cols-4 gap-2 text-sm border-b items-center">
-                          <div>{format(new Date(service.date), "MM/dd/yyyy")}</div>
-                          <div>{service.service_code}</div>
-                          <div>{service.name}</div>
-                          <div className="flex justify-end">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeService(index)}
-                            >
-                              <X className="h-4 w-4 text-destructive" />
-                            </Button>
+                      {selectedServices.map((service, index) => {
+                        const employerClient = clients.find(c => c.id === selectedClientId);
+                        const billingClient = clients.find(c => c.id === billingClientId);
+                        
+                        return (
+                          <div key={index} className="p-2 grid grid-cols-6 gap-2 text-sm border-b items-center">
+                            <div>{format(new Date(service.date), "MM/dd/yyyy")}</div>
+                            <div>{service.service_code}</div>
+                            <div>{service.name}</div>
+                            <div>{employerClient?.short_code || '-'}</div>
+                            <div>{billingClient?.billing_id || employerClient?.billing_id || '-'}</div>
+                            <div className="flex justify-end">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeService(index)}
+                              >
+                                <X className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </ScrollArea>
                   </div>
 
