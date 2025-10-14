@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 
 interface Service {
@@ -42,7 +43,7 @@ export function ServiceSelector({ services, selectedServiceIds, onServiceToggle,
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [referenceType, setReferenceType] = useState<'form_fox' | 'other'>('form_fox');
   const [referenceValue, setReferenceValue] = useState('');
-  const [selectedTpas, setSelectedTpas] = useState<Set<string>>(new Set());
+  const [selectedTpa, setSelectedTpa] = useState<string>('');
   const [inHouseSelected, setInHouseSelected] = useState(false);
 
   // Available TPA providers
@@ -54,20 +55,14 @@ export function ServiceSelector({ services, selectedServiceIds, onServiceToggle,
     { id: 'tpa-5', name: 'TPA Provider 5' },
   ];
 
-  const handleTpaToggle = (tpaId: string) => {
-    const newSelectedTpas = new Set(selectedTpas);
-    if (newSelectedTpas.has(tpaId)) {
-      newSelectedTpas.delete(tpaId);
-    } else {
-      newSelectedTpas.add(tpaId);
-    }
-    setSelectedTpas(newSelectedTpas);
-    onTpaSelect?.(Array.from(newSelectedTpas));
+  const handleTpaSelect = (tpaId: string) => {
+    setSelectedTpa(tpaId);
+    onTpaSelect?.(tpaId ? [tpaId] : []);
     
     // Update billing type
-    if (newSelectedTpas.size > 0 && inHouseSelected) {
+    if (tpaId && inHouseSelected) {
       onBillingTypeChange?.('both');
-    } else if (newSelectedTpas.size > 0) {
+    } else if (tpaId) {
       onBillingTypeChange?.('tpa');
     } else if (inHouseSelected) {
       onBillingTypeChange?.('client');
@@ -79,9 +74,9 @@ export function ServiceSelector({ services, selectedServiceIds, onServiceToggle,
     setInHouseSelected(newInHouseSelected);
     
     // Update billing type
-    if (selectedTpas.size > 0 && newInHouseSelected) {
+    if (selectedTpa && newInHouseSelected) {
       onBillingTypeChange?.('both');
-    } else if (selectedTpas.size > 0) {
+    } else if (selectedTpa) {
       onBillingTypeChange?.('tpa');
     } else if (newInHouseSelected) {
       onBillingTypeChange?.('client');
@@ -102,42 +97,39 @@ export function ServiceSelector({ services, selectedServiceIds, onServiceToggle,
 
   const isGroupOpen = (groupId: string) => openGroups.has(groupId);
 
-  // Filter specific services based on codes/names
-  const getFilteredServices = (codes: string[], includeRapid: boolean = false) => {
-    const filtered = services.filter(s => {
-      const nameMatch = codes.some(code => 
-        s.name?.toLowerCase().includes(code.toLowerCase()) ||
-        s.service_code?.toLowerCase().includes(code.toLowerCase())
-      );
-      return nameMatch;
-    });
-    
-    if (includeRapid) {
-      const rapidServices = services.filter(s =>
-        s.name?.toLowerCase().includes('rapid 5') ||
-        s.name?.toLowerCase().includes('rapid 10')
-      );
-      return [...filtered, ...rapidServices];
-    }
-    
-    return filtered;
+  // Filter specific services by exact names
+  const getSpecificServices = (serviceNames: string[]) => {
+    return services.filter(s => 
+      serviceNames.some(name => 
+        s.name?.toLowerCase().includes(name.toLowerCase())
+      )
+    );
   };
 
-  // TPA Services
+  // TPA Services - specific services only
   const tpaServices: ServiceGroup = {
     id: 'tpa-consortium',
     name: 'TPA Consortium Testing',
     subGroups: [
       {
         id: 'tpa-non-dot',
-        name: 'Non- DOT',
-        services: getFilteredServices(['UA', 'BA', 'OF', 'Hair'])
+        name: 'Non-DOT',
+        services: getSpecificServices([
+          'NON-DOT URINE',
+          'NON-DOT BREATH ALCOHOL',
+          'NON-DOT HAIR FOLLICLE',
+          'NON-DOT ORAL FLUID'
+        ])
       },
       {
         id: 'tpa-dot',
         name: 'DOT',
-        services: getFilteredServices(['UA', 'BA', 'OF']).filter(s => 
-          s.name?.toLowerCase().includes('dot') && !s.name?.toLowerCase().includes('non-dot')
+        services: services.filter(s => 
+          s.name?.toLowerCase().includes('dot') && 
+          !s.name?.toLowerCase().includes('non-dot') &&
+          (s.name?.toLowerCase().includes('urine') ||
+           s.name?.toLowerCase().includes('breath alcohol') ||
+           s.name?.toLowerCase().includes('oral fluid'))
         )
       }
     ]
@@ -150,14 +142,29 @@ export function ServiceSelector({ services, selectedServiceIds, onServiceToggle,
     subGroups: [
       {
         id: 'in-house-non-dot',
-        name: 'Non- DOT',
-        services: getFilteredServices(['UA', 'BA', 'OF', 'Hair'], true)
+        name: 'Non-DOT',
+        services: [
+          ...getSpecificServices([
+            'NON-DOT URINE',
+            'NON-DOT BREATH ALCOHOL',
+            'NON-DOT HAIR FOLLICLE',
+            'NON-DOT ORAL FLUID'
+          ]),
+          ...services.filter(s =>
+            s.name?.toLowerCase().includes('rapid 5') ||
+            s.name?.toLowerCase().includes('rapid 10')
+          )
+        ]
       },
       {
         id: 'in-house-dot',
         name: 'DOT',
-        services: getFilteredServices(['UA', 'BA', 'OF']).filter(s => 
-          s.name?.toLowerCase().includes('dot') && !s.name?.toLowerCase().includes('non-dot')
+        services: services.filter(s => 
+          s.name?.toLowerCase().includes('dot') && 
+          !s.name?.toLowerCase().includes('non-dot') &&
+          (s.name?.toLowerCase().includes('urine') ||
+           s.name?.toLowerCase().includes('breath alcohol') ||
+           s.name?.toLowerCase().includes('oral fluid'))
         )
       }
     ]
@@ -175,26 +182,23 @@ export function ServiceSelector({ services, selectedServiceIds, onServiceToggle,
               <h4 className="font-semibold text-base mb-2">{tpaServices.name}</h4>
               
               <div className="ml-4 space-y-2">
-                <div className="flex flex-wrap gap-4 mb-4">
-                  {tpaProviders.map((tpa) => (
-                    <div key={tpa.id} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`tpa-${tpa.id}`}
-                        checked={selectedTpas.has(tpa.id)}
-                        onCheckedChange={() => handleTpaToggle(tpa.id)}
-                      />
-                      <Label
-                        htmlFor={`tpa-${tpa.id}`}
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {tpa.name}
-                      </Label>
-                    </div>
-                  ))}
+                <div className="mb-4">
+                  <Select value={selectedTpa} onValueChange={handleTpaSelect}>
+                    <SelectTrigger className="w-[280px]">
+                      <SelectValue placeholder="Select TPA Client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tpaProviders.map((tpa) => (
+                        <SelectItem key={tpa.id} value={tpa.id}>
+                          {tpa.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Show service groups if any TPA is selected */}
-                {selectedTpas.size > 0 && (
+                {/* Show service groups if TPA is selected */}
+                {selectedTpa && (
                   <div className="mt-4 space-y-2">
                     {tpaServices.subGroups.map((subGroup) => (
                       <div key={subGroup.id} className="space-y-2">
