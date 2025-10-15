@@ -2,6 +2,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
 import { Order } from "@/hooks/useOrdersData";
 
 interface RoutingSlipProps {
@@ -12,6 +14,10 @@ interface RoutingSlipProps {
 
 export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipProps) {
   if (!order) return null;
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   // Group services by room first, then department
   const servicesByRoom = (order.order_items || []).reduce((acc, item) => {
@@ -33,7 +39,13 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Routing Slip - Trainee Schedule</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-2xl">Routing Slip - Trainee Schedule</DialogTitle>
+            <Button variant="outline" size="sm" onClick={handlePrint} className="print:hidden">
+              <Printer className="h-4 w-4 mr-2" />
+              Print
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">

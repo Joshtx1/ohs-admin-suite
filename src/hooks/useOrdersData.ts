@@ -16,6 +16,10 @@ export interface Order {
   created_at: string;
   updated_at: string;
   created_by: string;
+  created_by_profile?: {
+    first_name: string;
+    last_name: string;
+  } | null;
   clients?: {
     id: string;
     company_name: string;
@@ -69,6 +73,10 @@ export function useOrdersData() {
         .from('orders')
         .select(`
           *,
+          created_by_profile:profiles!orders_created_by_fkey (
+            first_name,
+            last_name
+          ),
           clients!client_id (
             id,
             company_name,

@@ -79,6 +79,16 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
       cell: (order: Order) => format(new Date(order.service_date), 'MM/dd/yyyy'),
     },
     {
+      header: 'Created By',
+      cell: (order: Order) => {
+        const profile = order.created_by_profile;
+        if (profile) {
+          return `${profile.first_name} ${profile.last_name}`;
+        }
+        return 'N/A';
+      },
+    },
+    {
       header: 'Status',
       cell: (order: Order) => (
         <Badge variant={getStatusBadgeVariant(order.status)}>
