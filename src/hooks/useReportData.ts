@@ -5,7 +5,8 @@ import { format } from "date-fns";
 export interface BillingExportRow {
   orderId: string;
   billingId: string;
-  clientName: string;
+  billingClientName: string;
+  employerName: string;
   po: string;
   serviceCode: string;
   service: string;
@@ -64,8 +65,8 @@ export const useBillingExportData = () => {
         // Prioritize item-level billing client, then order-level billing client, then registrant client
         const itemBillingClient = item.item_billing_client;
         const orderBillingClient = order?.billing_client;
-        const client = order?.client;
-        const effectiveClient = itemBillingClient || orderBillingClient || client;
+        const assignedClient = order?.client;
+        const effectiveBillingClient = itemBillingClient || orderBillingClient || assignedClient;
 
         // Extract PO from notes if it exists
         const poMatch = order?.notes?.match(/PO:\s*([^\s,]+)/i);
@@ -73,8 +74,9 @@ export const useBillingExportData = () => {
 
         return {
           orderId: order?.id || "",
-          billingId: effectiveClient?.billing_id || "Self-Pay",
-          clientName: effectiveClient?.company_name || "Self-Pay",
+          billingId: effectiveBillingClient?.billing_id || "Self-Pay",
+          billingClientName: effectiveBillingClient?.company_name || "Self-Pay",
+          employerName: assignedClient?.company_name || "Self-Pay",
           po,
           serviceCode: service?.service_code || "",
           service: service?.name || "",

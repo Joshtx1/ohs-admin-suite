@@ -18,7 +18,8 @@ const Reports = () => {
     return (
       row.orderId.toLowerCase().includes(search) ||
       row.billingId.toLowerCase().includes(search) ||
-      row.clientName.toLowerCase().includes(search) ||
+      row.billingClientName.toLowerCase().includes(search) ||
+      row.employerName.toLowerCase().includes(search) ||
       row.po.toLowerCase().includes(search) ||
       row.serviceCode.toLowerCase().includes(search) ||
       row.service.toLowerCase().includes(search) ||
@@ -48,7 +49,7 @@ const Reports = () => {
         [
           row.orderId.split('-')[0],
           row.billingId,
-          `"${row.clientName}"`,
+          `"${row.employerName}"`,
           row.po,
           row.serviceCode,
           `"${row.service}"`,
@@ -79,7 +80,7 @@ const Reports = () => {
       cell: (row: BillingExportRow) => row.orderId.split('-')[0]
     },
     { header: "Bill To", accessorKey: "billingId" as keyof BillingExportRow },
-    { header: "Employer", accessorKey: "clientName" as keyof BillingExportRow },
+    { header: "Employer", accessorKey: "employerName" as keyof BillingExportRow },
     { header: "PO", accessorKey: "po" as keyof BillingExportRow },
     { header: "Service Code", accessorKey: "serviceCode" as keyof BillingExportRow },
     { header: "Service", accessorKey: "service" as keyof BillingExportRow },
