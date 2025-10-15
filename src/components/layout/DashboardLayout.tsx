@@ -149,37 +149,35 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <nav className="w-48 border-r border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="space-y-1 p-4">
-            {filteredNavigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`flex items-center space-x-2 rounded-lg px-2 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
-                    isActive
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground/70'
-                  }`}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
+      {/* Horizontal Navigation */}
+      <nav className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex items-center px-6 py-3 space-x-2 overflow-x-auto">
+          {filteredNavigation.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={`flex items-center space-x-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground whitespace-nowrap ${
+                  isActive
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-foreground/70'
+                }`}
+              >
+                <item.icon className="h-4 w-4" />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
 
-        {/* Main content */}
-        <main className="flex-1">
-          <div className="p-6">
-            {children}
-          </div>
-        </main>
-      </div>
+      {/* Main content */}
+      <main className="flex-1">
+        <div className="p-6">
+          {children}
+        </div>
+      </main>
       
       <ProfileSettings 
         open={profileOpen} 

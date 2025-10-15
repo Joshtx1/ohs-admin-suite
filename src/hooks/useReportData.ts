@@ -13,6 +13,7 @@ export interface BillingExportRow {
   date: string;
   ssn: string;
   traineeName: string;
+  paymentStatus: string;
   receipt: string;
   rate: number;
 }
@@ -26,6 +27,7 @@ export const useBillingExportData = () => {
         .select(`
           id,
           price,
+          payment_status,
           item_billing_client:clients!billing_client_id (
             company_name,
             billing_id
@@ -83,6 +85,7 @@ export const useBillingExportData = () => {
           date: order?.service_date ? format(new Date(order.service_date), "MM/dd/yy") : "",
           ssn: trainee?.ssn || "",
           traineeName: trainee?.name || "",
+          paymentStatus: (item as any).payment_status || "Payment Due",
           receipt: "", // Placeholder for future payment tracking
           rate: Number(item.price) || 0,
         };

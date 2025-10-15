@@ -39,6 +39,7 @@ const Reports = () => {
       "Date",
       "SSN",
       "Trainee Name",
+      "Payment Status",
       "Receipt",
       "Rate",
     ];
@@ -56,6 +57,7 @@ const Reports = () => {
           row.date,
           row.ssn,
           `"${row.traineeName}"`,
+          row.paymentStatus,
           row.receipt,
           row.rate,
         ].join(",")
@@ -87,6 +89,7 @@ const Reports = () => {
     { header: "Date", accessorKey: "date" as keyof BillingExportRow },
     { header: "SSN", accessorKey: "ssn" as keyof BillingExportRow },
     { header: "Trainee Name", accessorKey: "traineeName" as keyof BillingExportRow },
+    { header: "Payment Status", accessorKey: "paymentStatus" as keyof BillingExportRow },
     { header: "Receipt", accessorKey: "receipt" as keyof BillingExportRow },
     {
       header: "Rate",

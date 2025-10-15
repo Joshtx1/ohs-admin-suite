@@ -79,29 +79,6 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
       cell: (order: Order) => format(new Date(order.service_date), 'MM/dd/yyyy'),
     },
     {
-      header: 'Billing ID',
-      cell: (order: Order) => {
-        // Check if order has multiple billing parties by examining order items
-        const billingIds = new Set(
-          order.order_items?.map(item => {
-            // @ts-ignore - billing_client_id may not be in type yet
-            if (item.billing_client_id) {
-              // Find client by ID to get billing_id
-              return 'varies'; // Placeholder, will show "Multiple" if varies
-            }
-            return order.billing_clients?.billing_id || order.clients?.billing_id || 'Self-Pay';
-          })
-        );
-        
-        // Show "Multiple" if there are different billing parties
-        if (billingIds.size > 1 || billingIds.has('varies')) {
-          return <span className="text-muted-foreground">Multiple</span>;
-        }
-        
-        return <span>{order.billing_clients?.billing_id || order.clients?.billing_id || 'Self-Pay'}</span>;
-      },
-    },
-    {
       header: 'Status',
       cell: (order: Order) => (
         <Badge variant={getStatusBadgeVariant(order.status)}>
