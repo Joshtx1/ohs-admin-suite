@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronRight, ChevronDown } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Service {
   id: string;
@@ -26,9 +27,9 @@ interface ServiceGroup {
   }[];
 }
 
-interface TPA {
+interface TPAClient {
   id: string;
-  name: string;
+  company_name: string;
 }
 
 interface ServiceSelectorProps {
@@ -41,46 +42,33 @@ interface ServiceSelectorProps {
 
 export function ServiceSelector({ services, selectedServiceIds, onServiceToggle, onTpaSelect, onBillingTypeChange }: ServiceSelectorProps) {
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
-  const [referenceType, setReferenceType] = useState<'form_fox' | 'other'>('form_fox');
-  const [referenceValue, setReferenceValue] = useState('');
+  const [formFoxId, setFormFoxId] = useState('');
+  const [otherReference, setOtherReference] = useState('');
   const [selectedTpa, setSelectedTpa] = useState<string>('');
-  const [inHouseSelected, setInHouseSelected] = useState(false);
+  const [tpaClients, setTpaClients] = useState<TPAClient[]>([]);
 
-  // Available TPA providers
-  const tpaProviders: TPA[] = [
-    { id: 'disa', name: 'DISA' },
-    { id: 'asap', name: 'ASAP' },
-    { id: 'tpa-3', name: 'TPA Provider 3' },
-    { id: 'tpa-4', name: 'TPA Provider 4' },
-    { id: 'tpa-5', name: 'TPA Provider 5' },
-  ];
+  // Fetch TPA clients from database
+  useEffect(() => {
+    const fetchTpaClients = async () => {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, company_name')
+        .eq('mem_type', 'TPA')
+        .eq('status', 'active')
+        .order('company_name');
+      
+      if (data && !error) {
+        setTpaClients(data);
+      }
+    };
+    
+    fetchTpaClients();
+  }, []);
 
   const handleTpaSelect = (tpaId: string) => {
     setSelectedTpa(tpaId);
     onTpaSelect?.(tpaId ? [tpaId] : []);
-    
-    // Update billing type
-    if (tpaId && inHouseSelected) {
-      onBillingTypeChange?.('both');
-    } else if (tpaId) {
-      onBillingTypeChange?.('tpa');
-    } else if (inHouseSelected) {
-      onBillingTypeChange?.('client');
-    }
-  };
-
-  const handleInHouseToggle = () => {
-    const newInHouseSelected = !inHouseSelected;
-    setInHouseSelected(newInHouseSelected);
-    
-    // Update billing type
-    if (selectedTpa && newInHouseSelected) {
-      onBillingTypeChange?.('both');
-    } else if (selectedTpa) {
-      onBillingTypeChange?.('tpa');
-    } else if (newInHouseSelected) {
-      onBillingTypeChange?.('client');
-    }
+    onBillingTypeChange?.(tpaId ? 'tpa' : 'client');
   };
 
   const toggleGroup = (groupId: string) => {
@@ -188,9 +176,9 @@ export function ServiceSelector({ services, selectedServiceIds, onServiceToggle,
                       <SelectValue placeholder="Select TPA Client" />
                     </SelectTrigger>
                     <SelectContent>
-                      {tpaProviders.map((tpa) => (
-                        <SelectItem key={tpa.id} value={tpa.id}>
-                          {tpa.name}
+                      {tpaClients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.company_name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -248,108 +236,68 @@ export function ServiceSelector({ services, selectedServiceIds, onServiceToggle,
               <h4 className="font-semibold text-base mb-2">{inHouseServices.name}</h4>
               
               <div className="ml-4 space-y-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <Checkbox
-                    id="in-house-select"
-                    checked={inHouseSelected}
-                    onCheckedChange={handleInHouseToggle}
-                  />
-                  <Label
-                    htmlFor="in-house-select"
-                    className="text-sm font-normal cursor-pointer"
-                  >
-                    Select In-House (Billing for Client)
-                  </Label>
+                <div className="space-y-2">
+                  {inHouseServices.subGroups.map((subGroup) => (
+                    <div key={subGroup.id} className="space-y-2">
+                      <Collapsible open={isGroupOpen(subGroup.id)}>
+                        <CollapsibleTrigger
+                          onClick={() => toggleGroup(subGroup.id)}
+                          className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                        >
+                          {isGroupOpen(subGroup.id) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                          <span>+ {subGroup.name}</span>
+                        </CollapsibleTrigger>
+                        
+                        <CollapsibleContent className="ml-6 mt-2 space-y-2">
+                          {subGroup.services.map((service) => {
+                            const isChecked = selectedServiceIds.includes(service.id);
+                            return (
+                              <div key={service.id} className="flex items-center gap-2">
+                                <Checkbox
+                                  id={`service-${service.id}`}
+                                  checked={isChecked}
+                                  onCheckedChange={() => onServiceToggle(service.id)}
+                                />
+                                <Label
+                                  htmlFor={`service-${service.id}`}
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {service.name}
+                                </Label>
+                              </div>
+                            );
+                          })}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </div>
+                  ))}
                 </div>
-
-                {/* Show service groups if In-House is selected */}
-                {inHouseSelected && (
-                  <div className="space-y-2">
-                    {inHouseServices.subGroups.map((subGroup) => (
-                      <div key={subGroup.id} className="space-y-2">
-                        <Collapsible open={isGroupOpen(subGroup.id)}>
-                          <CollapsibleTrigger
-                            onClick={() => toggleGroup(subGroup.id)}
-                            className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
-                          >
-                            {isGroupOpen(subGroup.id) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                            <span>+ {subGroup.name}</span>
-                          </CollapsibleTrigger>
-                          
-                          <CollapsibleContent className="ml-6 mt-2 space-y-2">
-                            {subGroup.services.map((service) => {
-                              const isChecked = selectedServiceIds.includes(service.id);
-                              return (
-                                <div key={service.id} className="flex items-center gap-2">
-                                  <Checkbox
-                                    id={`service-${service.id}`}
-                                    checked={isChecked}
-                                    onCheckedChange={() => onServiceToggle(service.id)}
-                                  />
-                                  <Label
-                                    htmlFor={`service-${service.id}`}
-                                    className="text-sm font-normal cursor-pointer"
-                                  >
-                                    {service.name}
-                                  </Label>
-                                </div>
-                              );
-                            })}
-                          </CollapsibleContent>
-                        </Collapsible>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </div>
 
           {/* Reference ID Section */}
           <div className="mt-6 pt-4 border-t">
-            <div className="flex items-center gap-4 mb-2">
-              <Label className="text-sm font-semibold">Reference ID:</Label>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="form-fox-id"
-                  checked={referenceType === 'form_fox'}
-                  onCheckedChange={(checked) => {
-                    if (checked) setReferenceType('form_fox');
-                  }}
-                />
-                <Label htmlFor="form-fox-id" className="text-sm font-normal cursor-pointer">
-                  Form Fox ID
-                </Label>
-              </div>
-            </div>
-            
             <div className="flex items-center gap-4">
+              <Label className="text-sm font-semibold whitespace-nowrap">Reference ID:</Label>
               <Input
-                placeholder={referenceType === 'form_fox' ? 'Enter Form Fox ID' : 'Enter Other ID'}
-                value={referenceValue}
-                onChange={(e) => setReferenceValue(e.target.value)}
-                className="max-w-md"
-                disabled={referenceType !== 'form_fox'}
+                placeholder="Enter FormFox ID"
+                value={formFoxId}
+                onChange={(e) => setFormFoxId(e.target.value)}
+                className="max-w-xs"
               />
               
-              <div className="flex items-center gap-2">
-                <Label className="text-sm font-normal">Other</Label>
-                <Input
-                  placeholder="Other reference"
-                  className="max-w-xs"
-                  disabled={referenceType === 'form_fox'}
-                  onChange={(e) => {
-                    if (referenceType === 'other') {
-                      setReferenceValue(e.target.value);
-                    }
-                  }}
-                  onFocus={() => setReferenceType('other')}
-                />
-              </div>
+              <Label className="text-sm font-normal whitespace-nowrap">Other</Label>
+              <Input
+                placeholder="Other reference"
+                value={otherReference}
+                onChange={(e) => setOtherReference(e.target.value)}
+                className="max-w-xs"
+              />
             </div>
           </div>
         </div>
