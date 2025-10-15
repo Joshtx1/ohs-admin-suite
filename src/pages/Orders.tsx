@@ -78,6 +78,7 @@ export default function Orders() {
   const [registrationType, setRegistrationType] = useState<"client" | "selfpay">("client");
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState("");
+  const [selfPayClientId, setSelfPayClientId] = useState<string | null>(null);
   const [billingClientId, setBillingClientId] = useState("");
   const [orderPO, setOrderPO] = useState("");
   const [clientSearchQuery, setClientSearchQuery] = useState("");
@@ -193,6 +194,12 @@ export default function Orders() {
 
       if (error) throw error;
       setClients(data || []);
+      
+      // Find and store the self-pay client ID
+      const selfPayClient = data?.find(c => c.short_code === 'RP-SELF');
+      if (selfPayClient) {
+        setSelfPayClientId(selfPayClient.id);
+      }
     } catch (error) {
       console.error("Error fetching clients:", error);
     }
@@ -339,8 +346,8 @@ export default function Orders() {
         const { data: orderData, error: orderError } = await supabase
           .from("orders")
           .insert({
-            client_id: registrationType === "client" ? selectedClientId : null,
-            billing_client_id: registrationType === "client" ? (billingClientId || selectedClientId) : null,
+            client_id: registrationType === "client" ? selectedClientId : selfPayClientId,
+            billing_client_id: registrationType === "client" ? (billingClientId || selectedClientId) : selfPayClientId,
             trainee_id: trainee.id,
             created_by: user.user.id,
             status: "created",
