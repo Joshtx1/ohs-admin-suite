@@ -76,7 +76,8 @@ export function useOrdersData() {
             phone,
             email,
             billing_id,
-            short_code
+            short_code,
+            mem_status
           ),
           billing_clients:clients!billing_client_id (
             id,
@@ -85,7 +86,8 @@ export function useOrdersData() {
             phone,
             email,
             billing_id,
-            short_code
+            short_code,
+            mem_status
           ),
           trainees (
             id,

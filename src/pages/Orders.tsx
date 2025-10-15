@@ -366,10 +366,25 @@ export default function Orders() {
             billingClientIdForItem = tpaClient?.id || orderData.billing_client_id;
           }
           
-          // Set payment status based on billing arrangement:
-          // - If billed to a client/TPA (has billing_client_id) = "Billed" (Member)
-          // - If self-pay (no billing_client_id) = "Payment Due" (Non-member)
-          const paymentStatus = billingClientIdForItem ? "Billed" : "Payment Due";
+          // Determine payment status based on membership and billing arrangement:
+          let paymentStatus = "Payment Due";
+          
+          if (billingClientIdForItem) {
+            // Find the billing client to check mem_status
+            const billingClient = clients.find(c => c.id === billingClientIdForItem);
+            const isTpa = billingClientIdForItem !== selectedClientId;
+            
+            if (isTpa) {
+              // TPA services are always "Billed"
+              paymentStatus = "Billed";
+            } else if (billingClient?.mem_status === "Member") {
+              // Member clients are billed with net terms
+              paymentStatus = "Billed";
+            } else {
+              // Non-member clients require immediate payment
+              paymentStatus = "Payment Due";
+            }
+          }
           
           return {
             order_id: orderData.id,

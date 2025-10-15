@@ -30,7 +30,8 @@ export const useBillingExportData = () => {
           payment_status,
           item_billing_client:clients!billing_client_id (
             company_name,
-            billing_id
+            billing_id,
+            mem_status
           ),
           orders!inner (
             id,
@@ -38,11 +39,13 @@ export const useBillingExportData = () => {
             notes,
             client:clients!client_id (
               company_name,
-              billing_id
+              billing_id,
+              mem_status
             ),
             billing_client:clients!billing_client_id (
               company_name,
-              billing_id
+              billing_id,
+              mem_status
             ),
             trainees (
               name,
