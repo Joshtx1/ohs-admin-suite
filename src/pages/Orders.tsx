@@ -55,6 +55,7 @@ interface Service {
 
 interface SelectedService extends Service {
   date: string;
+  tpa_billing_id?: string;
 }
 
 export default function Orders() {
@@ -89,6 +90,7 @@ export default function Orders() {
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   const [selectedTpaServices, setSelectedTpaServices] = useState<SelectedService[]>([]);
   const [selectedInHouseServices, setSelectedInHouseServices] = useState<SelectedService[]>([]);
+  const [selectedTpaId, setSelectedTpaId] = useState<string>("");
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [serviceDate, setServiceDate] = useState<Date>(new Date());
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
@@ -382,6 +384,7 @@ export default function Orders() {
       setSelectedServices([]);
       setSelectedTpaServices([]);
       setSelectedInHouseServices([]);
+      setSelectedTpaId("");
       setSelectedClientId("");
       setBillingClientId("");
       setOrderPO("");
@@ -826,17 +829,21 @@ export default function Orders() {
                               const date = format(serviceDate, "yyyy-MM-dd");
                               const isCurrentlySelected = selectedTpaServices.some(s => s.id === serviceId);
                               
+                              // Get TPA billing ID
+                              const tpaClient = clients.find(c => c.id === selectedTpaId);
+                              const tpaBillingId = tpaClient?.billing_id;
+                              
                               if (isCurrentlySelected) {
                                 setSelectedTpaServices(selectedTpaServices.filter(s => s.id !== serviceId));
                               } else {
-                                setSelectedTpaServices([...selectedTpaServices, { ...service, date }]);
+                                setSelectedTpaServices([...selectedTpaServices, { ...service, date, tpa_billing_id: tpaBillingId }]);
                               }
                               
                               // Update combined selectedServices
                               const allServices = [
                                 ...selectedTpaServices.filter(s => s.id !== serviceId),
                                 ...selectedInHouseServices,
-                                ...(isCurrentlySelected ? [] : [{ ...service, date }])
+                                ...(isCurrentlySelected ? [] : [{ ...service, date, tpa_billing_id: tpaBillingId }])
                               ];
                               setSelectedServices(allServices);
                             }}
@@ -861,6 +868,7 @@ export default function Orders() {
                               ];
                               setSelectedServices(allServices);
                             }}
+                            onTpaSelect={setSelectedTpaId}
                           />
                         </DialogContent>
                       </Dialog>
@@ -881,13 +889,16 @@ export default function Orders() {
                         const employerClient = clients.find(c => c.id === selectedClientId);
                         const billingClient = clients.find(c => c.id === billingClientId);
                         
+                        // Use TPA billing ID if service is from TPA, otherwise use regular billing
+                        const displayBillingId = service.tpa_billing_id || billingClient?.billing_id || employerClient?.billing_id || '-';
+                        
                         return (
                           <div key={index} className="p-2 grid grid-cols-6 gap-2 text-sm border-b items-center">
                             <div>{format(new Date(service.date), "MM/dd/yyyy")}</div>
                             <div>{service.service_code}</div>
                             <div>{service.name}</div>
                             <div>{employerClient?.short_code || '-'}</div>
-                            <div>{billingClient?.billing_id || employerClient?.billing_id || '-'}</div>
+                            <div>{displayBillingId}</div>
                             <div className="flex justify-end">
                               <Button
                                 variant="ghost"
