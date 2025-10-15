@@ -19,7 +19,7 @@ export interface Order {
   created_by_profile?: {
     first_name: string;
     last_name: string;
-  } | null;
+  } | null | undefined;
   clients?: {
     id: string;
     company_name: string;
