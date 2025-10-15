@@ -47,6 +47,7 @@ export interface Order {
     service_id: string;
     price: number;
     status: string;
+    payment_status?: string;
     services: {
       name: string;
       service_code: string;
@@ -99,6 +100,7 @@ export function useOrdersData() {
             service_id,
             price,
             status,
+            payment_status,
             billing_client_id,
             billing_client:clients!billing_client_id (
               billing_id

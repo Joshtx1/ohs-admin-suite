@@ -366,12 +366,18 @@ export default function Orders() {
             billingClientIdForItem = tpaClient?.id || orderData.billing_client_id;
           }
           
+          // Set payment status based on billing arrangement:
+          // - If billed to a client/TPA (has billing_client_id) = "Billed" (Member)
+          // - If self-pay (no billing_client_id) = "Payment Due" (Non-member)
+          const paymentStatus = billingClientIdForItem ? "Billed" : "Payment Due";
+          
           return {
             order_id: orderData.id,
             service_id: service.id,
             price: service.member_price || 0,
             status: "pending",
-            billing_client_id: billingClientIdForItem
+            billing_client_id: billingClientIdForItem,
+            payment_status: paymentStatus
           };
         });
 
@@ -380,6 +386,24 @@ export default function Orders() {
           .insert(orderItems);
 
         if (itemsError) throw itemsError;
+        
+        // Update order payment status based on items
+        const uniquePaymentStatuses = [...new Set(orderItems.map(item => item.payment_status))];
+        let orderPaymentStatus = "Payment Due";
+        
+        if (uniquePaymentStatuses.length === 1) {
+          // All items have same status
+          orderPaymentStatus = uniquePaymentStatuses[0];
+        } else if (uniquePaymentStatuses.length > 1) {
+          // Mixed payment statuses
+          orderPaymentStatus = "Mixed";
+        }
+        
+        // Update the order with calculated payment status
+        await supabase
+          .from("orders")
+          .update({ payment_status: orderPaymentStatus })
+          .eq("id", orderData.id);
       }
 
       toast({

@@ -111,11 +111,20 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
     },
     {
       header: 'Payment Status',
-      cell: (order: Order) => (
-        <Badge variant={order.payment_status === 'Billed' ? 'default' : 'secondary'}>
-          {order.payment_status || 'Payment Due'}
-        </Badge>
-      ),
+      cell: (order: Order) => {
+        const status = order.payment_status || 'Payment Due';
+        return (
+          <Badge 
+            variant={
+              status === 'Billed' ? 'default' : 
+              status === 'Mixed' ? 'outline' : 
+              'secondary'
+            }
+          >
+            {status}
+          </Badge>
+        );
+      },
     },
     {
       header: 'Actions',
@@ -199,6 +208,7 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
                 <SelectItem value="all">All Payment Status</SelectItem>
                 <SelectItem value="Billed">Billed</SelectItem>
                 <SelectItem value="Payment Due">Payment Due</SelectItem>
+                <SelectItem value="Mixed">Mixed</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -246,6 +256,7 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
                         <th className="text-left p-3">Category</th>
                         <th className="text-left p-3">Billing ID</th>
                         <th className="text-right p-3">Price</th>
+                        <th className="text-left p-3">Payment Status</th>
                         <th className="text-left p-3">Status</th>
                       </tr>
                     </thead>
@@ -264,6 +275,15 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
                             <td className="p-3">{item.services.category}</td>
                             <td className="p-3">{itemBillingId}</td>
                             <td className="p-3 text-right">${item.price.toFixed(2)}</td>
+                            <td className="p-3">
+                              <Badge 
+                                variant={
+                                  item.payment_status === 'Billed' ? 'default' : 'secondary'
+                                }
+                              >
+                                {item.payment_status || 'Payment Due'}
+                              </Badge>
+                            </td>
                             <td className="p-3">
                               <Badge variant={getStatusBadgeVariant(item.status)}>
                                 {getStatusDisplay(item.status)}
