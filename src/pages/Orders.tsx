@@ -87,6 +87,8 @@ export default function Orders() {
   // Step 3: Service Selection
   const [services, setServices] = useState<Service[]>([]);
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
+  const [selectedTpaServices, setSelectedTpaServices] = useState<SelectedService[]>([]);
+  const [selectedInHouseServices, setSelectedInHouseServices] = useState<SelectedService[]>([]);
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [serviceDate, setServiceDate] = useState<Date>(new Date());
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
@@ -378,6 +380,8 @@ export default function Orders() {
       setCurrentStep(1);
       setSelectedTrainees([]);
       setSelectedServices([]);
+      setSelectedTpaServices([]);
+      setSelectedInHouseServices([]);
       setSelectedClientId("");
       setBillingClientId("");
       setOrderPO("");
@@ -813,21 +817,49 @@ export default function Orders() {
                           </DialogHeader>
                           <ServiceSelector
                             services={services}
-                            selectedServiceIds={selectedServices.map(s => s.id)}
-                            onServiceToggle={(serviceId) => {
+                            selectedTpaServiceIds={selectedTpaServices.map(s => s.id)}
+                            selectedInHouseServiceIds={selectedInHouseServices.map(s => s.id)}
+                            onTpaServiceToggle={(serviceId) => {
                               const service = services.find(s => s.id === serviceId);
                               if (!service) return;
                               
                               const date = format(serviceDate, "yyyy-MM-dd");
-                              const isCurrentlySelected = selectedServices.some(s => s.id === serviceId);
+                              const isCurrentlySelected = selectedTpaServices.some(s => s.id === serviceId);
                               
                               if (isCurrentlySelected) {
-                                // Remove service
-                                setSelectedServices(selectedServices.filter(s => s.id !== serviceId));
+                                setSelectedTpaServices(selectedTpaServices.filter(s => s.id !== serviceId));
                               } else {
-                                // Add service
-                                addService(service, date);
+                                setSelectedTpaServices([...selectedTpaServices, { ...service, date }]);
                               }
+                              
+                              // Update combined selectedServices
+                              const allServices = [
+                                ...selectedTpaServices.filter(s => s.id !== serviceId),
+                                ...selectedInHouseServices,
+                                ...(isCurrentlySelected ? [] : [{ ...service, date }])
+                              ];
+                              setSelectedServices(allServices);
+                            }}
+                            onInHouseServiceToggle={(serviceId) => {
+                              const service = services.find(s => s.id === serviceId);
+                              if (!service) return;
+                              
+                              const date = format(serviceDate, "yyyy-MM-dd");
+                              const isCurrentlySelected = selectedInHouseServices.some(s => s.id === serviceId);
+                              
+                              if (isCurrentlySelected) {
+                                setSelectedInHouseServices(selectedInHouseServices.filter(s => s.id !== serviceId));
+                              } else {
+                                setSelectedInHouseServices([...selectedInHouseServices, { ...service, date }]);
+                              }
+                              
+                              // Update combined selectedServices
+                              const allServices = [
+                                ...selectedTpaServices,
+                                ...selectedInHouseServices.filter(s => s.id !== serviceId),
+                                ...(isCurrentlySelected ? [] : [{ ...service, date }])
+                              ];
+                              setSelectedServices(allServices);
                             }}
                           />
                         </DialogContent>

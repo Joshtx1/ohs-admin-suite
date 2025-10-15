@@ -34,13 +34,15 @@ interface TPAClient {
 
 interface ServiceSelectorProps {
   services: Service[];
-  selectedServiceIds: string[];
-  onServiceToggle: (serviceId: string) => void;
-  onTpaSelect?: (tpaIds: string[]) => void;
+  selectedTpaServiceIds: string[];
+  selectedInHouseServiceIds: string[];
+  onTpaServiceToggle: (serviceId: string) => void;
+  onInHouseServiceToggle: (serviceId: string) => void;
+  onTpaSelect?: (tpaId: string) => void;
   onBillingTypeChange?: (type: 'tpa' | 'client' | 'both') => void;
 }
 
-export function ServiceSelector({ services, selectedServiceIds, onServiceToggle, onTpaSelect, onBillingTypeChange }: ServiceSelectorProps) {
+export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHouseServiceIds, onTpaServiceToggle, onInHouseServiceToggle, onTpaSelect, onBillingTypeChange }: ServiceSelectorProps) {
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [formFoxId, setFormFoxId] = useState('');
   const [otherReference, setOtherReference] = useState('');
@@ -67,7 +69,7 @@ export function ServiceSelector({ services, selectedServiceIds, onServiceToggle,
 
   const handleTpaSelect = (tpaId: string) => {
     setSelectedTpa(tpaId);
-    onTpaSelect?.(tpaId ? [tpaId] : []);
+    onTpaSelect?.(tpaId);
     onBillingTypeChange?.(tpaId ? 'tpa' : 'client');
   };
 
@@ -205,16 +207,16 @@ export function ServiceSelector({ services, selectedServiceIds, onServiceToggle,
                           
                           <CollapsibleContent className="ml-6 mt-2 space-y-2">
                             {subGroup.services.map((service) => {
-                              const isChecked = selectedServiceIds.includes(service.id);
+                              const isChecked = selectedTpaServiceIds.includes(service.id);
                               return (
                                 <div key={service.id} className="flex items-center gap-2">
                                   <Checkbox
-                                    id={`service-${service.id}`}
+                                    id={`tpa-service-${service.id}`}
                                     checked={isChecked}
-                                    onCheckedChange={() => onServiceToggle(service.id)}
+                                    onCheckedChange={() => onTpaServiceToggle(service.id)}
                                   />
                                   <Label
-                                    htmlFor={`service-${service.id}`}
+                                    htmlFor={`tpa-service-${service.id}`}
                                     className="text-sm font-normal cursor-pointer"
                                   >
                                     {service.name}
@@ -230,6 +232,30 @@ export function ServiceSelector({ services, selectedServiceIds, onServiceToggle,
                 )}
               </div>
             </div>
+
+            {/* Reference ID Section */}
+            <div className="mt-6 pt-4">
+              <div className="flex items-center gap-4">
+                <Label className="text-sm font-semibold whitespace-nowrap">Reference ID:</Label>
+                <Input
+                  placeholder="Enter FormFox ID"
+                  value={formFoxId}
+                  onChange={(e) => setFormFoxId(e.target.value)}
+                  className="max-w-xs"
+                />
+                
+                <Label className="text-sm font-normal whitespace-nowrap">Other</Label>
+                <Input
+                  placeholder="Other reference"
+                  value={otherReference}
+                  onChange={(e) => setOtherReference(e.target.value)}
+                  className="max-w-xs"
+                />
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t my-6"></div>
 
             {/* In House Testing */}
             <div className="space-y-2">
@@ -254,16 +280,16 @@ export function ServiceSelector({ services, selectedServiceIds, onServiceToggle,
                         
                         <CollapsibleContent className="ml-6 mt-2 space-y-2">
                           {subGroup.services.map((service) => {
-                            const isChecked = selectedServiceIds.includes(service.id);
+                            const isChecked = selectedInHouseServiceIds.includes(service.id);
                             return (
                               <div key={service.id} className="flex items-center gap-2">
                                 <Checkbox
-                                  id={`service-${service.id}`}
+                                  id={`inhouse-service-${service.id}`}
                                   checked={isChecked}
-                                  onCheckedChange={() => onServiceToggle(service.id)}
+                                  onCheckedChange={() => onInHouseServiceToggle(service.id)}
                                 />
                                 <Label
-                                  htmlFor={`service-${service.id}`}
+                                  htmlFor={`inhouse-service-${service.id}`}
                                   className="text-sm font-normal cursor-pointer"
                                 >
                                   {service.name}
@@ -280,26 +306,6 @@ export function ServiceSelector({ services, selectedServiceIds, onServiceToggle,
             </div>
           </div>
 
-          {/* Reference ID Section */}
-          <div className="mt-6 pt-4 border-t">
-            <div className="flex items-center gap-4">
-              <Label className="text-sm font-semibold whitespace-nowrap">Reference ID:</Label>
-              <Input
-                placeholder="Enter FormFox ID"
-                value={formFoxId}
-                onChange={(e) => setFormFoxId(e.target.value)}
-                className="max-w-xs"
-              />
-              
-              <Label className="text-sm font-normal whitespace-nowrap">Other</Label>
-              <Input
-                placeholder="Other reference"
-                value={otherReference}
-                onChange={(e) => setOtherReference(e.target.value)}
-                className="max-w-xs"
-              />
-            </div>
-          </div>
         </div>
       </div>
     </ScrollArea>
