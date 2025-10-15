@@ -337,6 +337,7 @@ export type Database = {
       }
       order_items: {
         Row: {
+          billing_client_id: string | null
           completed_at: string | null
           created_at: string
           id: string
@@ -348,6 +349,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billing_client_id?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
@@ -359,6 +361,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billing_client_id?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
@@ -382,6 +385,13 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_billing_client_id_fkey"
+            columns: ["billing_client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]

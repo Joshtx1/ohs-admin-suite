@@ -25,6 +25,10 @@ export const useBillingExportData = () => {
         .select(`
           id,
           price,
+          item_billing_client:clients!billing_client_id (
+            company_name,
+            billing_id
+          ),
           orders!inner (
             id,
             service_date,
@@ -54,12 +58,14 @@ export const useBillingExportData = () => {
       // Transform data into flat structure for report
       const rows: BillingExportRow[] = (data || []).map((item: any) => {
         const order = item.orders;
-        // Prioritize billing client, fallback to registrant client
-        const billingClient = order?.billing_client;
-        const client = order?.client;
-        const effectiveClient = billingClient || client;
         const trainee = order?.trainees;
         const service = item.services;
+
+        // Prioritize item-level billing client, then order-level billing client, then registrant client
+        const itemBillingClient = item.item_billing_client;
+        const orderBillingClient = order?.billing_client;
+        const client = order?.client;
+        const effectiveClient = itemBillingClient || orderBillingClient || client;
 
         // Extract PO from notes if it exists
         const poMatch = order?.notes?.match(/PO:\s*([^\s,]+)/i);

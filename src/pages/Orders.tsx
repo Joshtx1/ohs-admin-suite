@@ -355,13 +355,25 @@ export default function Orders() {
 
         if (orderError) throw orderError;
 
-        // Create order items for each service
-        const orderItems = traineeServices.map(service => ({
-          order_id: orderData.id,
-          service_id: service.id,
-          price: service.member_price || 0,
-          status: "pending"
-        }));
+        // Create order items for each service with billing client info
+        const orderItems = traineeServices.map(service => {
+          // Determine billing client: use TPA client if service has tpa_billing_id, otherwise use order's billing_client
+          let billingClientIdForItem = orderData.billing_client_id;
+          
+          // If service has tpa_billing_id, find the corresponding client
+          if (service.tpa_billing_id) {
+            const tpaClient = clients.find(c => c.billing_id === service.tpa_billing_id);
+            billingClientIdForItem = tpaClient?.id || orderData.billing_client_id;
+          }
+          
+          return {
+            order_id: orderData.id,
+            service_id: service.id,
+            price: service.member_price || 0,
+            status: "pending",
+            billing_client_id: billingClientIdForItem
+          };
+        });
 
         const { error: itemsError } = await supabase
           .from("order_items")

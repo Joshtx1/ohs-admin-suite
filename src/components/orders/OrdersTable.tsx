@@ -80,9 +80,26 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
     },
     {
       header: 'Billing ID',
-      cell: (order: Order) => (
-        <span>{order.billing_clients?.billing_id || order.clients?.billing_id || 'Self-Pay'}</span>
-      ),
+      cell: (order: Order) => {
+        // Check if order has multiple billing parties by examining order items
+        const billingIds = new Set(
+          order.order_items?.map(item => {
+            // @ts-ignore - billing_client_id may not be in type yet
+            if (item.billing_client_id) {
+              // Find client by ID to get billing_id
+              return 'varies'; // Placeholder, will show "Multiple" if varies
+            }
+            return order.billing_clients?.billing_id || order.clients?.billing_id || 'Self-Pay';
+          })
+        );
+        
+        // Show "Multiple" if there are different billing parties
+        if (billingIds.size > 1 || billingIds.has('varies')) {
+          return <span className="text-muted-foreground">Multiple</span>;
+        }
+        
+        return <span>{order.billing_clients?.billing_id || order.clients?.billing_id || 'Self-Pay'}</span>;
+      },
     },
     {
       header: 'Status',
@@ -227,28 +244,34 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
                         <th className="text-left p-3">Service</th>
                         <th className="text-left p-3">Code</th>
                         <th className="text-left p-3">Category</th>
-                        <th className="text-left p-3">Department</th>
-                        <th className="text-left p-3">Room</th>
+                        <th className="text-left p-3">Billing ID</th>
                         <th className="text-right p-3">Price</th>
                         <th className="text-left p-3">Status</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedOrderDetails.order_items?.map((item, idx) => (
-                        <tr key={idx} className="border-t">
-                          <td className="p-3">{item.services.name}</td>
-                          <td className="p-3">{item.services.service_code}</td>
-                          <td className="p-3">{item.services.category}</td>
-                          <td className="p-3">{item.services.department || '-'}</td>
-                          <td className="p-3">{item.services.room || '-'}</td>
-                          <td className="p-3 text-right">${item.price.toFixed(2)}</td>
-                          <td className="p-3">
-                            <Badge variant={getStatusBadgeVariant(item.status)}>
-                              {getStatusDisplay(item.status)}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
+                      {selectedOrderDetails.order_items?.map((item, idx) => {
+                        // @ts-ignore - billing_client may not be in type yet
+                        const itemBillingId = item.billing_client?.billing_id || 
+                          selectedOrderDetails.billing_clients?.billing_id || 
+                          selectedOrderDetails.clients?.billing_id || 
+                          'Self-Pay';
+                        
+                        return (
+                          <tr key={idx} className="border-t">
+                            <td className="p-3">{item.services.name}</td>
+                            <td className="p-3">{item.services.service_code}</td>
+                            <td className="p-3">{item.services.category}</td>
+                            <td className="p-3">{itemBillingId}</td>
+                            <td className="p-3 text-right">${item.price.toFixed(2)}</td>
+                            <td className="p-3">
+                              <Badge variant={getStatusBadgeVariant(item.status)}>
+                                {getStatusDisplay(item.status)}
+                              </Badge>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

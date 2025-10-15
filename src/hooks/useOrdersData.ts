@@ -99,6 +99,10 @@ export function useOrdersData() {
             service_id,
             price,
             status,
+            billing_client_id,
+            billing_client:clients!billing_client_id (
+              billing_id
+            ),
             services (
               name,
               service_code,
