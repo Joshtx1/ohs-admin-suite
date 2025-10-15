@@ -954,9 +954,12 @@ export default function Orders() {
                             const employer = registrationType === "client" 
                               ? registrantClient?.billing_id || ""
                               : "Self Pay";
-                            const billTo = registrationType === "client" 
-                              ? billingClient?.billing_id || ""
-                              : "Self Pay";
+                            // Use TPA billing ID if service is from TPA, otherwise use regular billing logic
+                            const billTo = service.tpa_billing_id 
+                              ? service.tpa_billing_id
+                              : registrationType === "client" 
+                                ? billingClient?.billing_id || ""
+                                : "Self Pay";
                             
                             const isExcluded = isServiceExcluded(trainee.id, service.id);
                             if (isExcluded) return null;
