@@ -40,9 +40,10 @@ interface ServiceSelectorProps {
   onInHouseServiceToggle: (serviceId: string) => void;
   onTpaSelect?: (tpaId: string) => void;
   onBillingTypeChange?: (type: 'tpa' | 'client' | 'both') => void;
+  registrationType?: 'client' | 'selfpay';
 }
 
-export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHouseServiceIds, onTpaServiceToggle, onInHouseServiceToggle, onTpaSelect, onBillingTypeChange }: ServiceSelectorProps) {
+export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHouseServiceIds, onTpaServiceToggle, onInHouseServiceToggle, onTpaSelect, onBillingTypeChange, registrationType }: ServiceSelectorProps) {
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [formFoxId, setFormFoxId] = useState('');
   const [otherReference, setOtherReference] = useState('');
@@ -167,95 +168,99 @@ export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHou
           <h3 className="text-xl font-bold mb-4">Drug & Alcohol</h3>
 
           <div className="space-y-4">
-            {/* TPA Consortium Testing */}
-            <div className="space-y-2">
-              <h4 className="font-semibold text-base mb-2">{tpaServices.name}</h4>
-              
-              <div className="ml-4 space-y-2">
-                <div className="mb-4">
-                  <Select value={selectedTpa} onValueChange={handleTpaSelect}>
-                    <SelectTrigger className="w-[280px]">
-                      <SelectValue placeholder="Select TPA Client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tpaClients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.company_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Show service groups if TPA is selected */}
-                {selectedTpa && (
-                  <div className="mt-4 space-y-2">
-                    {tpaServices.subGroups.map((subGroup) => (
-                      <div key={subGroup.id} className="space-y-2">
-                        <Collapsible open={isGroupOpen(subGroup.id)}>
-                          <CollapsibleTrigger
-                            onClick={() => toggleGroup(subGroup.id)}
-                            className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
-                          >
-                            {isGroupOpen(subGroup.id) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                            <span>+ {subGroup.name}</span>
-                          </CollapsibleTrigger>
-                          
-                          <CollapsibleContent className="ml-6 mt-2 space-y-2">
-                            {subGroup.services.map((service) => {
-                              const isChecked = selectedTpaServiceIds.includes(service.id);
-                              return (
-                                <div key={service.id} className="flex items-center gap-2">
-                                  <Checkbox
-                                    id={`tpa-service-${service.id}`}
-                                    checked={isChecked}
-                                    onCheckedChange={() => onTpaServiceToggle(service.id)}
-                                  />
-                                  <Label
-                                    htmlFor={`tpa-service-${service.id}`}
-                                    className="text-sm font-normal cursor-pointer"
-                                  >
-                                    {service.name}
-                                  </Label>
-                                </div>
-                              );
-                            })}
-                          </CollapsibleContent>
-                        </Collapsible>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Reference ID Section */}
-            <div className="mt-6 pt-4">
-              <div className="flex items-center gap-4">
-                <Label className="text-sm font-semibold whitespace-nowrap">Reference ID:</Label>
-                <Input
-                  placeholder="Enter FormFox ID"
-                  value={formFoxId}
-                  onChange={(e) => setFormFoxId(e.target.value)}
-                  className="max-w-xs"
-                />
+            {/* TPA Consortium Testing - Only show for client registration */}
+            {registrationType !== 'selfpay' && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-base mb-2">{tpaServices.name}</h4>
                 
-                <Label className="text-sm font-normal whitespace-nowrap">Other</Label>
-                <Input
-                  placeholder="Other reference"
-                  value={otherReference}
-                  onChange={(e) => setOtherReference(e.target.value)}
-                  className="max-w-xs"
-                />
-              </div>
-            </div>
+                <div className="ml-4 space-y-2">
+                  <div className="mb-4">
+                    <Select value={selectedTpa} onValueChange={handleTpaSelect}>
+                      <SelectTrigger className="w-[280px]">
+                        <SelectValue placeholder="Select TPA Client" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tpaClients.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.company_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            {/* Divider */}
-            <div className="border-t my-6"></div>
+                  {/* Show service groups if TPA is selected */}
+                  {selectedTpa && (
+                    <div className="mt-4 space-y-2">
+                      {tpaServices.subGroups.map((subGroup) => (
+                        <div key={subGroup.id} className="space-y-2">
+                          <Collapsible open={isGroupOpen(subGroup.id)}>
+                            <CollapsibleTrigger
+                              onClick={() => toggleGroup(subGroup.id)}
+                              className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                            >
+                              {isGroupOpen(subGroup.id) ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                              <span>+ {subGroup.name}</span>
+                            </CollapsibleTrigger>
+                            
+                            <CollapsibleContent className="ml-6 mt-2 space-y-2">
+                              {subGroup.services.map((service) => {
+                                const isChecked = selectedTpaServiceIds.includes(service.id);
+                                return (
+                                  <div key={service.id} className="flex items-center gap-2">
+                                    <Checkbox
+                                      id={`tpa-service-${service.id}`}
+                                      checked={isChecked}
+                                      onCheckedChange={() => onTpaServiceToggle(service.id)}
+                                    />
+                                    <Label
+                                      htmlFor={`tpa-service-${service.id}`}
+                                      className="text-sm font-normal cursor-pointer"
+                                    >
+                                      {service.name}
+                                    </Label>
+                                  </div>
+                                );
+                              })}
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Reference ID Section - Only show for client registration with TPA */}
+            {registrationType !== 'selfpay' && selectedTpa && (
+              <div className="mt-6 pt-4">
+                <div className="flex items-center gap-4">
+                  <Label className="text-sm font-semibold whitespace-nowrap">Reference ID:</Label>
+                  <Input
+                    placeholder="Enter FormFox ID"
+                    value={formFoxId}
+                    onChange={(e) => setFormFoxId(e.target.value)}
+                    className="max-w-xs"
+                  />
+                  
+                  <Label className="text-sm font-normal whitespace-nowrap">Other</Label>
+                  <Input
+                    placeholder="Other reference"
+                    value={otherReference}
+                    onChange={(e) => setOtherReference(e.target.value)}
+                    className="max-w-xs"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Divider - Only show if TPA section is visible */}
+            {registrationType !== 'selfpay' && <div className="border-t my-6"></div>}
 
             {/* In House Testing */}
             <div className="space-y-2">

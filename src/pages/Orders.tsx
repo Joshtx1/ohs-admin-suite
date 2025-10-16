@@ -882,6 +882,7 @@ export default function Orders() {
                             services={services}
                             selectedTpaServiceIds={selectedTpaServices.map(s => s.id)}
                             selectedInHouseServiceIds={selectedInHouseServices.map(s => s.id)}
+                            registrationType={registrationType}
                             onTpaServiceToggle={(serviceId) => {
                               const service = services.find(s => s.id === serviceId);
                               if (!service) return;
