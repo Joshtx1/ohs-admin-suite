@@ -196,7 +196,7 @@ export default function Orders() {
       setClients(data || []);
       
       // Find and store the self-pay client ID
-      const selfPayClient = data?.find(c => c.short_code === 'RP-SELF');
+      const selfPayClient = data?.find(c => c.short_code === 'SELF');
       if (selfPayClient) {
         setSelfPayClientId(selfPayClient.id);
       }
@@ -944,8 +944,12 @@ export default function Orders() {
                     </div>
                     <ScrollArea className="h-[300px]">
                       {selectedServices.map((service, index) => {
-                        const employerClient = clients.find(c => c.id === selectedClientId);
-                        const billingClient = clients.find(c => c.id === billingClientId);
+                        const employerClient = registrationType === "client" 
+                          ? clients.find(c => c.id === selectedClientId)
+                          : clients.find(c => c.id === selfPayClientId);
+                        const billingClient = registrationType === "client"
+                          ? clients.find(c => c.id === billingClientId)
+                          : clients.find(c => c.id === selfPayClientId);
                         
                         // Use TPA billing ID if service is from TPA, otherwise use regular billing
                         const displayBillingId = service.tpa_billing_id || billingClient?.billing_id || employerClient?.billing_id || '-';
@@ -955,7 +959,7 @@ export default function Orders() {
                             <div>{format(new Date(service.date), "MM/dd/yyyy")}</div>
                             <div>{service.service_code}</div>
                             <div>{service.name}</div>
-                            <div>{employerClient?.short_code || '-'}</div>
+                            <div>{employerClient?.billing_id || '-'}</div>
                             <div>{displayBillingId}</div>
                             <div className="flex justify-end">
                               <Button
@@ -1007,17 +1011,17 @@ export default function Orders() {
                         </div>
                         <div className="space-y-1">
                           {selectedServices.map((service, idx) => {
-                            const registrantClient = clients.find(c => c.id === selectedClientId);
-                            const billingClient = clients.find(c => c.id === (billingClientId || selectedClientId));
-                            const employer = registrationType === "client" 
-                              ? registrantClient?.billing_id || ""
-                              : "Self Pay";
+                            const registrantClient = registrationType === "client"
+                              ? clients.find(c => c.id === selectedClientId)
+                              : clients.find(c => c.id === selfPayClientId);
+                            const billingClient = registrationType === "client"
+                              ? clients.find(c => c.id === (billingClientId || selectedClientId))
+                              : clients.find(c => c.id === selfPayClientId);
+                            const employer = registrantClient?.billing_id || "";
                             // Use TPA billing ID if service is from TPA, otherwise use regular billing logic
                             const billTo = service.tpa_billing_id 
                               ? service.tpa_billing_id
-                              : registrationType === "client" 
-                                ? billingClient?.billing_id || ""
-                                : "Self Pay";
+                              : billingClient?.billing_id || "";
                             
                             const isExcluded = isServiceExcluded(trainee.id, service.id);
                             if (isExcluded) return null;
@@ -1056,7 +1060,7 @@ export default function Orders() {
                         <div className="text-sm text-muted-foreground">
                           Employer: {registrationType === "client" 
                             ? `${clients.find(c => c.id === selectedClientId)?.billing_id} ${clients.find(c => c.id === selectedClientId)?.short_code} ${clients.find(c => c.id === selectedClientId)?.company_name}`
-                            : "SELF PAY"}
+                            : clients.find(c => c.id === selfPayClientId)?.company_name || "SELF-PAY"}
                         </div>
                       </div>
                       <Button onClick={createRegistrations} size="lg">
