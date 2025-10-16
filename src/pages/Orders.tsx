@@ -379,7 +379,9 @@ export default function Orders() {
           if (billingClientIdForItem) {
             // Find the billing client to check mem_status
             const billingClient = clients.find(c => c.id === billingClientIdForItem);
-            const isTpa = billingClientIdForItem !== selectedClientId;
+            const isTpa = registrationType === "client" 
+              ? billingClientIdForItem !== selectedClientId
+              : billingClientIdForItem !== selfPayClientId;
             
             if (isTpa) {
               // TPA services are always "Billed"
