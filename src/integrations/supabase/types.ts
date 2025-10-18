@@ -405,6 +405,7 @@ export type Database = {
           client_id: string | null
           created_at: string
           created_by: string
+          formfox_auth: string | null
           id: string
           notes: string | null
           other_auth: string | null
@@ -421,6 +422,7 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           created_by: string
+          formfox_auth?: string | null
           id?: string
           notes?: string | null
           other_auth?: string | null
@@ -437,6 +439,7 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           created_by?: string
+          formfox_auth?: string | null
           id?: string
           notes?: string | null
           other_auth?: string | null

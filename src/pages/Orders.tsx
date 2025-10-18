@@ -96,6 +96,8 @@ export default function Orders() {
   const [serviceDate, setServiceDate] = useState<Date>(new Date());
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
   const [reasonForTest, setReasonForTest] = useState<string>("");
+  const [formFoxAuth, setFormFoxAuth] = useState<string>("");
+  const [otherAuth, setOtherAuth] = useState<string>("");
   
   // Track excluded trainee-service combinations
   const [excludedCombinations, setExcludedCombinations] = useState<Set<string>>(new Set());
@@ -355,7 +357,9 @@ export default function Orders() {
             service_date: traineeServices[0]?.date || new Date().toISOString().split('T')[0],
             notes: registrationType === "client" ? `PO: ${orderPO}` : "Self Pay",
             reason_for_test: reasonForTest,
-            payment_status: registrationType === "client" ? "Billed" : "Payment Due"
+            payment_status: registrationType === "client" ? "Billed" : "Payment Due",
+            formfox_auth: formFoxAuth || null,
+            other_auth: otherAuth || null
           })
           .select()
           .single();
@@ -883,6 +887,8 @@ export default function Orders() {
                             selectedTpaServiceIds={selectedTpaServices.map(s => s.id)}
                             selectedInHouseServiceIds={selectedInHouseServices.map(s => s.id)}
                             registrationType={registrationType}
+                            onFormFoxChange={setFormFoxAuth}
+                            onOtherAuthChange={setOtherAuth}
                             onTpaServiceToggle={(serviceId) => {
                               const service = services.find(s => s.id === serviceId);
                               if (!service) return;

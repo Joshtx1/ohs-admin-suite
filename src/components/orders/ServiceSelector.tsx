@@ -41,9 +41,11 @@ interface ServiceSelectorProps {
   onTpaSelect?: (tpaId: string) => void;
   onBillingTypeChange?: (type: 'tpa' | 'client' | 'both') => void;
   registrationType?: 'client' | 'selfpay';
+  onFormFoxChange?: (value: string) => void;
+  onOtherAuthChange?: (value: string) => void;
 }
 
-export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHouseServiceIds, onTpaServiceToggle, onInHouseServiceToggle, onTpaSelect, onBillingTypeChange, registrationType }: ServiceSelectorProps) {
+export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHouseServiceIds, onTpaServiceToggle, onInHouseServiceToggle, onTpaSelect, onBillingTypeChange, registrationType, onFormFoxChange, onOtherAuthChange }: ServiceSelectorProps) {
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [formFoxId, setFormFoxId] = useState('');
   const [otherReference, setOtherReference] = useState('');
@@ -254,7 +256,10 @@ export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHou
                   <Input
                     placeholder="Enter FormFox ID"
                     value={formFoxId}
-                    onChange={(e) => setFormFoxId(e.target.value)}
+                    onChange={(e) => {
+                      setFormFoxId(e.target.value);
+                      onFormFoxChange?.(e.target.value);
+                    }}
                     className="max-w-xs"
                   />
                   
@@ -262,7 +267,10 @@ export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHou
                   <Input
                     placeholder="Other reference"
                     value={otherReference}
-                    onChange={(e) => setOtherReference(e.target.value)}
+                    onChange={(e) => {
+                      setOtherReference(e.target.value);
+                      onOtherAuthChange?.(e.target.value);
+                    }}
                     className="max-w-xs"
                   />
                 </div>
