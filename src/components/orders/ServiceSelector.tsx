@@ -88,13 +88,17 @@ export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHou
 
   const isGroupOpen = (groupId: string) => openGroups.has(groupId);
 
-  // Filter specific services by exact names
+  // Filter specific services by exact names in specified order
   const getSpecificServices = (serviceNames: string[]) => {
-    return services.filter(s => 
-      serviceNames.some(name => 
+    const foundServices: Service[] = [];
+    // Iterate through serviceNames to maintain order
+    serviceNames.forEach(name => {
+      const matchingServices = services.filter(s => 
         s.name?.toLowerCase().includes(name.toLowerCase())
-      )
-    );
+      );
+      foundServices.push(...matchingServices);
+    });
+    return foundServices;
   };
 
   // TPA Services - specific services only
@@ -108,20 +112,23 @@ export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHou
         services: getSpecificServices([
           'NON-DOT URINE',
           'NON-DOT BREATH ALCOHOL',
-          'NON-DOT HAIR FOLLICLE',
-          'NON-DOT ORAL FLUID'
+          'NON-DOT HAIR',
+          'NON-DOT ORAL'
         ])
       },
       {
         id: 'tpa-dot',
         name: 'DOT',
-        services: services.filter(s => 
-          s.name?.toLowerCase().includes('dot') && 
-          !s.name?.toLowerCase().includes('non-dot') &&
-          (s.name?.toLowerCase().includes('urine') ||
-           s.name?.toLowerCase().includes('breath alcohol') ||
-           s.name?.toLowerCase().includes('oral fluid'))
-        )
+        services: (() => {
+          const ordered = ['urine', 'breath alcohol', 'hair', 'oral'];
+          const dotServices = services.filter(s => 
+            s.name?.toLowerCase().includes('dot') && 
+            !s.name?.toLowerCase().includes('non-dot')
+          );
+          return ordered.flatMap(keyword => 
+            dotServices.filter(s => s.name?.toLowerCase().includes(keyword))
+          );
+        })()
       }
     ]
   };
@@ -138,8 +145,8 @@ export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHou
           ...getSpecificServices([
             'NON-DOT URINE',
             'NON-DOT BREATH ALCOHOL',
-            'NON-DOT HAIR FOLLICLE',
-            'NON-DOT ORAL FLUID'
+            'NON-DOT HAIR',
+            'NON-DOT ORAL'
           ]),
           ...services.filter(s =>
             s.name?.toLowerCase().includes('rapid 5') ||
@@ -150,13 +157,16 @@ export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHou
       {
         id: 'in-house-dot',
         name: 'DOT',
-        services: services.filter(s => 
-          s.name?.toLowerCase().includes('dot') && 
-          !s.name?.toLowerCase().includes('non-dot') &&
-          (s.name?.toLowerCase().includes('urine') ||
-           s.name?.toLowerCase().includes('breath alcohol') ||
-           s.name?.toLowerCase().includes('oral fluid'))
-        )
+        services: (() => {
+          const ordered = ['urine', 'breath alcohol', 'hair', 'oral'];
+          const dotServices = services.filter(s => 
+            s.name?.toLowerCase().includes('dot') && 
+            !s.name?.toLowerCase().includes('non-dot')
+          );
+          return ordered.flatMap(keyword => 
+            dotServices.filter(s => s.name?.toLowerCase().includes(keyword))
+          );
+        })()
       }
     ]
   };
