@@ -217,22 +217,35 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                             <h5 className="font-semibold">{department}</h5>
                           </div>
                            <div className="divide-y">
-                            {items.map((item, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-4 hover:bg-muted/50">
-                                <div className="flex-1">
-                                  <p className="font-medium">{item.services.name}</p>
-                                  <div className="flex gap-4 text-sm text-muted-foreground mt-1">
-                                    <span>Code: {item.services.service_code}</span>
+                            {items.map((item, idx) => {
+                              // Check if this is a TPA Drug/Alcohol test
+                              const isTPA = item.services.category?.toLowerCase().includes('tpa') || 
+                                           item.services.name?.toLowerCase().includes('drug') ||
+                                           item.services.name?.toLowerCase().includes('alcohol');
+                              
+                              return (
+                                <div key={idx} className="flex items-center justify-between p-4 hover:bg-muted/50">
+                                  <div className="flex-1">
+                                    <p className="font-medium">{item.services.name}</p>
+                                    <div className="flex gap-4 text-sm text-muted-foreground mt-1">
+                                      <span>Code: {item.services.service_code}</span>
+                                      {isTPA && item.formfox_auth && (
+                                        <span className="font-semibold text-foreground">| FF Auth: {item.formfox_auth}</span>
+                                      )}
+                                      {isTPA && item.other_auth && (
+                                        <span>| Other: {item.other_auth}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-semibold">${item.price.toFixed(2)}</p>
+                                    <Badge variant="outline" className="mt-1">
+                                      {item.status}
+                                    </Badge>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <p className="font-semibold">${item.price.toFixed(2)}</p>
-                                  <Badge variant="outline" className="mt-1">
-                                    {item.status}
-                                  </Badge>
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       ))}
