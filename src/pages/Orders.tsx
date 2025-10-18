@@ -102,6 +102,9 @@ export default function Orders() {
   // Track excluded trainee-service combinations
   const [excludedCombinations, setExcludedCombinations] = useState<Set<string>>(new Set());
   
+  // Track if we're editing an order
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  
   // Loading states
   const [loading, setLoading] = useState(true);
   
@@ -126,12 +129,76 @@ export default function Orders() {
     setIsRoutingSlipOpen(true);
   };
 
-  const handleEditOrder = (order: Order) => {
-    // TODO: Implement edit functionality
-    toast({
-      title: "Edit Order",
-      description: "Edit functionality coming soon",
-    });
+  const handleEditOrder = async (order: Order) => {
+    try {
+      // Set editing mode
+      setEditingOrderId(order.id);
+      
+      // Load trainee
+      if (order.trainees) {
+        setSelectedTrainees([{
+          id: order.trainees.id,
+          name: order.trainees.name,
+          unique_id: order.trainees.unique_id,
+          ssn: order.trainees.ssn,
+          email: order.trainees.email,
+          phone: order.trainees.phone,
+        }]);
+      }
+      
+      // Set registration type and client
+      if (order.client_id === selfPayClientId) {
+        setRegistrationType("selfpay");
+      } else {
+        setRegistrationType("client");
+        setSelectedClientId(order.client_id || "");
+        setBillingClientId(order.billing_client_id || "");
+      }
+      
+      // Extract PO from notes
+      const poMatch = order.notes?.match(/PO:\s*(.+)/i);
+      if (poMatch) {
+        setOrderPO(poMatch[1].trim());
+      }
+      
+      // Set other fields
+      setReasonForTest(order.reason_for_test || "");
+      setFormFoxAuth(order.formfox_auth || "");
+      setOtherAuth(order.other_auth || "");
+      
+      // Load services from order items
+      if (order.order_items && order.order_items.length > 0) {
+        const loadedServices: SelectedService[] = order.order_items.map(item => ({
+          id: item.service_id,
+          name: item.services.name,
+          service_code: item.services.service_code,
+          category: item.services.category,
+          member_price: item.price,
+          non_member_price: item.price,
+          date: order.service_date,
+        }));
+        setSelectedServices(loadedServices);
+      }
+      
+      // Set service date
+      setServiceDate(new Date(order.service_date));
+      
+      // Switch to create tab and go to step 3 (services)
+      setCurrentTab("create");
+      setCurrentStep(3);
+      
+      toast({
+        title: "Editing Order",
+        description: "Make your changes and click Update Order to save",
+      });
+    } catch (error) {
+      console.error("Error loading order for editing:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load order for editing",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteOrder = async (orderId: string) => {
@@ -331,6 +398,12 @@ export default function Orders() {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("User not authenticated");
 
+      // Handle edit mode
+      if (editingOrderId) {
+        await updateOrder();
+        return;
+      }
+
       // Create one order per trainee
       for (const trainee of selectedTrainees) {
         // Filter out excluded services for this trainee
@@ -443,18 +516,7 @@ export default function Orders() {
       refetchOrders();
 
       // Reset form and switch to view tab
-      setCurrentStep(1);
-      setSelectedTrainees([]);
-      setSelectedServices([]);
-      setSelectedTpaServices([]);
-      setSelectedInHouseServices([]);
-      setSelectedTpaId("");
-      setSelectedClientId("");
-      setBillingClientId("");
-      setOrderPO("");
-      setRegistrationType("client");
-      setExcludedCombinations(new Set());
-      setCurrentTab("view");
+      resetForm();
     } catch (error) {
       console.error("Error creating registrations:", error);
       toast({
@@ -463,6 +525,134 @@ export default function Orders() {
         variant: "destructive",
       });
     }
+  };
+
+  const updateOrder = async () => {
+    if (!editingOrderId) return;
+
+    try {
+      const totalAmount = selectedServices.reduce((sum, service) => 
+        sum + (service.member_price || 0), 0
+      );
+
+      // Update order
+      const { error: orderError } = await supabase
+        .from("orders")
+        .update({
+          client_id: registrationType === "client" ? selectedClientId : selfPayClientId,
+          billing_client_id: registrationType === "client" ? (billingClientId || selectedClientId) : selfPayClientId,
+          total_amount: totalAmount,
+          service_date: selectedServices[0]?.date || new Date().toISOString().split('T')[0],
+          notes: registrationType === "client" ? `PO: ${orderPO}` : "Self Pay",
+          reason_for_test: reasonForTest,
+          formfox_auth: formFoxAuth || null,
+          other_auth: otherAuth || null
+        })
+        .eq("id", editingOrderId);
+
+      if (orderError) throw orderError;
+
+      // Delete existing order items
+      const { error: deleteError } = await supabase
+        .from("order_items")
+        .delete()
+        .eq("order_id", editingOrderId);
+
+      if (deleteError) throw deleteError;
+
+      // Create new order items
+      const orderItems = selectedServices.map(service => {
+        let billingClientIdForItem = registrationType === "client" 
+          ? (billingClientId || selectedClientId) 
+          : selfPayClientId;
+        
+        if (service.tpa_billing_id) {
+          const tpaClient = clients.find(c => c.billing_id === service.tpa_billing_id);
+          billingClientIdForItem = tpaClient?.id || billingClientIdForItem;
+        }
+        
+        let paymentStatus = "Payment Due";
+        if (billingClientIdForItem) {
+          const billingClient = clients.find(c => c.id === billingClientIdForItem);
+          const isTpa = registrationType === "client" 
+            ? billingClientIdForItem !== selectedClientId
+            : billingClientIdForItem !== selfPayClientId;
+          
+          if (isTpa) {
+            paymentStatus = "Billed";
+          } else if (billingClient?.mem_status === "Member") {
+            paymentStatus = "Billed";
+          }
+        }
+        
+        return {
+          order_id: editingOrderId,
+          service_id: service.id,
+          price: service.member_price || 0,
+          status: "pending",
+          billing_client_id: billingClientIdForItem,
+          payment_status: paymentStatus
+        };
+      });
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // Update order payment status
+      const uniquePaymentStatuses = [...new Set(orderItems.map(item => item.payment_status))];
+      let orderPaymentStatus = "Payment Due";
+      
+      if (uniquePaymentStatuses.length === 1) {
+        orderPaymentStatus = uniquePaymentStatuses[0];
+      } else if (uniquePaymentStatuses.length > 1) {
+        orderPaymentStatus = "Mixed";
+      }
+      
+      await supabase
+        .from("orders")
+        .update({ payment_status: orderPaymentStatus })
+        .eq("id", editingOrderId);
+
+      toast({
+        title: "Success",
+        description: "Order updated successfully",
+      });
+
+      // Refresh orders list
+      refetchOrders();
+
+      // Reset form
+      resetForm();
+    } catch (error) {
+      console.error("Error updating order:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update order",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setCurrentStep(1);
+    setSelectedTrainees([]);
+    setSelectedServices([]);
+    setSelectedTpaServices([]);
+    setSelectedInHouseServices([]);
+    setSelectedTpaId("");
+    setSelectedClientId("");
+    setBillingClientId("");
+    setOrderPO("");
+    setRegistrationType("client");
+    setReasonForTest("");
+    setFormFoxAuth("");
+    setOtherAuth("");
+    setExcludedCombinations(new Set());
+    setEditingOrderId(null);
+    setCurrentTab("view");
   };
 
   const canProceedToStep2 = selectedTrainees.length > 0;
@@ -552,6 +742,20 @@ export default function Orders() {
         {/* Create Registration Tab */}
         <TabsContent value="create" className="mt-6">
 
+        {editingOrderId && (
+          <div className="mb-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-semibold text-primary">Editing Order</div>
+                <div className="text-sm text-muted-foreground">Make your changes and click Update Order</div>
+              </div>
+              <Button variant="outline" onClick={resetForm}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Step Navigation - Horizontal Tabs */}
         <div className="space-y-6">
           <div className="flex items-center gap-1 border-b">
@@ -565,6 +769,9 @@ export default function Orders() {
                 key={step.num}
                 type="button"
                 onClick={() => {
+                  // Disable step 1 and 2 when editing
+                  if (editingOrderId && (step.num === 1 || step.num === 2)) return;
+                  
                   if (step.num === 1 || 
                       (step.num === 2 && canProceedToStep2) ||
                       (step.num === 3 && canProceedToStep3) ||
@@ -575,7 +782,7 @@ export default function Orders() {
                 className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
                   currentStep === step.num
                     ? 'bg-primary text-primary-foreground'
-                    : currentStep > step.num
+                    : currentStep > step.num && !(editingOrderId && (step.num === 1 || step.num === 2))
                     ? 'bg-muted/50 text-foreground hover:bg-muted cursor-pointer'
                     : 'bg-muted/30 text-muted-foreground cursor-not-allowed'
                 }`}
@@ -1065,7 +1272,9 @@ export default function Orders() {
                   <div className="bg-primary/10 p-4 rounded-lg">
                     <div className="flex justify-between items-center">
                       <div>
-                        <div className="font-semibold">Add {totalRegistrations} Registrations</div>
+                        <div className="font-semibold">
+                          {editingOrderId ? "Update Order" : `Add ${totalRegistrations} Registrations`}
+                        </div>
                         <div className="text-sm text-muted-foreground">
                           Employer: {registrationType === "client" 
                             ? `${clients.find(c => c.id === selectedClientId)?.billing_id} ${clients.find(c => c.id === selectedClientId)?.short_code} ${clients.find(c => c.id === selectedClientId)?.company_name}`
@@ -1074,15 +1283,22 @@ export default function Orders() {
                       </div>
                       <Button onClick={createRegistrations} size="lg">
                         <Check className="mr-2 h-4 w-4" />
-                        Confirm
+                        {editingOrderId ? "Update Order" : "Confirm"}
                       </Button>
                     </div>
                   </div>
 
                   <div className="flex justify-between">
-                    <Button variant="outline" onClick={() => setCurrentStep(3)}>
-                      Back
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={() => setCurrentStep(3)}>
+                        Back
+                      </Button>
+                      {editingOrderId && (
+                        <Button variant="outline" onClick={resetForm}>
+                          Cancel Edit
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
