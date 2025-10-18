@@ -30,6 +30,8 @@ export const useBillingExportData = () => {
           id,
           price,
           payment_status,
+          formfox_auth,
+          other_auth,
           item_billing_client:clients!billing_client_id (
             company_name,
             billing_id,

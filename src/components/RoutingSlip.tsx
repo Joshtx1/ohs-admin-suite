@@ -217,11 +217,9 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                             <h5 className="font-semibold">{department}</h5>
                           </div>
                            <div className="divide-y">
-                            {items.map((item, idx) => {
+                             {items.map((item, idx) => {
                               // Check if this is a TPA Drug/Alcohol test
-                              const isTPA = item.services.category?.toLowerCase().includes('tpa') || 
-                                           item.services.name?.toLowerCase().includes('drug') ||
-                                           item.services.name?.toLowerCase().includes('alcohol');
+                              const isTPA = item.services.category === 'TPA Drug/Alcohol';
                               
                               return (
                                 <div key={idx} className="flex items-center justify-between p-4 hover:bg-muted/50">
