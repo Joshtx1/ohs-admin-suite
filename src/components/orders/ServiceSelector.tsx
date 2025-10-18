@@ -41,14 +41,10 @@ interface ServiceSelectorProps {
   onTpaSelect?: (tpaId: string) => void;
   onBillingTypeChange?: (type: 'tpa' | 'client' | 'both') => void;
   registrationType?: 'client' | 'selfpay';
-  onFormFoxChange?: (value: string) => void;
-  onOtherAuthChange?: (value: string) => void;
 }
 
-export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHouseServiceIds, onTpaServiceToggle, onInHouseServiceToggle, onTpaSelect, onBillingTypeChange, registrationType, onFormFoxChange, onOtherAuthChange }: ServiceSelectorProps) {
+export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHouseServiceIds, onTpaServiceToggle, onInHouseServiceToggle, onTpaSelect, onBillingTypeChange, registrationType }: ServiceSelectorProps) {
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
-  const [formFoxId, setFormFoxId] = useState('');
-  const [otherReference, setOtherReference] = useState('');
   const [selectedTpa, setSelectedTpa] = useState<string>('');
   const [tpaClients, setTpaClients] = useState<TPAClient[]>([]);
 
@@ -248,34 +244,6 @@ export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHou
               </div>
             )}
 
-            {/* Reference ID Section - Only show for client registration with TPA */}
-            {registrationType !== 'selfpay' && selectedTpa && (
-              <div className="mt-6 pt-4">
-                <div className="flex items-center gap-4">
-                  <Label className="text-sm font-semibold whitespace-nowrap">Reference ID:</Label>
-                  <Input
-                    placeholder="Enter FormFox ID"
-                    value={formFoxId}
-                    onChange={(e) => {
-                      setFormFoxId(e.target.value);
-                      onFormFoxChange?.(e.target.value);
-                    }}
-                    className="max-w-xs"
-                  />
-                  
-                  <Label className="text-sm font-normal whitespace-nowrap">Other</Label>
-                  <Input
-                    placeholder="Other reference"
-                    value={otherReference}
-                    onChange={(e) => {
-                      setOtherReference(e.target.value);
-                      onOtherAuthChange?.(e.target.value);
-                    }}
-                    className="max-w-xs"
-                  />
-                </div>
-              </div>
-            )}
 
             {/* Divider - Only show if TPA section is visible */}
             {registrationType !== 'selfpay' && <div className="border-t my-6"></div>}

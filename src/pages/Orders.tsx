@@ -96,8 +96,9 @@ export default function Orders() {
   const [serviceDate, setServiceDate] = useState<Date>(new Date());
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
   const [reasonForTest, setReasonForTest] = useState<string>("");
-  const [formFoxAuth, setFormFoxAuth] = useState<string>("");
-  const [otherAuth, setOtherAuth] = useState<string>("");
+  
+  // Track FF Auth per trainee (only for TPA Drug/Alcohol services)
+  const [traineeFFAuth, setTraineeFFAuth] = useState<Map<string, { formfox_auth: string; other_auth: string }>>(new Map());
   
   // Track excluded trainee-service combinations
   const [excludedCombinations, setExcludedCombinations] = useState<Set<string>>(new Set());
@@ -163,8 +164,19 @@ export default function Orders() {
       
       // Set other fields
       setReasonForTest(order.reason_for_test || "");
-      setFormFoxAuth(order.formfox_auth || "");
-      setOtherAuth(order.other_auth || "");
+      
+      // Load FF Auth from order items (first item with data)
+      if (order.order_items && order.order_items.length > 0 && order.trainees) {
+        const firstItemWithAuth = order.order_items.find(item => item.formfox_auth || item.other_auth);
+        if (firstItemWithAuth) {
+          const newMap = new Map(traineeFFAuth);
+          newMap.set(order.trainees.id, {
+            formfox_auth: firstItemWithAuth.formfox_auth || '',
+            other_auth: firstItemWithAuth.other_auth || ''
+          });
+          setTraineeFFAuth(newMap);
+        }
+      }
       
       // Load services from order items
       if (order.order_items && order.order_items.length > 0) {
@@ -431,13 +443,14 @@ export default function Orders() {
             notes: registrationType === "client" ? `PO: ${orderPO}` : "Self Pay",
             reason_for_test: reasonForTest,
             payment_status: registrationType === "client" ? "Billed" : "Payment Due",
-            formfox_auth: formFoxAuth || null,
-            other_auth: otherAuth || null
           })
           .select()
           .single();
 
         if (orderError) throw orderError;
+
+        // Get FF Auth for this trainee
+        const traineeAuth = traineeFFAuth.get(trainee.id);
 
         // Create order items for each service with billing client info
         const orderItems = traineeServices.map(service => {
@@ -478,7 +491,9 @@ export default function Orders() {
             price: service.member_price || 0,
             status: "pending",
             billing_client_id: billingClientIdForItem,
-            payment_status: paymentStatus
+            payment_status: paymentStatus,
+            formfox_auth: traineeAuth?.formfox_auth || null,
+            other_auth: traineeAuth?.other_auth || null
           };
         });
 
@@ -545,8 +560,6 @@ export default function Orders() {
           service_date: selectedServices[0]?.date || new Date().toISOString().split('T')[0],
           notes: registrationType === "client" ? `PO: ${orderPO}` : "Self Pay",
           reason_for_test: reasonForTest,
-          formfox_auth: formFoxAuth || null,
-          other_auth: otherAuth || null
         })
         .eq("id", editingOrderId);
 
@@ -559,6 +572,9 @@ export default function Orders() {
         .eq("order_id", editingOrderId);
 
       if (deleteError) throw deleteError;
+
+      // Get FF Auth for the trainee (there's only one trainee when editing)
+      const traineeAuth = selectedTrainees.length > 0 ? traineeFFAuth.get(selectedTrainees[0].id) : undefined;
 
       // Create new order items
       const orderItems = selectedServices.map(service => {
@@ -591,7 +607,9 @@ export default function Orders() {
           price: service.member_price || 0,
           status: "pending",
           billing_client_id: billingClientIdForItem,
-          payment_status: paymentStatus
+          payment_status: paymentStatus,
+          formfox_auth: traineeAuth?.formfox_auth || null,
+          other_auth: traineeAuth?.other_auth || null
         };
       });
 
@@ -648,8 +666,7 @@ export default function Orders() {
     setOrderPO("");
     setRegistrationType("client");
     setReasonForTest("");
-    setFormFoxAuth("");
-    setOtherAuth("");
+    setTraineeFFAuth(new Map());
     setExcludedCombinations(new Set());
     setEditingOrderId(null);
     setCurrentTab("view");
@@ -1094,8 +1111,6 @@ export default function Orders() {
                             selectedTpaServiceIds={selectedTpaServices.map(s => s.id)}
                             selectedInHouseServiceIds={selectedInHouseServices.map(s => s.id)}
                             registrationType={registrationType}
-                            onFormFoxChange={setFormFoxAuth}
-                            onOtherAuthChange={setOtherAuth}
                             onTpaServiceToggle={(serviceId) => {
                               const service = services.find(s => s.id === serviceId);
                               if (!service) return;

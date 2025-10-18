@@ -54,6 +54,8 @@ export interface Order {
     price: number;
     status: string;
     payment_status?: string;
+    formfox_auth?: string | null;
+    other_auth?: string | null;
     services: {
       name: string;
       service_code: string;
@@ -114,6 +116,8 @@ export function useOrdersData() {
             status,
             payment_status,
             billing_client_id,
+            formfox_auth,
+            other_auth,
             billing_client:clients!billing_client_id (
               billing_id
             ),
