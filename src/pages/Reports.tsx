@@ -74,8 +74,6 @@ const Reports = () => {
     toast.success("Report exported successfully");
   };
 
-  const totalRevenue = filteredData.reduce((sum, row) => sum + row.rate, 0);
-
   const columns = [
     { 
       header: "Order ID", 
@@ -98,7 +96,7 @@ const Reports = () => {
   ];
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="w-full py-6 px-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Reports</h1>
         <p className="text-muted-foreground">Generate and export various reports</p>
@@ -134,12 +132,9 @@ const Reports = () => {
                 </Button>
               </div>
 
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <div className="flex items-center text-sm text-muted-foreground">
                 <span>
                   Showing {filteredData.length} line item{filteredData.length !== 1 ? "s" : ""}
-                </span>
-                <span className="font-semibold">
-                  Total Revenue: ${totalRevenue.toFixed(2)}
                 </span>
               </div>
 
@@ -148,11 +143,13 @@ const Reports = () => {
                   Loading report data...
                 </div>
               ) : (
-                <DataTable
-                  data={filteredData}
-                  columns={columns}
-                  pageSize={20}
-                />
+                <div className="overflow-x-auto">
+                  <DataTable
+                    data={filteredData}
+                    columns={columns}
+                    pageSize={20}
+                  />
+                </div>
               )}
             </CardContent>
           </Card>

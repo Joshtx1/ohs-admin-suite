@@ -514,7 +514,7 @@ export default function Orders() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="w-full p-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-muted rounded w-1/4"></div>
           <div className="h-32 bg-muted rounded"></div>
@@ -524,7 +524,7 @@ export default function Orders() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="w-full p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Orders Management</h1>
       </div>
