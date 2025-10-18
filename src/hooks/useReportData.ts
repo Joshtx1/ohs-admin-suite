@@ -16,6 +16,7 @@ export interface BillingExportRow {
   paymentStatus: string;
   receipt: string;
   rate: number;
+  ffAuthId: string;
 }
 
 export const useBillingExportData = () => {
@@ -91,6 +92,7 @@ export const useBillingExportData = () => {
           paymentStatus: (item as any).payment_status || "Payment Due",
           receipt: "", // Placeholder for future payment tracking
           rate: Number(item.price) || 0,
+          ffAuthId: order?.formfox_auth || "",
         };
       });
 

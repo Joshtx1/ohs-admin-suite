@@ -24,7 +24,8 @@ const Reports = () => {
       row.serviceCode.toLowerCase().includes(search) ||
       row.service.toLowerCase().includes(search) ||
       row.traineeName.toLowerCase().includes(search) ||
-      row.ssn.toLowerCase().includes(search)
+      row.ssn.toLowerCase().includes(search) ||
+      row.ffAuthId.toLowerCase().includes(search)
     );
   });
 
@@ -42,6 +43,7 @@ const Reports = () => {
       "Payment Status",
       "Receipt",
       "Rate",
+      "FF AUTH ID",
     ];
 
     const csvContent = [
@@ -60,6 +62,7 @@ const Reports = () => {
           row.paymentStatus,
           row.receipt,
           row.rate,
+          row.ffAuthId,
         ].join(",")
       ),
     ].join("\n");
@@ -93,6 +96,7 @@ const Reports = () => {
       header: "Rate",
       cell: (row: BillingExportRow) => `$${row.rate.toFixed(2)}`,
     },
+    { header: "FF AUTH ID", accessorKey: "ffAuthId" as keyof BillingExportRow },
   ];
 
   return (

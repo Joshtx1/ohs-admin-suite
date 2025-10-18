@@ -59,7 +59,7 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
       cell: (order: Order) => (
         <div>
           <div className="font-medium">{order.trainees?.name || 'N/A'}</div>
-          <div className="text-sm text-muted-foreground">{order.trainees?.unique_id || 'N/A'}</div>
+          <div className="text-sm text-muted-foreground">{order.trainees?.ssn || 'N/A'}</div>
         </div>
       ),
     },
@@ -79,14 +79,8 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
       cell: (order: Order) => format(new Date(order.service_date), 'MM/dd/yyyy'),
     },
     {
-      header: 'Created By',
-      cell: (order: Order) => {
-        const profile = order.created_by_profile;
-        if (profile) {
-          return `${profile.first_name} ${profile.last_name}`;
-        }
-        return 'N/A';
-      },
+      header: 'Total Services',
+      cell: (order: Order) => order.order_items?.length || 0,
     },
     {
       header: 'Status',
