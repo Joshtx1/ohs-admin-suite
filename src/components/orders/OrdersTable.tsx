@@ -83,6 +83,14 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
       cell: (order: Order) => order.order_items?.length || 0,
     },
     {
+      header: 'FF AUTH ID',
+      cell: (order: Order) => (
+        <div className="text-sm">
+          {order.formfox_auth || '-'}
+        </div>
+      ),
+    },
+    {
       header: 'Status',
       cell: (order: Order) => (
         <Badge variant={getStatusBadgeVariant(order.status)}>

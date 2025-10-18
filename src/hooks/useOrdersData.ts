@@ -13,6 +13,8 @@ export interface Order {
   notes: string | null;
   reason_for_test?: string | null;
   payment_status?: string | null;
+  formfox_auth?: string | null;
+  other_auth?: string | null;
   created_at: string;
   updated_at: string;
   created_by: string;

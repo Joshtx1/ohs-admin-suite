@@ -147,6 +147,18 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                     <p className="font-medium">{order.notes.replace('PO:', '').trim()}</p>
                   </div>
                 )}
+                {order.formfox_auth && (
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">FormFox Auth ID</p>
+                    <p className="font-medium">{order.formfox_auth}</p>
+                  </div>
+                )}
+                {order.other_auth && (
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Other Reference ID</p>
+                    <p className="font-medium">{order.other_auth}</p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="p-4 border rounded-lg">
@@ -204,32 +216,23 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                           <div className="bg-primary/10 px-4 py-2 border-b">
                             <h5 className="font-semibold">{department}</h5>
                           </div>
-                          <div className="divide-y">
-                            {items.map((item, idx) => {
-                              const isDrugScreen = item.services.department?.toLowerCase().includes('drug') || 
-                                                 item.services.category?.toLowerCase().includes('drug');
-                              const referenceId = item.notes?.match(/Reference ID:\s*([^\s,]+)/i)?.[1];
-                              
-                              return (
-                                <div key={idx} className="flex items-center justify-between p-4 hover:bg-muted/50">
-                                  <div className="flex-1">
-                                    <p className="font-medium">{item.services.name}</p>
-                                    <div className="flex gap-4 text-sm text-muted-foreground mt-1">
-                                      <span>Code: {item.services.service_code}</span>
-                                      {isDrugScreen && referenceId && (
-                                        <span className="font-semibold text-primary">Ref ID: {referenceId}</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="font-semibold">${item.price.toFixed(2)}</p>
-                                    <Badge variant="outline" className="mt-1">
-                                      {item.status}
-                                    </Badge>
+                           <div className="divide-y">
+                            {items.map((item, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-4 hover:bg-muted/50">
+                                <div className="flex-1">
+                                  <p className="font-medium">{item.services.name}</p>
+                                  <div className="flex gap-4 text-sm text-muted-foreground mt-1">
+                                    <span>Code: {item.services.service_code}</span>
                                   </div>
                                 </div>
-                              );
-                            })}
+                                <div className="text-right">
+                                  <p className="font-semibold">${item.price.toFixed(2)}</p>
+                                  <Badge variant="outline" className="mt-1">
+                                    {item.status}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       ))}
