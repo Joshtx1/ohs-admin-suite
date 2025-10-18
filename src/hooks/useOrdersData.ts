@@ -54,8 +54,12 @@ export interface Order {
     price: number;
     status: string;
     payment_status?: string;
+    billing_client_id?: string | null;
     formfox_auth?: string | null;
     other_auth?: string | null;
+    billing_client?: {
+      billing_id: string;
+    } | null;
     services: {
       name: string;
       service_code: string;
