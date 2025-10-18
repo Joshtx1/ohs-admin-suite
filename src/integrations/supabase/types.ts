@@ -340,9 +340,11 @@ export type Database = {
           billing_client_id: string | null
           completed_at: string | null
           created_at: string
+          formfox_auth: string | null
           id: string
           notes: string | null
           order_id: string
+          other_auth: string | null
           payment_status: string | null
           price: number
           service_id: string
@@ -353,9 +355,11 @@ export type Database = {
           billing_client_id?: string | null
           completed_at?: string | null
           created_at?: string
+          formfox_auth?: string | null
           id?: string
           notes?: string | null
           order_id: string
+          other_auth?: string | null
           payment_status?: string | null
           price: number
           service_id: string
@@ -366,9 +370,11 @@ export type Database = {
           billing_client_id?: string | null
           completed_at?: string | null
           created_at?: string
+          formfox_auth?: string | null
           id?: string
           notes?: string | null
           order_id?: string
+          other_auth?: string | null
           payment_status?: string | null
           price?: number
           service_id?: string

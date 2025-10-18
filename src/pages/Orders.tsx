@@ -1227,6 +1227,64 @@ export default function Orders() {
                 <div className="space-y-4">
                   <Label className="text-sm font-semibold">Review</Label>
                   
+                  {/* FF Auth Section - Only show for trainees with TPA services */}
+                  {selectedTpaServices.length > 0 && selectedTrainees.length > 0 && (
+                    <Card className="p-4 bg-blue-50 border-blue-200">
+                      <Label className="text-sm font-semibold mb-3 block">TPA REFERENCE IDs</Label>
+                      <div className="space-y-3">
+                        {selectedTrainees.map((trainee) => {
+                          const hasTPAServices = selectedTpaServices.some(
+                            service => !isServiceExcluded(trainee.id, service.id)
+                          );
+                          
+                          if (!hasTPAServices) return null;
+                          
+                          const currentAuth = traineeFFAuth.get(trainee.id) || { formfox_auth: '', other_auth: '' };
+                          
+                          return (
+                            <div key={trainee.id} className="grid grid-cols-[200px_1fr_1fr] gap-3 items-center">
+                              <div className="font-medium text-sm">
+                                {trainee.name}
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <Label className="text-xs">FormFox ID</Label>
+                                <Input
+                                  placeholder="Enter FormFox ID"
+                                  value={currentAuth.formfox_auth}
+                                  onChange={(e) => {
+                                    const newMap = new Map(traineeFFAuth);
+                                    newMap.set(trainee.id, {
+                                      ...currentAuth,
+                                      formfox_auth: e.target.value
+                                    });
+                                    setTraineeFFAuth(newMap);
+                                  }}
+                                  className="h-9"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <Label className="text-xs">Other Reference</Label>
+                                <Input
+                                  placeholder="Other reference"
+                                  value={currentAuth.other_auth}
+                                  onChange={(e) => {
+                                    const newMap = new Map(traineeFFAuth);
+                                    newMap.set(trainee.id, {
+                                      ...currentAuth,
+                                      other_auth: e.target.value
+                                    });
+                                    setTraineeFFAuth(newMap);
+                                  }}
+                                  className="h-9"
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </Card>
+                  )}
+                  
                   <ScrollArea className="h-[400px]">
                     {selectedTrainees.map((trainee) => (
                       <div key={trainee.id} className="mb-6 border rounded-lg overflow-hidden">
