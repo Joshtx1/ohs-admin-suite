@@ -218,8 +218,11 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                           </div>
                            <div className="divide-y">
                              {items.map((item, idx) => {
-                              // Check if this is a TPA Drug/Alcohol test
-                              const isTPA = item.services.category === 'TPA Drug/Alcohol';
+                              // Check if this is a TPA Drug/Alcohol test - flexible matching for different category names
+                              const isTPA = item.services.category === 'TPA Drug/Alcohol' || 
+                                            item.services.category === 'DRUG AND ALCOHOL' ||
+                                            item.services.category?.toUpperCase().includes('DRUG') ||
+                                            item.services.category?.toUpperCase().includes('ALCOHOL');
                               // Use item-level auth if available, otherwise fall back to order-level
                               const ffAuth = item.formfox_auth || order.formfox_auth;
                               const otherAuth = item.other_auth || order.other_auth;
