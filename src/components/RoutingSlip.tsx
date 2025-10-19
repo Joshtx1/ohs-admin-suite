@@ -220,6 +220,9 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                              {items.map((item, idx) => {
                               // Check if this is a TPA Drug/Alcohol test
                               const isTPA = item.services.category === 'TPA Drug/Alcohol';
+                              // Use item-level auth if available, otherwise fall back to order-level
+                              const ffAuth = item.formfox_auth || order.formfox_auth;
+                              const otherAuth = item.other_auth || order.other_auth;
                               
                               return (
                                 <div key={idx} className="flex items-center justify-between p-4 hover:bg-muted/50">
@@ -227,11 +230,11 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                                     <p className="font-medium">{item.services.name}</p>
                                     <div className="flex gap-4 text-sm text-muted-foreground mt-1">
                                       <span>Code: {item.services.service_code}</span>
-                                      {isTPA && item.formfox_auth && (
-                                        <span className="font-semibold text-foreground">| FF Auth: {item.formfox_auth}</span>
+                                      {isTPA && ffAuth && (
+                                        <span className="font-semibold text-foreground">| FF Auth: {ffAuth}</span>
                                       )}
-                                      {isTPA && item.other_auth && (
-                                        <span>| Other: {item.other_auth}</span>
+                                      {isTPA && otherAuth && (
+                                        <span className="font-semibold text-foreground">| Other: {otherAuth}</span>
                                       )}
                                     </div>
                                   </div>
