@@ -168,33 +168,64 @@ export default function Orders() {
       // Set other fields
       setReasonForTest(order.reason_for_test || "");
       
-      // Load FF Auth from order items (first item with data)
+      // Load FF Auth from order items per service
       if (order.order_items && order.order_items.length > 0 && order.trainees) {
-        const firstItemWithAuth = order.order_items.find(item => item.formfox_auth || item.other_auth);
-        if (firstItemWithAuth) {
-          const newMap = new Map(traineeFFAuth);
-          newMap.set(order.trainees.id, {
-            formfox_auth: firstItemWithAuth.formfox_auth || '',
-            other_auth: firstItemWithAuth.other_auth || ''
-          });
-          setTraineeFFAuth(newMap);
-          // Set willProvideAuthId if there are auth IDs
+        const newMap = new Map(traineeFFAuth);
+        order.order_items.forEach(item => {
+          if (item.formfox_auth || item.other_auth) {
+            const serviceKey = `${order.trainees.id}-${item.service_id}`;
+            newMap.set(serviceKey, {
+              formfox_auth: item.formfox_auth || '',
+              other_auth: item.other_auth || ''
+            });
+          }
+        });
+        setTraineeFFAuth(newMap);
+        
+        // Set willProvideAuthId if there are any auth IDs
+        const hasAuthIds = order.order_items.some(item => item.formfox_auth || item.other_auth);
+        if (hasAuthIds) {
           setWillProvideAuthId(true);
         }
       }
       
-      // Load services from order items
+      // Find if any services have a TPA billing client (different from main billing client)
+      const tpaItem = order.order_items?.find(item => 
+        item.billing_client_id && item.billing_client_id !== order.billing_client_id
+      );
+      if (tpaItem) {
+        setSelectedTpaId(tpaItem.billing_client_id);
+      }
+      
+      // Load services from order items with proper billing IDs
       if (order.order_items && order.order_items.length > 0) {
-        const loadedServices: SelectedService[] = order.order_items.map(item => ({
-          id: item.service_id,
-          name: item.services.name,
-          service_code: item.services.service_code,
-          category: item.services.category,
-          member_price: item.price,
-          non_member_price: item.price,
-          date: order.service_date,
-          tpa_billing_id: item.billing_client_id || undefined, // Preserve the TPA billing ID
-        }));
+        const loadedServices: SelectedService[] = await Promise.all(
+          order.order_items.map(async (item) => {
+            let tpaBillingId: string | undefined = undefined;
+            
+            // If this item has a different billing client than the order, fetch it
+            if (item.billing_client_id && item.billing_client_id !== order.billing_client_id) {
+              const { data: billingClient } = await supabase
+                .from('clients')
+                .select('billing_id')
+                .eq('id', item.billing_client_id)
+                .single();
+              
+              tpaBillingId = billingClient?.billing_id;
+            }
+            
+            return {
+              id: item.service_id,
+              name: item.services.name,
+              service_code: item.services.service_code,
+              category: item.services.category,
+              member_price: item.price,
+              non_member_price: item.price,
+              date: order.service_date,
+              tpa_billing_id: tpaBillingId,
+            };
+          })
+        );
         setSelectedServices(loadedServices);
       }
       
@@ -493,6 +524,10 @@ export default function Orders() {
             }
           }
           
+          // Get auth IDs for this specific trainee-service combination
+          const serviceKey = `${trainee.id}-${service.id}`;
+          const serviceAuth = willProvideAuthId ? traineeFFAuth.get(serviceKey) : undefined;
+          
           return {
             order_id: orderData.id,
             service_id: service.id,
@@ -501,8 +536,8 @@ export default function Orders() {
             billing_client_id: billingClientIdForItem,
             payment_status: paymentStatus,
             // Only assign auth IDs to TPA services
-            formfox_auth: isTPAService && traineeAuth ? traineeAuth.formfox_auth || null : null,
-            other_auth: isTPAService && traineeAuth ? traineeAuth.other_auth || null : null
+            formfox_auth: isTPAService && serviceAuth ? serviceAuth.formfox_auth || null : null,
+            other_auth: isTPAService && serviceAuth ? serviceAuth.other_auth || null : null
           };
         });
 
@@ -611,6 +646,10 @@ export default function Orders() {
           }
         }
         
+        // Get auth IDs for this specific trainee-service combination
+        const serviceKey = selectedTrainees.length > 0 ? `${selectedTrainees[0].id}-${service.id}` : '';
+        const serviceAuth = willProvideAuthId && serviceKey ? traineeFFAuth.get(serviceKey) : undefined;
+        
         return {
           order_id: editingOrderId,
           service_id: service.id,
@@ -619,8 +658,8 @@ export default function Orders() {
           billing_client_id: billingClientIdForItem,
           payment_status: paymentStatus,
           // Only assign auth IDs to TPA services
-          formfox_auth: isTPAService && traineeAuth ? traineeAuth.formfox_auth || null : null,
-          other_auth: isTPAService && traineeAuth ? traineeAuth.other_auth || null : null
+          formfox_auth: isTPAService && serviceAuth ? serviceAuth.formfox_auth || null : null,
+          other_auth: isTPAService && serviceAuth ? serviceAuth.other_auth || null : null
         };
       });
 
@@ -1248,54 +1287,62 @@ export default function Orders() {
                   {/* FF Auth Section - Only show if user indicated they will provide auth IDs */}
                   {willProvideAuthId && selectedTpaServices.length > 0 && selectedTrainees.length > 0 && (
                     <Card className="p-4 bg-blue-50 border-blue-200">
-                      <Label className="text-sm font-semibold mb-3 block">TPA REFERENCE IDs</Label>
-                      <div className="space-y-3">
+                      <Label className="text-sm font-semibold mb-3 block">TPA AUTHORIZATION IDs PER SERVICE</Label>
+                      <div className="space-y-4">
                         {selectedTrainees.map((trainee) => {
-                          const hasTPAServices = selectedTpaServices.some(
+                          const traineeTPAServices = selectedTpaServices.filter(
                             service => !isServiceExcluded(trainee.id, service.id)
                           );
                           
-                          if (!hasTPAServices) return null;
-                          
-                          const currentAuth = traineeFFAuth.get(trainee.id) || { formfox_auth: '', other_auth: '' };
+                          if (traineeTPAServices.length === 0) return null;
                           
                           return (
-                            <div key={trainee.id} className="grid grid-cols-[200px_1fr_1fr] gap-3 items-center">
-                              <div className="font-medium text-sm">
-                                {trainee.name}
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <Label className="text-xs">FormFox ID</Label>
-                                <Input
-                                  placeholder="Enter FormFox ID"
-                                  value={currentAuth.formfox_auth}
-                                  onChange={(e) => {
-                                    const newMap = new Map(traineeFFAuth);
-                                    newMap.set(trainee.id, {
-                                      ...currentAuth,
-                                      formfox_auth: e.target.value
-                                    });
-                                    setTraineeFFAuth(newMap);
-                                  }}
-                                  className="h-9"
-                                />
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <Label className="text-xs">Other Reference</Label>
-                                <Input
-                                  placeholder="Other reference"
-                                  value={currentAuth.other_auth}
-                                  onChange={(e) => {
-                                    const newMap = new Map(traineeFFAuth);
-                                    newMap.set(trainee.id, {
-                                      ...currentAuth,
-                                      other_auth: e.target.value
-                                    });
-                                    setTraineeFFAuth(newMap);
-                                  }}
-                                  className="h-9"
-                                />
-                              </div>
+                            <div key={trainee.id} className="space-y-2 border-b pb-4 last:border-b-0">
+                              <div className="font-semibold text-sm">{trainee.name}</div>
+                              {traineeTPAServices.map((service) => {
+                                const serviceKey = `${trainee.id}-${service.id}`;
+                                const currentAuth = traineeFFAuth.get(serviceKey) || { formfox_auth: '', other_auth: '' };
+                                
+                                return (
+                                  <div key={service.id} className="ml-4 grid grid-cols-[200px_1fr_1fr] gap-3 items-center border-l-2 border-blue-300 pl-3">
+                                    <div className="text-sm text-muted-foreground">
+                                      {service.service_code} - {service.name}
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                      <Label className="text-xs">FormFox ID</Label>
+                                      <Input
+                                        placeholder="Enter FormFox ID"
+                                        value={currentAuth.formfox_auth}
+                                        onChange={(e) => {
+                                          const newMap = new Map(traineeFFAuth);
+                                          newMap.set(serviceKey, {
+                                            ...currentAuth,
+                                            formfox_auth: e.target.value
+                                          });
+                                          setTraineeFFAuth(newMap);
+                                        }}
+                                        className="h-9"
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                      <Label className="text-xs">Other Reference</Label>
+                                      <Input
+                                        placeholder="Other reference"
+                                        value={currentAuth.other_auth}
+                                        onChange={(e) => {
+                                          const newMap = new Map(traineeFFAuth);
+                                          newMap.set(serviceKey, {
+                                            ...currentAuth,
+                                            other_auth: e.target.value
+                                          });
+                                          setTraineeFFAuth(newMap);
+                                        }}
+                                        className="h-9"
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           );
                         })}
