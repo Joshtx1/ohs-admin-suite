@@ -229,10 +229,13 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                               
                               return (
                                 <div key={idx} className="flex items-center justify-between p-4 hover:bg-muted/50">
-                                  <div className="flex-1">
+                                   <div className="flex-1">
                                     <p className="font-medium">{item.services.name}</p>
                                     <div className="flex gap-4 text-sm text-muted-foreground mt-1">
-                                      <span>Code: {item.services.service_code}</span>
+                                      <span>{item.services.service_code}</span>
+                                      <span className="font-semibold text-foreground">
+                                        | TPA: {item.billing_clients?.billing_id || 'inhouse'}
+                                      </span>
                                       {isTPA && ffAuth && (
                                         <span className="font-semibold text-foreground">| FF Auth: {ffAuth}</span>
                                       )}
