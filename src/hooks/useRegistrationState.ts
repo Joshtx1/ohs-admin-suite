@@ -9,7 +9,7 @@ export interface SelectedService {
 
 export interface RegistrationState {
   selectedTrainee: any | null;
-  registrationType: 'client' | 'self-pay' | null;
+  registrationType: 'client' | 'self-pay' | 'combination' | null;
   selectedClient: any | null;
   selectedServices: SelectedService[];
   serviceDate: Date;
@@ -33,7 +33,7 @@ export function useRegistrationState() {
     setState(prev => ({ ...prev, selectedTrainee: trainee }));
   };
 
-  const setRegistrationType = (type: 'client' | 'self-pay' | null) => {
+  const setRegistrationType = (type: 'client' | 'self-pay' | 'combination' | null) => {
     setState(prev => ({ ...prev, registrationType: type }));
   };
 

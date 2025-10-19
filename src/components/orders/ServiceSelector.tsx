@@ -40,7 +40,7 @@ interface ServiceSelectorProps {
   onInHouseServiceToggle: (serviceId: string) => void;
   onTpaSelect?: (tpaId: string) => void;
   onBillingTypeChange?: (type: 'tpa' | 'client' | 'both') => void;
-  registrationType?: 'client' | 'selfpay';
+  registrationType?: 'client' | 'selfpay' | 'combination';
 }
 
 export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHouseServiceIds, onTpaServiceToggle, onInHouseServiceToggle, onTpaSelect, onBillingTypeChange, registrationType }: ServiceSelectorProps) {
@@ -177,7 +177,7 @@ export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHou
 
           <div className="space-y-4">
             {/* TPA Consortium Testing - Only show for client registration */}
-            {registrationType !== 'selfpay' && (
+            {registrationType === 'client' && (
               <div className="space-y-2">
                 <h4 className="font-semibold text-base mb-2">{tpaServices.name}</h4>
                 

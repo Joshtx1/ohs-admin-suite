@@ -75,7 +75,7 @@ export default function Orders() {
   const [isSelectTraineeOpen, setIsSelectTraineeOpen] = useState(false);
   
   // Step 2: Registration Type
-  const [registrationType, setRegistrationType] = useState<"client" | "selfpay">("client");
+  const [registrationType, setRegistrationType] = useState<"client" | "selfpay" | "combination">("client");
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState("");
   const [selfPayClientId, setSelfPayClientId] = useState<string | null>(null);
@@ -433,14 +433,14 @@ export default function Orders() {
         const { data: orderData, error: orderError } = await supabase
           .from("orders")
           .insert({
-            client_id: registrationType === "client" ? selectedClientId : selfPayClientId,
-            billing_client_id: registrationType === "client" ? (billingClientId || selectedClientId) : selfPayClientId,
+            client_id: registrationType === "client" ? selectedClientId : (registrationType === "combination" ? selectedClientId : selfPayClientId),
+            billing_client_id: registrationType === "client" ? (billingClientId || selectedClientId) : (registrationType === "combination" ? selectedClientId : selfPayClientId),
             trainee_id: trainee.id,
             created_by: user.user.id,
             status: "created",
             total_amount: totalAmount,
             service_date: traineeServices[0]?.date || new Date().toISOString().split('T')[0],
-            notes: registrationType === "client" ? `PO: ${orderPO}` : "Self Pay",
+            notes: registrationType === "client" ? `PO: ${orderPO}` : (registrationType === "combination" ? "Combination" : "Self Pay"),
             reason_for_test: reasonForTest,
             payment_status: registrationType === "client" ? "Billed" : "Payment Due",
           })
@@ -554,11 +554,11 @@ export default function Orders() {
       const { error: orderError } = await supabase
         .from("orders")
         .update({
-          client_id: registrationType === "client" ? selectedClientId : selfPayClientId,
-          billing_client_id: registrationType === "client" ? (billingClientId || selectedClientId) : selfPayClientId,
+          client_id: registrationType === "client" ? selectedClientId : (registrationType === "combination" ? selectedClientId : selfPayClientId),
+          billing_client_id: registrationType === "client" ? (billingClientId || selectedClientId) : (registrationType === "combination" ? selectedClientId : selfPayClientId),
           total_amount: totalAmount,
           service_date: selectedServices[0]?.date || new Date().toISOString().split('T')[0],
-          notes: registrationType === "client" ? `PO: ${orderPO}` : "Self Pay",
+          notes: registrationType === "client" ? `PO: ${orderPO}` : (registrationType === "combination" ? "Combination" : "Self Pay"),
           reason_for_test: reasonForTest,
         })
         .eq("id", editingOrderId);
@@ -914,19 +914,23 @@ export default function Orders() {
                 <div className="space-y-6">
                   <div>
                     <Label className="text-sm font-semibold mb-4 block">REGISTRATION TYPE</Label>
-                    <RadioGroup value={registrationType} onValueChange={(v) => setRegistrationType(v as "client" | "selfpay")}>
+                    <RadioGroup value={registrationType} onValueChange={(v) => setRegistrationType(v as "client" | "selfpay" | "combination")}>
                       <div className="flex items-center space-x-2 mb-2">
                         <RadioGroupItem value="client" id="client" />
                         <Label htmlFor="client" className="cursor-pointer">ASSIGN TO CLIENT</Label>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 mb-2">
                         <RadioGroupItem value="selfpay" id="selfpay" />
                         <Label htmlFor="selfpay" className="cursor-pointer">Self Pay</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="combination" id="combination" />
+                        <Label htmlFor="combination" className="cursor-pointer">Combination</Label>
                       </div>
                     </RadioGroup>
                   </div>
 
-                  {registrationType === "client" && (
+                  {(registrationType === "client" || registrationType === "combination") && (
                     <div className="space-y-6 mt-6">
                       <div>
                         <Dialog open={isSelectClientOpen} onOpenChange={setIsSelectClientOpen}>
@@ -1351,6 +1355,8 @@ export default function Orders() {
                         <div className="text-sm text-muted-foreground">
                           Employer: {registrationType === "client" 
                             ? `${clients.find(c => c.id === selectedClientId)?.billing_id} ${clients.find(c => c.id === selectedClientId)?.short_code} ${clients.find(c => c.id === selectedClientId)?.company_name}`
+                            : registrationType === "combination"
+                            ? `${clients.find(c => c.id === selectedClientId)?.billing_id} ${clients.find(c => c.id === selectedClientId)?.short_code} ${clients.find(c => c.id === selectedClientId)?.company_name} (Combination)`
                             : clients.find(c => c.id === selfPayClientId)?.company_name || "SELF-PAY"}
                         </div>
                       </div>
