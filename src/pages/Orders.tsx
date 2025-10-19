@@ -178,6 +178,8 @@ export default function Orders() {
             other_auth: firstItemWithAuth.other_auth || ''
           });
           setTraineeFFAuth(newMap);
+          // Set willProvideAuthId if there are auth IDs
+          setWillProvideAuthId(true);
         }
       }
       
@@ -191,6 +193,7 @@ export default function Orders() {
           member_price: item.price,
           non_member_price: item.price,
           date: order.service_date,
+          tpa_billing_id: item.billing_client_id || undefined, // Preserve the TPA billing ID
         }));
         setSelectedServices(loadedServices);
       }
