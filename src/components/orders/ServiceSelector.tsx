@@ -41,9 +41,11 @@ interface ServiceSelectorProps {
   onTpaSelect?: (tpaId: string) => void;
   onBillingTypeChange?: (type: 'tpa' | 'client' | 'both') => void;
   registrationType?: 'client' | 'selfpay' | 'combination';
+  willProvideAuthId?: boolean;
+  onWillProvideAuthIdChange?: (value: boolean) => void;
 }
 
-export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHouseServiceIds, onTpaServiceToggle, onInHouseServiceToggle, onTpaSelect, onBillingTypeChange, registrationType }: ServiceSelectorProps) {
+export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHouseServiceIds, onTpaServiceToggle, onInHouseServiceToggle, onTpaSelect, onBillingTypeChange, registrationType, willProvideAuthId, onWillProvideAuthIdChange }: ServiceSelectorProps) {
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const [selectedTpa, setSelectedTpa] = useState<string>('');
   const [tpaClients, setTpaClients] = useState<TPAClient[]>([]);
@@ -197,10 +199,30 @@ export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHou
                     </Select>
                   </div>
 
-                  {/* Show service groups if TPA is selected */}
+                  {/* Show authorization checkbox if TPA is selected */}
                   {selectedTpa && (
-                    <div className="mt-4 space-y-2">
-                      {tpaServices.subGroups.map((subGroup) => (
+                    <>
+                      <div className="mb-4 p-3 bg-muted rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="provide-auth-id"
+                            checked={willProvideAuthId}
+                            onCheckedChange={(checked) => onWillProvideAuthIdChange?.(checked === true)}
+                          />
+                          <Label 
+                            htmlFor="provide-auth-id" 
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            I will provide authorization IDs (FormFox/Other) for TPA services
+                          </Label>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2 ml-6">
+                          Check this if you have reference numbers from your TPA (e.g., FormFox authorization codes)
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        {tpaServices.subGroups.map((subGroup) => (
                         <div key={subGroup.id} className="space-y-2">
                           <Collapsible open={isGroupOpen(subGroup.id)}>
                             <CollapsibleTrigger
@@ -237,8 +259,9 @@ export function ServiceSelector({ services, selectedTpaServiceIds, selectedInHou
                             </CollapsibleContent>
                           </Collapsible>
                         </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
               </div>

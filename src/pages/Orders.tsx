@@ -100,6 +100,9 @@ export default function Orders() {
   // Track FF Auth per trainee (only for TPA Drug/Alcohol services)
   const [traineeFFAuth, setTraineeFFAuth] = useState<Map<string, { formfox_auth: string; other_auth: string }>>(new Map());
   
+  // Track if user will provide auth IDs for TPA services
+  const [willProvideAuthId, setWillProvideAuthId] = useState(false);
+  
   // Track excluded trainee-service combinations
   const [excludedCombinations, setExcludedCombinations] = useState<Set<string>>(new Set());
   
@@ -449,11 +452,13 @@ export default function Orders() {
 
         if (orderError) throw orderError;
 
-        // Get FF Auth for this trainee
-        const traineeAuth = traineeFFAuth.get(trainee.id);
+        // Get FF Auth for this trainee (only if they indicated they'll provide it)
+        const traineeAuth = willProvideAuthId ? traineeFFAuth.get(trainee.id) : undefined;
 
         // Create order items for each service with billing client info
         const orderItems = traineeServices.map(service => {
+          // Check if this is a TPA service
+          const isTPAService = !!service.tpa_billing_id;
           // Determine billing client: use TPA client if service has tpa_billing_id, otherwise use order's billing_client
           let billingClientIdForItem = orderData.billing_client_id;
           
@@ -492,8 +497,9 @@ export default function Orders() {
             status: "pending",
             billing_client_id: billingClientIdForItem,
             payment_status: paymentStatus,
-            formfox_auth: traineeAuth?.formfox_auth || null,
-            other_auth: traineeAuth?.other_auth || null
+            // Only assign auth IDs to TPA services
+            formfox_auth: isTPAService && traineeAuth ? traineeAuth.formfox_auth || null : null,
+            other_auth: isTPAService && traineeAuth ? traineeAuth.other_auth || null : null
           };
         });
 
@@ -573,11 +579,12 @@ export default function Orders() {
 
       if (deleteError) throw deleteError;
 
-      // Get FF Auth for the trainee (there's only one trainee when editing)
-      const traineeAuth = selectedTrainees.length > 0 ? traineeFFAuth.get(selectedTrainees[0].id) : undefined;
+      // Get FF Auth for the trainee (only if they indicated they'll provide it)
+      const traineeAuth = willProvideAuthId && selectedTrainees.length > 0 ? traineeFFAuth.get(selectedTrainees[0].id) : undefined;
 
       // Create new order items
       const orderItems = selectedServices.map(service => {
+        const isTPAService = !!service.tpa_billing_id;
         let billingClientIdForItem = registrationType === "client" 
           ? (billingClientId || selectedClientId) 
           : selfPayClientId;
@@ -608,8 +615,9 @@ export default function Orders() {
           status: "pending",
           billing_client_id: billingClientIdForItem,
           payment_status: paymentStatus,
-          formfox_auth: traineeAuth?.formfox_auth || null,
-          other_auth: traineeAuth?.other_auth || null
+          // Only assign auth IDs to TPA services
+          formfox_auth: isTPAService && traineeAuth ? traineeAuth.formfox_auth || null : null,
+          other_auth: isTPAService && traineeAuth ? traineeAuth.other_auth || null : null
         };
       });
 
@@ -669,6 +677,7 @@ export default function Orders() {
     setTraineeFFAuth(new Map());
     setExcludedCombinations(new Set());
     setEditingOrderId(null);
+    setWillProvideAuthId(false);
     setCurrentTab("view");
   };
 
@@ -1115,6 +1124,8 @@ export default function Orders() {
                             selectedTpaServiceIds={selectedTpaServices.map(s => s.id)}
                             selectedInHouseServiceIds={selectedInHouseServices.map(s => s.id)}
                             registrationType={registrationType}
+                            willProvideAuthId={willProvideAuthId}
+                            onWillProvideAuthIdChange={setWillProvideAuthId}
                             onTpaServiceToggle={(serviceId) => {
                               const service = services.find(s => s.id === serviceId);
                               if (!service) return;
@@ -1231,8 +1242,8 @@ export default function Orders() {
                 <div className="space-y-4">
                   <Label className="text-sm font-semibold">Review</Label>
                   
-                  {/* FF Auth Section - Only show for trainees with TPA services */}
-                  {selectedTpaServices.length > 0 && selectedTrainees.length > 0 && (
+                  {/* FF Auth Section - Only show if user indicated they will provide auth IDs */}
+                  {willProvideAuthId && selectedTpaServices.length > 0 && selectedTrainees.length > 0 && (
                     <Card className="p-4 bg-blue-50 border-blue-200">
                       <Label className="text-sm font-semibold mb-3 block">TPA REFERENCE IDs</Label>
                       <div className="space-y-3">

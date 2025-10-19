@@ -14,6 +14,7 @@ export interface RegistrationState {
   selectedServices: SelectedService[];
   serviceDate: Date;
   totalAmount: number;
+  willProvideAuthId: boolean;
 }
 
 const initialState: RegistrationState = {
@@ -23,6 +24,7 @@ const initialState: RegistrationState = {
   selectedServices: [],
   serviceDate: new Date(),
   totalAmount: 0,
+  willProvideAuthId: false,
 };
 
 export function useRegistrationState() {
