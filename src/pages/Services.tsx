@@ -297,17 +297,24 @@ const Services = () => {
 
   const handleExport = () => {
     const csvContent = [
-      ['Code', 'Name', 'Description', 'Category', 'Duration (min)', 'Member Price', 'Non-Member Price', 'Valid Days', 'Status'].join(','),
+      ['ID', 'Code', 'Name', 'Description', 'Category', 'Service Groups', 'Duration (min)', 'Member Price', 'Non-Member Price', 'Valid Days', 'Room', 'Department', 'Status', 'Is Active', 'Created At', 'Updated At'].join(','),
       ...filteredServices.map(service => [
+        service.id,
         service.service_code,
         `"${service.name}"`,
         `"${service.description || ''}"`,
         `"${service.category}"`,
+        `"${service.service_group?.join('; ') || ''}"`,
         service.duration_minutes,
         service.member_price || 0,
         service.non_member_price || 0,
         service.valid_for_days || 0,
-        service.status === 'active' ? 'Active' : 'Inactive'
+        `"${service.room || ''}"`,
+        `"${service.department || ''}"`,
+        service.status === 'active' ? 'Active' : 'Inactive',
+        service.is_active ? 'Yes' : 'No',
+        new Date(service.created_at).toLocaleString(),
+        new Date(service.updated_at).toLocaleString()
       ].join(','))
     ].join('\n');
 
