@@ -679,6 +679,7 @@ export type Database = {
           non_member_price: number | null
           room: string | null
           service_code: string
+          service_group: string | null
           status: string | null
           updated_at: string
           valid_for_days: number | null
@@ -697,6 +698,7 @@ export type Database = {
           non_member_price?: number | null
           room?: string | null
           service_code: string
+          service_group?: string | null
           status?: string | null
           updated_at?: string
           valid_for_days?: number | null
@@ -715,6 +717,7 @@ export type Database = {
           non_member_price?: number | null
           room?: string | null
           service_code?: string
+          service_group?: string | null
           status?: string | null
           updated_at?: string
           valid_for_days?: number | null

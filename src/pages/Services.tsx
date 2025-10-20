@@ -21,7 +21,8 @@ const serviceSchema = z.object({
   name: z.string().min(1, 'Service name is required').max(255),
   description: z.string().max(1000).optional(),
   category: z.string().min(1, 'Category is required').max(100),
-  duration_minutes: z.number().min(1, 'Duration must be at least 1 minute'),
+  service_group: z.string().min(1, 'Service group is required').max(100),
+  duration_minutes: z.number().min(0, 'Duration must be 0 or greater').optional(),
   member_price: z.number().min(0, 'Member price must be 0 or greater'),
   non_member_price: z.number().min(0, 'Non-member price must be 0 or greater'),
   valid_for_days: z.number().min(0, 'Valid for days must be 0 or greater'),
@@ -37,6 +38,7 @@ interface Service {
   name: string;
   description?: string;
   category: string;
+  service_group: string;
   duration_minutes: number;
   member_price: number;
   non_member_price: number;
@@ -64,6 +66,7 @@ const Services = () => {
     name: '',
     description: '',
     category: '',
+    service_group: '',
     duration_minutes: '60',
     member_price: '20',
     non_member_price: '30',
@@ -78,6 +81,7 @@ const Services = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const serviceCategories = [
     'AUDIO',
@@ -164,6 +168,7 @@ const Services = () => {
       name: '',
       description: '',
       category: '',
+      service_group: '',
       duration_minutes: '60',
       member_price: '20',
       non_member_price: '30',
@@ -182,7 +187,7 @@ const Services = () => {
     try {
       const processedData = {
         ...formData,
-        duration_minutes: parseInt(formData.duration_minutes),
+        duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : 0,
         member_price: parseFloat(formData.member_price),
         non_member_price: parseFloat(formData.non_member_price),
         valid_for_days: parseInt(formData.valid_for_days),
@@ -210,12 +215,15 @@ const Services = () => {
             name: validatedData.name,
             description: validatedData.description,
             category: validatedData.category,
+            service_group: validatedData.service_group,
             duration_minutes: validatedData.duration_minutes,
             member_price: validatedData.member_price,
             non_member_price: validatedData.non_member_price,
             valid_for_days: validatedData.valid_for_days,
             status: validatedData.status,
             is_active: validatedData.is_active,
+            department: validatedData.department,
+            room: validatedData.room,
             created_by: user?.id,
           }]);
 
@@ -237,6 +245,12 @@ const Services = () => {
           description: error.errors[0].message,
           variant: 'destructive',
         });
+      } else if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+        toast({
+          title: 'Duplicate Service Code',
+          description: 'A service with this code already exists. Please use a different service code.',
+          variant: 'destructive',
+        });
       } else {
         console.error('Error saving service:', error);
         toast({
@@ -255,7 +269,8 @@ const Services = () => {
       name: service.name,
       description: service.description || '',
       category: service.category,
-      duration_minutes: service.duration_minutes.toString(),
+      service_group: service.service_group || service.category,
+      duration_minutes: service.duration_minutes?.toString() || '60',
       member_price: service.member_price?.toString() || '20',
       non_member_price: service.non_member_price?.toString() || '30',
       valid_for_days: service.valid_for_days?.toString() || '0',
@@ -450,14 +465,33 @@ const Services = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="duration_minutes">Duration (minutes) *</Label>
+                <Label htmlFor="service_group">Service Group *</Label>
+                <Select
+                  value={formData.service_group}
+                  onValueChange={(value) => setFormData({ ...formData, service_group: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a service group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceCategories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="duration_minutes">Duration (minutes)</Label>
                 <Input
                   id="duration_minutes"
                   type="number"
-                  min="1"
+                  min="0"
                   value={formData.duration_minutes}
                   onChange={(e) => setFormData({ ...formData, duration_minutes: e.target.value })}
-                  required
+                  placeholder="Enter duration in minutes"
                 />
               </div>
 
@@ -640,8 +674,12 @@ const Services = () => {
               </Button>
             </div>
             
-            <Button variant="link" className="text-cyan-600">
-              View Advanced Filters
+            <Button 
+              variant="link" 
+              className="text-cyan-600"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            >
+              {showAdvancedFilters ? 'Hide' : 'View'} Advanced Filters
             </Button>
           </div>
         </CardContent>
