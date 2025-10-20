@@ -12,7 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Search, Download, Filter } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Download, Filter, Check } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { z } from 'zod';
 import { getStatusBadgeVariant, getStatusDisplay } from '@/lib/status';
 
@@ -21,7 +23,7 @@ const serviceSchema = z.object({
   name: z.string().min(1, 'Service name is required').max(255),
   description: z.string().max(1000).optional(),
   category: z.string().min(1, 'Category is required').max(100),
-  service_group: z.string().min(1, 'Service group is required').max(100),
+  service_group: z.array(z.string()).min(1, 'At least one service group is required'),
   duration_minutes: z.number().min(0, 'Duration must be 0 or greater').optional(),
   member_price: z.number().min(0, 'Member price must be 0 or greater'),
   non_member_price: z.number().min(0, 'Non-member price must be 0 or greater'),
@@ -38,7 +40,7 @@ interface Service {
   name: string;
   description?: string;
   category: string;
-  service_group: string;
+  service_group: string[];
   duration_minutes: number;
   member_price: number;
   non_member_price: number;
@@ -66,7 +68,7 @@ const Services = () => {
     name: '',
     description: '',
     category: '',
-    service_group: '',
+    service_group: [] as string[],
     duration_minutes: '60',
     member_price: '20',
     non_member_price: '30',
@@ -76,6 +78,8 @@ const Services = () => {
     department: '',
     room: '',
   });
+  
+  const [availableServiceGroups, setAvailableServiceGroups] = useState<string[]>([]);
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -123,6 +127,15 @@ const Services = () => {
       if (error) throw error;
       setServices(data || []);
       setFilteredServices(data || []);
+      
+      // Extract unique service groups from all services
+      const uniqueGroups = new Set<string>();
+      data?.forEach(service => {
+        if (service.service_group && Array.isArray(service.service_group)) {
+          service.service_group.forEach((group: string) => uniqueGroups.add(group));
+        }
+      });
+      setAvailableServiceGroups([...serviceCategories, ...Array.from(uniqueGroups)].filter((v, i, a) => a.indexOf(v) === i).sort());
     } catch (error) {
       console.error('Error fetching services:', error);
       toast({
@@ -168,7 +181,7 @@ const Services = () => {
       name: '',
       description: '',
       category: '',
-      service_group: '',
+      service_group: [],
       duration_minutes: '60',
       member_price: '20',
       non_member_price: '30',
@@ -269,7 +282,7 @@ const Services = () => {
       name: service.name,
       description: service.description || '',
       category: service.category,
-      service_group: service.service_group || service.category,
+      service_group: Array.isArray(service.service_group) ? service.service_group : (service.service_group ? [service.service_group] : [service.category]),
       duration_minutes: service.duration_minutes?.toString() || '60',
       member_price: service.member_price?.toString() || '20',
       non_member_price: service.non_member_price?.toString() || '30',
@@ -466,21 +479,53 @@ const Services = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="service_group">Service Group *</Label>
-                <Select
-                  value={formData.service_group}
-                  onValueChange={(value) => setFormData({ ...formData, service_group: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a service group" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {serviceCategories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className="w-full justify-between font-normal"
+                    >
+                      {formData.service_group.length > 0
+                        ? `${formData.service_group.length} group(s) selected`
+                        : "Select service groups"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <div className="max-h-64 overflow-y-auto p-4 space-y-2">
+                      {availableServiceGroups.map((group) => (
+                        <div key={group} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`group-${group}`}
+                            checked={formData.service_group.includes(group)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFormData({
+                                  ...formData,
+                                  service_group: [...formData.service_group, group]
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  service_group: formData.service_group.filter(g => g !== group)
+                                });
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`group-${group}`}
+                            className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
+                            {group}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <p className="text-xs text-muted-foreground">
+                  Selected: {formData.service_group.join(', ') || 'None'}
+                </p>
               </div>
 
               <div className="space-y-2">
