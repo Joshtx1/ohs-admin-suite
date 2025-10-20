@@ -234,7 +234,7 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                                     <div className="flex gap-4 text-sm text-muted-foreground mt-1">
                                       <span>{item.services.service_code}</span>
                                       <span className="font-semibold text-foreground">
-                                        | TPA: {item.billing_client?.billing_id || 'In-House'}
+                                        | {item.billing_client_id && item.billing_client_id !== order.client_id ? item.billing_client?.billing_id : 'In-House'}
                                       </span>
                                       {isTPA && ffAuth && (
                                         <span className="font-semibold text-foreground">| FF Auth: {ffAuth}</span>
@@ -243,7 +243,7 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                                         <span className="font-semibold text-foreground">| Other: {otherAuth}</span>
                                       )}
                                     </div>
-                                  </div>
+                                   </div>
                                   <div className="text-right">
                                     <p className="font-semibold">${item.price.toFixed(2)}</p>
                                     <Badge variant="outline" className="mt-1">
