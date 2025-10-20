@@ -12,11 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Search, Download, Filter, Check } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Download, Filter, Check, Eye, ChevronDown } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { z } from 'zod';
 import { getStatusBadgeVariant, getStatusDisplay } from '@/lib/status';
+import { MetadataFieldBuilder, ServiceMetadata, MetadataField, METADATA_TEMPLATES } from '@/components/MetadataFieldBuilder';
 
 const serviceSchema = z.object({
   service_code: z.string().min(1, 'Service code is required').max(20),
@@ -49,6 +51,7 @@ interface Service {
   is_active: boolean;
   department?: string;
   room?: string;
+  service_metadata?: ServiceMetadata;
   created_at: string;
   updated_at: string;
 }
@@ -63,6 +66,9 @@ const Services = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [metadataPreviewOpen, setMetadataPreviewOpen] = useState(false);
+  const [previewService, setPreviewService] = useState<Service | null>(null);
+  const [showMetadataConfig, setShowMetadataConfig] = useState(false);
   const [formData, setFormData] = useState({
     service_code: '',
     name: '',
@@ -77,6 +83,7 @@ const Services = () => {
     is_active: true,
     department: '',
     room: '',
+    service_metadata: { fields: [] } as ServiceMetadata,
   });
   
   const [availableServiceGroups, setAvailableServiceGroups] = useState<string[]>([]);
@@ -125,8 +132,12 @@ const Services = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setServices(data || []);
-      setFilteredServices(data || []);
+      const servicesWithMetadata = (data || []).map(service => ({
+        ...service,
+        service_metadata: service.service_metadata as unknown as ServiceMetadata | undefined
+      }));
+      setServices(servicesWithMetadata);
+      setFilteredServices(servicesWithMetadata);
       
       // Extract unique service groups from all services
       const uniqueGroups = new Set<string>();
@@ -190,8 +201,10 @@ const Services = () => {
       department: '',
       room: '',
       is_active: true,
+      service_metadata: { fields: [] },
     });
     setEditingService(null);
+    setShowMetadataConfig(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -209,9 +222,13 @@ const Services = () => {
       const validatedData = serviceSchema.parse(processedData);
 
       if (editingService) {
+        const updateData = {
+          ...validatedData,
+          service_metadata: (formData.service_metadata.fields.length > 0 ? formData.service_metadata : null) as any
+        };
         const { error } = await supabase
           .from('services')
-          .update(validatedData)
+          .update(updateData)
           .eq('id', editingService.id);
 
         if (error) throw error;
@@ -237,6 +254,7 @@ const Services = () => {
             is_active: validatedData.is_active,
             department: validatedData.department,
             room: validatedData.room,
+            service_metadata: (formData.service_metadata.fields.length > 0 ? formData.service_metadata : null) as any,
             created_by: user?.id,
           }]);
 
@@ -291,31 +309,54 @@ const Services = () => {
       is_active: service.is_active,
       department: service.department || '',
       room: service.room || '',
+      service_metadata: service.service_metadata || { fields: [] },
     });
+    setShowMetadataConfig(!!service.service_metadata?.fields?.length);
     setDialogOpen(true);
+  };
+
+  const handleViewMetadata = (service: Service) => {
+    setPreviewService(service);
+    setMetadataPreviewOpen(true);
+  };
+
+  const loadMetadataTemplate = (templateKey: string) => {
+    if (templateKey === 'custom') {
+      setFormData({ ...formData, service_metadata: { fields: [] } });
+    } else if (METADATA_TEMPLATES[templateKey]) {
+      setFormData({ ...formData, service_metadata: METADATA_TEMPLATES[templateKey] });
+    }
   };
 
   const handleExport = () => {
     const csvContent = [
-      ['ID', 'Code', 'Name', 'Description', 'Category', 'Service Groups', 'Duration (min)', 'Member Price', 'Non-Member Price', 'Valid Days', 'Room', 'Department', 'Status', 'Is Active', 'Created At', 'Updated At'].join(','),
-      ...filteredServices.map(service => [
-        service.id,
-        service.service_code,
-        `"${service.name}"`,
-        `"${service.description || ''}"`,
-        `"${service.category}"`,
-        `"${service.service_group?.join('; ') || ''}"`,
-        service.duration_minutes,
-        service.member_price || 0,
-        service.non_member_price || 0,
-        service.valid_for_days || 0,
-        `"${service.room || ''}"`,
-        `"${service.department || ''}"`,
-        service.status === 'active' ? 'Active' : 'Inactive',
-        service.is_active ? 'Yes' : 'No',
-        new Date(service.created_at).toLocaleString(),
-        new Date(service.updated_at).toLocaleString()
-      ].join(','))
+      ['ID', 'Code', 'Name', 'Description', 'Category', 'Service Groups', 'Duration (min)', 'Member Price', 'Non-Member Price', 'Valid Days', 'Room', 'Department', 'Status', 'Is Active', 'Custom Fields Count', 'Custom Fields', 'Created At', 'Updated At'].join(','),
+      ...filteredServices.map(service => {
+        const metadata = service.service_metadata;
+        const fieldCount = metadata?.fields?.length || 0;
+        const fieldSummary = metadata?.fields?.map(f => f.fieldLabel).join('; ') || 'None';
+        
+        return [
+          service.id,
+          service.service_code,
+          `"${service.name}"`,
+          `"${service.description || ''}"`,
+          `"${service.category}"`,
+          `"${service.service_group?.join('; ') || ''}"`,
+          service.duration_minutes,
+          service.member_price || 0,
+          service.non_member_price || 0,
+          service.valid_for_days || 0,
+          `"${service.room || ''}"`,
+          `"${service.department || ''}"`,
+          service.status === 'active' ? 'Active' : 'Inactive',
+          service.is_active ? 'Yes' : 'No',
+          fieldCount,
+          `"${fieldSummary}"`,
+          new Date(service.created_at).toLocaleString(),
+          new Date(service.updated_at).toLocaleString()
+        ].join(',');
+      })
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -653,6 +694,49 @@ const Services = () => {
                 <Label htmlFor="is_active">Service is active</Label>
               </div>
 
+              {/* Metadata Configuration Section */}
+              <div className="space-y-3 pt-4 border-t">
+                <div>
+                  <Label className="text-base">Service-Specific Configuration (Optional)</Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Define custom fields needed when this service is ordered
+                  </p>
+                </div>
+                
+                <Collapsible open={showMetadataConfig} onOpenChange={setShowMetadataConfig}>
+                  <CollapsibleTrigger asChild>
+                    <Button type="button" variant="outline" className="w-full">
+                      <ChevronDown className={`h-4 w-4 mr-2 transition-transform ${showMetadataConfig ? 'rotate-180' : ''}`} />
+                      {showMetadataConfig ? 'Hide' : 'Configure'} Custom Fields
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label>Quick Templates</Label>
+                      <Select onValueChange={loadMetadataTemplate}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a template or start custom..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          <SelectItem value="drug-screen">Drug Screen</SelectItem>
+                          <SelectItem value="respirator-fit">Respirator Fit Test</SelectItem>
+                          <SelectItem value="pft">PFT (Simple)</SelectItem>
+                          <SelectItem value="custom">Custom (Start from scratch)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <MetadataFieldBuilder 
+                      fields={formData.service_metadata?.fields || []}
+                      onChange={(fields) => setFormData({
+                        ...formData, 
+                        service_metadata: { ...formData.service_metadata, fields }
+                      })}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancel
@@ -782,6 +866,21 @@ const Services = () => {
                 )
               },
               {
+                header: 'Custom Fields',
+                cell: (service) => {
+                  const metadata = service.service_metadata;
+                  const fieldCount = metadata?.fields?.length || 0;
+                  
+                  return fieldCount > 0 ? (
+                    <Badge variant="secondary">
+                      {fieldCount} field{fieldCount !== 1 ? 's' : ''}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">None</span>
+                  );
+                }
+              },
+              {
                 header: 'Status',
                 cell: (service) => (
                   <Badge variant={service.is_active ? 'default' : 'secondary'}>
@@ -793,6 +892,16 @@ const Services = () => {
                 header: 'Actions',
                 cell: (service) => (
                   <div className="flex items-center justify-center space-x-1">
+                    {service.service_metadata?.fields?.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleViewMetadata(service)}
+                        className="h-auto p-1"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="link"
                       size="sm"
@@ -819,6 +928,55 @@ const Services = () => {
           />
         </CardContent>
       </Card>
+
+      {/* Metadata Preview Dialog */}
+      <Dialog open={metadataPreviewOpen} onOpenChange={setMetadataPreviewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Service Metadata: {previewService?.name}</DialogTitle>
+            <DialogDescription>
+              Custom fields configured for this service type
+            </DialogDescription>
+          </DialogHeader>
+          
+          {previewService?.service_metadata?.fields?.length > 0 ? (
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+              {previewService.service_metadata.fields.map((field, index) => (
+                <Card key={index} className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <p className="font-medium">{field.fieldLabel}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Type: {field.fieldType} {field.required && '• Required'}
+                      </p>
+                      {field.placeholder && (
+                        <p className="text-xs text-muted-foreground">
+                          Placeholder: {field.placeholder}
+                        </p>
+                      )}
+                      {field.options && field.options.length > 0 && (
+                        <div className="text-xs text-muted-foreground mt-2">
+                          <p className="font-medium mb-1">Options:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {field.options.map((option, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {option}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <Badge variant="secondary">{field.fieldType}</Badge>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground py-8 text-center">No custom fields configured</p>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

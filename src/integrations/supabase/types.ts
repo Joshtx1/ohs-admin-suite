@@ -342,6 +342,7 @@ export type Database = {
           created_at: string
           formfox_auth: string | null
           id: string
+          item_metadata: Json | null
           notes: string | null
           order_id: string
           other_auth: string | null
@@ -357,6 +358,7 @@ export type Database = {
           created_at?: string
           formfox_auth?: string | null
           id?: string
+          item_metadata?: Json | null
           notes?: string | null
           order_id: string
           other_auth?: string | null
@@ -372,6 +374,7 @@ export type Database = {
           created_at?: string
           formfox_auth?: string | null
           id?: string
+          item_metadata?: Json | null
           notes?: string | null
           order_id?: string
           other_auth?: string | null
@@ -680,6 +683,7 @@ export type Database = {
           room: string | null
           service_code: string
           service_group: string[] | null
+          service_metadata: Json | null
           status: string | null
           updated_at: string
           valid_for_days: number | null
@@ -699,6 +703,7 @@ export type Database = {
           room?: string | null
           service_code: string
           service_group?: string[] | null
+          service_metadata?: Json | null
           status?: string | null
           updated_at?: string
           valid_for_days?: number | null
@@ -718,6 +723,7 @@ export type Database = {
           room?: string | null
           service_code?: string
           service_group?: string[] | null
+          service_metadata?: Json | null
           status?: string | null
           updated_at?: string
           valid_for_days?: number | null
