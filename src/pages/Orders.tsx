@@ -727,7 +727,7 @@ export default function Orders() {
   
   const selectedClient = clients.find(c => c.id === selectedClientId);
   const canProceedToStep3 = registrationType === "selfpay" || 
-    (registrationType === "client" && selectedClientId && 
+    ((registrationType === "client" || registrationType === "combination") && selectedClientId && 
       (!selectedClient?.po_required || (selectedClient?.po_required && orderPO.trim() !== "")));
   
   const canProceedToStep4 = selectedServices.length > 0;
