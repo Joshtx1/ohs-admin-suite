@@ -234,7 +234,7 @@ export default function RoutingSlip({ open, onOpenChange, order }: RoutingSlipPr
                                     <div className="flex gap-4 text-sm text-muted-foreground mt-1">
                                       <span>{item.services.service_code}</span>
                                       <span className="font-semibold text-foreground">
-                                        | TPA: {item.billing_clients?.billing_id || 'inhouse'}
+                                        | TPA: {item.billing_client?.billing_id || 'In-House'}
                                       </span>
                                       {isTPA && ffAuth && (
                                         <span className="font-semibold text-foreground">| FF Auth: {ffAuth}</span>
