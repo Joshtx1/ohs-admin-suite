@@ -471,13 +471,13 @@ export default function Orders() {
           .from("orders")
           .insert({
             client_id: registrationType === "client" ? selectedClientId : (registrationType === "combination" ? selectedClientId : selfPayClientId),
-            billing_client_id: registrationType === "client" ? (billingClientId || selectedClientId) : (registrationType === "combination" ? selectedClientId : selfPayClientId),
+            billing_client_id: registrationType === "client" ? (billingClientId || selectedClientId) : (registrationType === "combination" ? selfPayClientId : selfPayClientId),
             trainee_id: trainee.id,
             created_by: user.user.id,
             status: "created",
             total_amount: totalAmount,
             service_date: traineeServices[0]?.date || new Date().toISOString().split('T')[0],
-            notes: registrationType === "client" ? `PO: ${orderPO}` : (registrationType === "combination" ? "Combination" : "Self Pay"),
+            notes: registrationType === "client" ? `PO: ${orderPO}` : (registrationType === "combination" ? `PO: ${orderPO}` : "Self Pay"),
             reason_for_test: reasonForTest,
             payment_status: registrationType === "client" ? "Billed" : "Payment Due",
           })
@@ -1232,12 +1232,16 @@ export default function Orders() {
                     </div>
                     <ScrollArea className="h-[300px]">
                       {selectedServices.map((service, index) => {
-                        const employerClient = registrationType === "client" 
+                        const employerClient = registrationType === "combination"
                           ? clients.find(c => c.id === selectedClientId)
-                          : clients.find(c => c.id === selfPayClientId);
-                        const billingClient = registrationType === "client"
-                          ? clients.find(c => c.id === billingClientId)
-                          : clients.find(c => c.id === selfPayClientId);
+                          : (registrationType === "client" 
+                            ? clients.find(c => c.id === selectedClientId)
+                            : clients.find(c => c.id === selfPayClientId));
+                        const billingClient = registrationType === "combination"
+                          ? clients.find(c => c.id === selfPayClientId)
+                          : (registrationType === "client"
+                            ? clients.find(c => c.id === billingClientId)
+                            : clients.find(c => c.id === selfPayClientId));
                         
                         // Use TPA billing ID if service is from TPA, otherwise use regular billing
                         const displayBillingId = service.tpa_billing_id || billingClient?.billing_id || employerClient?.billing_id || '-';
@@ -1365,12 +1369,16 @@ export default function Orders() {
                         </div>
                         <div className="space-y-1">
                           {selectedServices.map((service, idx) => {
-                            const registrantClient = registrationType === "client"
+                            const registrantClient = registrationType === "combination"
                               ? clients.find(c => c.id === selectedClientId)
-                              : clients.find(c => c.id === selfPayClientId);
-                            const billingClient = registrationType === "client"
-                              ? clients.find(c => c.id === (billingClientId || selectedClientId))
-                              : clients.find(c => c.id === selfPayClientId);
+                              : (registrationType === "client"
+                                ? clients.find(c => c.id === selectedClientId)
+                                : clients.find(c => c.id === selfPayClientId));
+                            const billingClient = registrationType === "combination"
+                              ? clients.find(c => c.id === selfPayClientId)
+                              : (registrationType === "client"
+                                ? clients.find(c => c.id === (billingClientId || selectedClientId))
+                                : clients.find(c => c.id === selfPayClientId));
                             const employer = registrantClient?.billing_id || "";
                             // Use TPA billing ID if service is from TPA, otherwise use regular billing logic
                             const billTo = service.tpa_billing_id 
