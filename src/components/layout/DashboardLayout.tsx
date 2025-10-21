@@ -22,7 +22,8 @@ import {
   UserCog,
   UserPlus,
   ClipboardList,
-  BarChart3
+  BarChart3,
+  StickyNote
 } from 'lucide-react';
 import { ProfileSettings } from '@/components/ProfileSettings';
 
@@ -77,6 +78,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       name: 'Reports',
       href: '/dashboard/reports',
       icon: BarChart3,
+    },
+    {
+      name: 'Action Items',
+      href: '/dashboard/action-items',
+      icon: StickyNote,
     },
     {
       name: 'Dash Users',
