@@ -26,6 +26,7 @@ import {
   StickyNote
 } from 'lucide-react';
 import { ProfileSettings } from '@/components/ProfileSettings';
+import { GlobalNoteButton } from '@/components/GlobalNoteButton';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -189,6 +190,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         open={profileOpen} 
         onOpenChange={setProfileOpen} 
       />
+      
+      <GlobalNoteButton />
     </div>
   );
 };

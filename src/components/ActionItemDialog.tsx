@@ -10,7 +10,11 @@ import { Plus, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-export function ActionItemDialog() {
+interface ActionItemDialogProps {
+  embedded?: boolean;
+}
+
+export function ActionItemDialog({ embedded = false }: ActionItemDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -100,6 +104,95 @@ export function ActionItemDialog() {
     }
   };
 
+  const formContent = (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="title">Title *</Label>
+        <Input
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Brief description of the action item"
+          required
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Additional details, context, or notes..."
+          rows={4}
+        />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="pageUrl"
+          checked={includePageUrl}
+          onCheckedChange={(checked) => setIncludePageUrl(checked as boolean)}
+        />
+        <Label htmlFor="pageUrl" className="cursor-pointer">
+          Include current page link ({window.location.pathname})
+        </Label>
+      </div>
+
+      <div>
+        <Label>Attach Image (optional)</Label>
+        {!imagePreview ? (
+          <div className="mt-2">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+              id="image-upload"
+            />
+            <Label
+              htmlFor="image-upload"
+              className="flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-md cursor-pointer hover:bg-accent"
+            >
+              <Upload className="h-5 w-5" />
+              Click to upload image
+            </Label>
+          </div>
+        ) : (
+          <div className="mt-2 relative">
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="max-h-48 rounded-md border"
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              className="absolute top-2 right-2"
+              onClick={removeImage}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2 justify-end">
+        <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={loading || !title}>
+          {loading ? "Creating..." : "Create Action Item"}
+        </Button>
+      </div>
+    </form>
+  );
+
+  if (embedded) {
+    return formContent;
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -112,88 +205,7 @@ export function ActionItemDialog() {
         <DialogHeader>
           <DialogTitle>Add Action Item / Note</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Brief description of the action item"
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Additional details, context, or notes..."
-              rows={4}
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="pageUrl"
-              checked={includePageUrl}
-              onCheckedChange={(checked) => setIncludePageUrl(checked as boolean)}
-            />
-            <Label htmlFor="pageUrl" className="cursor-pointer">
-              Include current page link ({window.location.pathname})
-            </Label>
-          </div>
-
-          <div>
-            <Label>Attach Image (optional)</Label>
-            {!imagePreview ? (
-              <div className="mt-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                  id="image-upload"
-                />
-                <Label
-                  htmlFor="image-upload"
-                  className="flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-md cursor-pointer hover:bg-accent"
-                >
-                  <Upload className="h-5 w-5" />
-                  Click to upload image
-                </Label>
-              </div>
-            ) : (
-              <div className="mt-2 relative">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="max-h-48 rounded-md border"
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-2 right-2"
-                  onClick={removeImage}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-2 justify-end">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading || !title}>
-              {loading ? "Creating..." : "Create Action Item"}
-            </Button>
-          </div>
-        </form>
+        {formContent}
       </DialogContent>
     </Dialog>
   );
