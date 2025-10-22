@@ -26,7 +26,11 @@ interface ActionItem {
   created_at: string;
 }
 
-export function ActionItemsList() {
+interface ActionItemsListProps {
+  showCompleted?: boolean;
+}
+
+export function ActionItemsList({ showCompleted = false }: ActionItemsListProps) {
   const [items, setItems] = useState<ActionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -128,11 +132,13 @@ export function ActionItemsList() {
     return <div className="text-center py-8">Loading action items...</div>;
   }
 
-  if (items.length === 0) {
+  const filteredItems = items.filter(item => item.completed === showCompleted);
+
+  if (filteredItems.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p className="text-lg mb-2">No action items yet</p>
-        <p className="text-sm">Create your first note to get started</p>
+        <p className="text-lg mb-2">No {showCompleted ? 'completed' : 'active'} action items</p>
+        <p className="text-sm">{showCompleted ? 'Mark items as complete to see them here' : 'Create your first note to get started'}</p>
       </div>
     );
   }
@@ -165,7 +171,7 @@ export function ActionItemsList() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {items.map((item) => (
+          {filteredItems.map((item) => (
             <TableRow key={item.id} className={item.completed ? "opacity-60" : ""}>
               <TableCell>
                 <Checkbox

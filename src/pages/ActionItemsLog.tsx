@@ -1,8 +1,12 @@
+import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { ActionItemsList } from "@/components/ActionItemsList";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function ActionItemsLog() {
+  const [showCompleted, setShowCompleted] = useState(false);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -15,13 +19,20 @@ export default function ActionItemsLog() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Your Notes</CardTitle>
+            <CardTitle>{showCompleted ? "Action Items - Complete" : "Action Items - Active"}</CardTitle>
             <CardDescription>
               Track all action items with their status, attachments, and links
             </CardDescription>
+            <Button
+              variant="link"
+              className="w-fit px-0 h-auto"
+              onClick={() => setShowCompleted(!showCompleted)}
+            >
+              {showCompleted ? "View Active" : "View Complete"}
+            </Button>
           </CardHeader>
           <CardContent>
-            <ActionItemsList />
+            <ActionItemsList showCompleted={showCompleted} />
           </CardContent>
         </Card>
       </div>
