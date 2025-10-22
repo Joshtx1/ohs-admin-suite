@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Trash2, Image as ImageIcon } from "lucide-react";
+import { ExternalLink, Trash2, FileText, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface ActionItem {
   id: string;
@@ -121,89 +127,108 @@ export function ActionItemsList() {
     );
   }
 
+  const getPageName = (url: string | null) => {
+    if (!url) return '-';
+    try {
+      const pathname = new URL(url).pathname;
+      const parts = pathname.split('/').filter(Boolean);
+      return parts[parts.length - 1] || 'Dashboard';
+    } catch {
+      return '-';
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      {items.map((item) => (
-        <Card key={item.id} className={item.completed ? "opacity-60" : ""}>
-          <CardContent className="p-4">
-            <div className="flex items-start gap-4">
-              <Checkbox
-                checked={item.completed}
-                onCheckedChange={() => toggleComplete(item.id, item.completed)}
-                className="mt-1"
-              />
-              
-              <div className="flex-1 space-y-2">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className={`font-medium ${item.completed ? "line-through" : ""}`}>
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(item.created_at), 'MMM d, yyyy h:mm a')}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {item.completed && (
-                      <Badge variant="secondary">Completed</Badge>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteItem(item.id, item.image_url)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {item.description && (
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {item.description}
-                  </p>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-12">Status</TableHead>
+            <TableHead>Title</TableHead>
+            <TableHead>Page</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead className="text-center">Screenshot</TableHead>
+            <TableHead className="text-center">Attachment</TableHead>
+            <TableHead className="text-center">Link</TableHead>
+            <TableHead className="w-12"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((item) => (
+            <TableRow key={item.id} className={item.completed ? "opacity-60" : ""}>
+              <TableCell>
+                <Checkbox
+                  checked={item.completed}
+                  onCheckedChange={() => toggleComplete(item.id, item.completed)}
+                />
+              </TableCell>
+              <TableCell className={`font-medium ${item.completed ? "line-through" : ""}`}>
+                {item.title}
+              </TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                {getPageName(item.page_url)}
+              </TableCell>
+              <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                {format(new Date(item.created_at), 'MMM d, yyyy')}
+              </TableCell>
+              <TableCell className="max-w-md">
+                <p className="text-sm text-muted-foreground truncate">
+                  {item.description || '-'}
+                </p>
+              </TableCell>
+              <TableCell className="text-center">
+                {item.image_url && item.image_url.includes('screenshot') ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open(item.image_url!, '_blank')}
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  '-'
                 )}
-
-                <div className="flex flex-wrap gap-2">
-                  {item.page_url && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => window.open(item.page_url!, '_blank')}
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      View Page
-                    </Button>
-                  )}
-
-                  {item.image_url && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => window.open(item.image_url!, '_blank')}
-                    >
-                      <ImageIcon className="h-3 w-3" />
-                      View Image
-                    </Button>
-                  )}
-                </div>
-
-                {item.image_url && (
-                  <div className="mt-2">
-                    <img
-                      src={item.image_url}
-                      alt="Attachment"
-                      className="max-h-48 rounded-md border cursor-pointer"
-                      onClick={() => window.open(item.image_url!, '_blank')}
-                    />
-                  </div>
+              </TableCell>
+              <TableCell className="text-center">
+                {item.image_url && !item.image_url.includes('screenshot') ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open(item.image_url!, '_blank')}
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  '-'
                 )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+              </TableCell>
+              <TableCell className="text-center">
+                {item.page_url ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open(item.page_url!, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  '-'
+                )}
+              </TableCell>
+              <TableCell>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => deleteItem(item.id, item.image_url)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
