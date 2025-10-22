@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Trash2, FileText, Image as ImageIcon } from "lucide-react";
+import { Trash2, FileText, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import {
@@ -13,13 +13,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { EditActionItemDialog } from "./EditActionItemDialog";
 
 interface ActionItem {
   id: string;
   title: string;
   description: string | null;
   page_url: string | null;
-  image_url: string | null;
+  screenshot_url: string | null;
+  attachment_url: string | null;
   completed: boolean;
   created_at: string;
 }
@@ -81,11 +83,19 @@ export function ActionItemsList() {
     }
   };
 
-  const deleteItem = async (id: string, imageUrl: string | null) => {
+  const deleteItem = async (id: string, screenshotUrl: string | null, attachmentUrl: string | null) => {
     try {
-      // Delete image from storage if exists
-      if (imageUrl) {
-        const path = imageUrl.split('/action-items/')[1];
+      // Delete screenshot from storage if exists
+      if (screenshotUrl) {
+        const path = screenshotUrl.split('/action-items/')[1];
+        if (path) {
+          await supabase.storage.from('action-items').remove([path]);
+        }
+      }
+
+      // Delete attachment from storage if exists
+      if (attachmentUrl) {
+        const path = attachmentUrl.split('/action-items/')[1];
         if (path) {
           await supabase.storage.from('action-items').remove([path]);
         }
@@ -150,7 +160,7 @@ export function ActionItemsList() {
             <TableHead>Description</TableHead>
             <TableHead className="text-center">Screenshot</TableHead>
             <TableHead className="text-center">Attachment</TableHead>
-            <TableHead className="text-center">Link</TableHead>
+            <TableHead className="w-12"></TableHead>
             <TableHead className="w-12"></TableHead>
           </TableRow>
         </TableHeader>
@@ -178,11 +188,11 @@ export function ActionItemsList() {
                 </p>
               </TableCell>
               <TableCell className="text-center">
-                {item.image_url && item.image_url.includes('screenshot') ? (
+                {item.screenshot_url ? (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.open(item.image_url!, '_blank')}
+                    onClick={() => window.open(item.screenshot_url!, '_blank')}
                   >
                     <ImageIcon className="h-4 w-4" />
                   </Button>
@@ -191,11 +201,11 @@ export function ActionItemsList() {
                 )}
               </TableCell>
               <TableCell className="text-center">
-                {item.image_url && !item.image_url.includes('screenshot') ? (
+                {item.attachment_url ? (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.open(item.image_url!, '_blank')}
+                    onClick={() => window.open(item.attachment_url!, '_blank')}
                   >
                     <FileText className="h-4 w-4" />
                   </Button>
@@ -203,24 +213,14 @@ export function ActionItemsList() {
                   '-'
                 )}
               </TableCell>
-              <TableCell className="text-center">
-                {item.page_url ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.open(item.page_url!, '_blank')}
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  '-'
-                )}
+              <TableCell>
+                <EditActionItemDialog item={item} onUpdate={loadItems} />
               </TableCell>
               <TableCell>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => deleteItem(item.id, item.image_url)}
+                  onClick={() => deleteItem(item.id, item.screenshot_url, item.attachment_url)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

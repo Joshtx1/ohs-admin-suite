@@ -16,34 +16,37 @@ export type Database = {
     Tables: {
       action_items: {
         Row: {
+          attachment_url: string | null
           completed: boolean
           created_at: string
           description: string | null
           id: string
-          image_url: string | null
           page_url: string | null
+          screenshot_url: string | null
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          attachment_url?: string | null
           completed?: boolean
           created_at?: string
           description?: string | null
           id?: string
-          image_url?: string | null
           page_url?: string | null
+          screenshot_url?: string | null
           title: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          attachment_url?: string | null
           completed?: boolean
           created_at?: string
           description?: string | null
           id?: string
-          image_url?: string | null
           page_url?: string | null
+          screenshot_url?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -995,22 +998,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      generate_service_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_trainee_unique_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_user_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_username: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_service_code: { Args: never; Returns: string }
+      generate_trainee_unique_id: { Args: never; Returns: string }
+      generate_user_code: { Args: never; Returns: string }
+      generate_username: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

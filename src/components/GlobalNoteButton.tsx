@@ -21,8 +21,10 @@ export function GlobalNoteButton({ open: externalOpen, onOpenChange }: GlobalNot
   const setOpen = onOpenChange || setInternalOpen;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [takingScreenshot, setTakingScreenshot] = useState(false);
   const location = useLocation();
@@ -30,13 +32,13 @@ export function GlobalNoteButton({ open: externalOpen, onOpenChange }: GlobalNot
 
   const currentPageName = location.pathname.split('/').filter(Boolean).pop() || 'home';
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImage(file);
+      setAttachment(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        setAttachmentPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -64,10 +66,10 @@ export function GlobalNoteButton({ open: externalOpen, onOpenChange }: GlobalNot
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], `screenshot-${Date.now()}.png`, { type: 'image/png' });
-          setImage(file);
+          setScreenshot(file);
           const reader = new FileReader();
           reader.onloadend = () => {
-            setImagePreview(reader.result as string);
+            setScreenshotPreview(reader.result as string);
           };
           reader.readAsDataURL(file);
         }
@@ -85,9 +87,14 @@ export function GlobalNoteButton({ open: externalOpen, onOpenChange }: GlobalNot
     }
   };
 
-  const removeImage = () => {
-    setImage(null);
-    setImagePreview(null);
+  const removeScreenshot = () => {
+    setScreenshot(null);
+    setScreenshotPreview(null);
+  };
+
+  const removeAttachment = () => {
+    setAttachment(null);
+    setAttachmentPreview(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,15 +105,16 @@ export function GlobalNoteButton({ open: externalOpen, onOpenChange }: GlobalNot
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      let imageUrl: string | null = null;
+      let screenshotUrl: string | null = null;
+      let attachmentUrl: string | null = null;
 
-      // Upload image if present
-      if (image) {
-        const fileExt = image.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      // Upload screenshot if present
+      if (screenshot) {
+        const fileExt = screenshot.name.split('.').pop();
+        const fileName = `${user.id}/screenshot-${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
           .from('action-items')
-          .upload(fileName, image);
+          .upload(fileName, screenshot);
 
         if (uploadError) throw uploadError;
 
@@ -114,7 +122,24 @@ export function GlobalNoteButton({ open: externalOpen, onOpenChange }: GlobalNot
           .from('action-items')
           .getPublicUrl(fileName);
         
-        imageUrl = publicUrl;
+        screenshotUrl = publicUrl;
+      }
+
+      // Upload attachment if present
+      if (attachment) {
+        const fileExt = attachment.name.split('.').pop();
+        const fileName = `${user.id}/attachment-${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('action-items')
+          .upload(fileName, attachment);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('action-items')
+          .getPublicUrl(fileName);
+        
+        attachmentUrl = publicUrl;
       }
 
       // Create action item
@@ -123,7 +148,8 @@ export function GlobalNoteButton({ open: externalOpen, onOpenChange }: GlobalNot
         title,
         description: description || null,
         page_url: window.location.href,
-        image_url: imageUrl,
+        screenshot_url: screenshotUrl,
+        attachment_url: attachmentUrl,
       });
 
       if (error) throw error;
@@ -136,8 +162,10 @@ export function GlobalNoteButton({ open: externalOpen, onOpenChange }: GlobalNot
       // Reset form
       setTitle("");
       setDescription("");
-      setImage(null);
-      setImagePreview(null);
+      setScreenshot(null);
+      setScreenshotPreview(null);
+      setAttachment(null);
+      setAttachmentPreview(null);
       setOpen(false);
     } catch (error) {
       console.error('Error creating note:', error);
@@ -217,7 +245,7 @@ export function GlobalNoteButton({ open: externalOpen, onOpenChange }: GlobalNot
                 <input
                   type="file"
                   accept="image/*,application/pdf,.doc,.docx"
-                  onChange={handleImageChange}
+                  onChange={handleAttachmentChange}
                   className="hidden"
                   id="file-upload"
                 />
@@ -236,11 +264,11 @@ export function GlobalNoteButton({ open: externalOpen, onOpenChange }: GlobalNot
                 </Label>
               </div>
 
-              {imagePreview && (
+              {screenshotPreview && (
                 <div className="mt-4 relative">
                   <img
-                    src={imagePreview}
-                    alt="Attachment preview"
+                    src={screenshotPreview}
+                    alt="Screenshot preview"
                     className="max-h-48 rounded-md border"
                   />
                   <Button
@@ -248,7 +276,33 @@ export function GlobalNoteButton({ open: externalOpen, onOpenChange }: GlobalNot
                     variant="destructive"
                     size="icon"
                     className="absolute top-2 right-2"
-                    onClick={removeImage}
+                    onClick={removeScreenshot}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              {attachmentPreview && (
+                <div className="mt-4 relative">
+                  {attachment?.type.startsWith('image/') ? (
+                    <img
+                      src={attachmentPreview}
+                      alt="Attachment preview"
+                      className="max-h-48 rounded-md border"
+                    />
+                  ) : (
+                    <div className="p-4 border rounded-md flex items-center gap-2">
+                      <Paperclip className="h-4 w-4" />
+                      <span className="text-sm">{attachment?.name}</span>
+                    </div>
+                  )}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2"
+                    onClick={removeAttachment}
                   >
                     <X className="h-4 w-4" />
                   </Button>
