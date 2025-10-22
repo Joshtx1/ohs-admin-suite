@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { EditActionItemDialog } from "./EditActionItemDialog";
 import { ViewDescriptionDialog } from "./ViewDescriptionDialog";
+import { ViewMediaDialog } from "./ViewMediaDialog";
 
 interface ActionItem {
   id: string;
@@ -223,26 +224,20 @@ export function ActionItemsList({ showCompleted = false }: ActionItemsListProps)
               </TableCell>
               <TableCell className="text-center">
                 {item.screenshot_url ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.open(item.screenshot_url!, '_blank')}
-                  >
-                    <ImageIcon className="h-4 w-4" />
-                  </Button>
+                  <ViewMediaDialog 
+                    mediaUrl={item.screenshot_url} 
+                    type="screenshot" 
+                  />
                 ) : (
                   '-'
                 )}
               </TableCell>
               <TableCell className="text-center">
                 {item.attachment_url ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.open(item.attachment_url!, '_blank')}
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
+                  <ViewMediaDialog 
+                    mediaUrl={item.attachment_url} 
+                    type="attachment" 
+                  />
                 ) : (
                   '-'
                 )}

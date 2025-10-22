@@ -27,14 +27,14 @@ export function ViewDescriptionDialog({ description }: ViewDescriptionDialogProp
           <Eye className="ml-2 h-3 w-3 flex-shrink-0" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Full Description</DialogTitle>
           <DialogDescription>
             Complete note details
           </DialogDescription>
         </DialogHeader>
-        <div className="mt-4 max-h-[60vh] overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pr-2">
           <p className="text-sm whitespace-pre-wrap">{description}</p>
         </div>
       </DialogContent>
