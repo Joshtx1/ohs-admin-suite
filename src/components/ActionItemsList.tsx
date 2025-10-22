@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EditActionItemDialog } from "./EditActionItemDialog";
+import { ViewDescriptionDialog } from "./ViewDescriptionDialog";
 
 interface ActionItem {
   id: string;
@@ -24,6 +25,8 @@ interface ActionItem {
   attachment_url: string | null;
   completed: boolean;
   created_at: string;
+  user_id: string;
+  creator_name?: string;
 }
 
 interface ActionItemsListProps {
@@ -37,14 +40,33 @@ export function ActionItemsList({ showCompleted = false }: ActionItemsListProps)
 
   const loadItems = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: actionItems, error } = await supabase
         .from('action_items')
         .select('*')
         .order('completed', { ascending: true })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setItems(data || []);
+
+      // Get user details for each action item
+      const itemsWithUsers = await Promise.all(
+        (actionItems || []).map(async (item) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('user_id', item.user_id)
+            .single();
+          
+          return {
+            ...item,
+            creator_name: profile 
+              ? `${profile.first_name} ${profile.last_name}`
+              : 'Unknown'
+          };
+        })
+      );
+
+      setItems(itemsWithUsers);
     } catch (error) {
       console.error('Error loading action items:', error);
       toast({
@@ -163,6 +185,7 @@ export function ActionItemsList({ showCompleted = false }: ActionItemsListProps)
             <TableHead>Title</TableHead>
             <TableHead>Page</TableHead>
             <TableHead>Date</TableHead>
+            <TableHead>User</TableHead>
             <TableHead>Description</TableHead>
             <TableHead className="text-center">Screenshot</TableHead>
             <TableHead className="text-center">Attachment</TableHead>
@@ -188,10 +211,15 @@ export function ActionItemsList({ showCompleted = false }: ActionItemsListProps)
               <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                 {format(new Date(item.created_at), 'MMM d, yyyy')}
               </TableCell>
+              <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                {item.creator_name || '-'}
+              </TableCell>
               <TableCell className="max-w-md">
-                <p className="text-sm text-muted-foreground truncate">
-                  {item.description || '-'}
-                </p>
+                {item.description ? (
+                  <ViewDescriptionDialog description={item.description} />
+                ) : (
+                  <span className="text-sm text-muted-foreground">-</span>
+                )}
               </TableCell>
               <TableCell className="text-center">
                 {item.screenshot_url ? (

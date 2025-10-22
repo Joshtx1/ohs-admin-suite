@@ -40,7 +40,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { user, userRole, signOut, loading } = useAuth();
   const location = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
-  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
 
   if (loading) {
     return (
@@ -145,6 +144,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <UserCog className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard/action-items/log">
+                    <StickyNote className="mr-2 h-4 w-4" />
+                    <span>Action Log</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -176,32 +181,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               </Link>
             );
           })}
-          
-          {/* Action Items Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className={`flex items-center space-x-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground whitespace-nowrap ${
-                  location.pathname.startsWith('/dashboard/action-items')
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-foreground/70'
-                }`}
-              >
-                <StickyNote className="h-4 w-4" />
-                <span>Action Items</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => setNoteDialogOpen(true)}>
-                Add Task/Note
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/dashboard/action-items/log">View Log</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </nav>
 
@@ -217,10 +196,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         onOpenChange={setProfileOpen} 
       />
       
-      <GlobalNoteButton 
-        open={noteDialogOpen}
-        onOpenChange={setNoteDialogOpen}
-      />
+      {/* Floating Note Button - Always visible */}
+      <GlobalNoteButton />
     </div>
   );
 };
