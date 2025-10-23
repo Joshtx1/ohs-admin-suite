@@ -31,10 +31,18 @@ interface ActionItem {
 }
 
 interface ActionItemsListProps {
-  showCompleted?: boolean;
+  searchTerm?: string;
+  pageFilter?: string;
+  userFilter?: string;
+  statusFilter?: string;
 }
 
-export function ActionItemsList({ showCompleted = false }: ActionItemsListProps) {
+export function ActionItemsList({ 
+  searchTerm = "",
+  pageFilter = "all",
+  userFilter = "all",
+  statusFilter = "active"
+}: ActionItemsListProps) {
   const [items, setItems] = useState<ActionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -155,17 +163,6 @@ export function ActionItemsList({ showCompleted = false }: ActionItemsListProps)
     return <div className="text-center py-8">Loading action items...</div>;
   }
 
-  const filteredItems = items.filter(item => item.completed === showCompleted);
-
-  if (filteredItems.length === 0) {
-    return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p className="text-lg mb-2">No {showCompleted ? 'completed' : 'active'} action items</p>
-        <p className="text-sm">{showCompleted ? 'Mark items as complete to see them here' : 'Create your first note to get started'}</p>
-      </div>
-    );
-  }
-
   const getPageName = (url: string | null) => {
     if (!url) return '-';
     try {
@@ -176,6 +173,38 @@ export function ActionItemsList({ showCompleted = false }: ActionItemsListProps)
       return '-';
     }
   };
+
+  const filteredItems = items.filter(item => {
+    // Status filter
+    if (statusFilter === "active" && item.completed) return false;
+    if (statusFilter === "complete" && !item.completed) return false;
+    
+    // Search filter
+    if (searchTerm && !item.title.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false;
+    }
+    
+    // Page filter
+    if (pageFilter !== "all" && getPageName(item.page_url) !== pageFilter) {
+      return false;
+    }
+    
+    // User filter
+    if (userFilter !== "all" && item.user_id !== userFilter) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  if (filteredItems.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <p className="text-lg mb-2">No action items found</p>
+        <p className="text-sm">Try adjusting your filters</p>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-md border">
