@@ -30,24 +30,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Create Supabase client with anon key to verify the calling user
-    const supabaseAnon = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    // Extract JWT token from Bearer header
+    const token = authHeader.replace('Bearer ', '');
 
-    // Verify the calling user has admin/master role
-    const { data: { user }, error: userError } = await supabaseAnon.auth.getUser();
-    if (userError || !user) {
-      console.error('User verification failed:', userError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication' }),
-        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      );
-    }
-
-    // Create admin client to check roles (bypasses RLS)
+    // Create admin client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -58,6 +44,16 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
     );
+
+    // Verify JWT token using admin client
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    if (userError || !user) {
+      console.error('User verification failed:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
 
     // Check if user has admin or master role using admin client
     const { data: roleData, error: roleError } = await supabaseAdmin
