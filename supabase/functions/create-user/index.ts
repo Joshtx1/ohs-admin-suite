@@ -71,8 +71,8 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Check if user has admin role
-      const { data: roleData, error: roleError } = await supabaseAnon
+      // Check if user has admin role using admin client (bypasses RLS)
+      const { data: roleData, error: roleError } = await supabaseAdmin
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
