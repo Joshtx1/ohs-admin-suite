@@ -28,12 +28,19 @@ const handler = async (req: Request): Promise<Response> => {
     // Get the authorization header
     const authHeader = req.headers.get('authorization');
     
-    // Check if this is a bootstrap scenario (no admin users exist)
+    // Create admin client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
     );
 
+    // Check if this is a bootstrap scenario (no admin users exist)
     const { data: adminUsers, error: adminCheckError } = await supabaseAdmin
       .from('user_roles')
       .select('user_id')
@@ -54,11 +61,15 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Extract JWT token from Bearer header
-      const token = authHeader.replace('Bearer ', '');
+      // Create a Supabase client with the auth header to verify the user
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        { global: { headers: { Authorization: authHeader } } }
+      );
 
-      // Verify JWT token using admin client
-      const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+      // Verify the calling user
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
       if (userError || !user) {
         console.error('User verification failed:', userError);
         return new Response(
@@ -67,12 +78,16 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
+      console.log('User verified:', user.id);
+
       // Check if user has admin role using admin client (bypasses RLS)
       const { data: roleData, error: roleError } = await supabaseAdmin
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .single();
+
+      console.log('Role check:', { roleData, roleError });
 
       if (roleError || !roleData || roleData.role !== 'admin') {
         console.error('Insufficient privileges:', roleData?.role);

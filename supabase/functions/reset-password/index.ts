@@ -30,10 +30,26 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Extract JWT token from Bearer header
-    const token = authHeader.replace('Bearer ', '');
+    // Create a Supabase client with the auth header to verify the user
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
 
-    // Create admin client
+    // Verify the calling user
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      console.error('User verification failed:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
+    console.log('User verified:', user.id);
+
+    // Create admin client to check roles (bypasses RLS)
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -45,22 +61,14 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
 
-    // Verify JWT token using admin client
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    if (userError || !user) {
-      console.error('User verification failed:', userError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication' }),
-        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      );
-    }
-
     // Check if user has admin or master role using admin client
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
       .single();
+
+    console.log('Role check:', { roleData, roleError });
 
     if (roleError || !roleData || !['admin', 'master'].includes(roleData.role)) {
       console.error('Insufficient privileges:', roleData?.role);
