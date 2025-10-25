@@ -21,7 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   
   // Temporary bypass for testing
-  const bypassAuth = false; // Disable bypass to use auth signup
+  const bypassAuth = true; // ⚠️ SECURITY WARNING: Auth is bypassed!
   
   if (bypassAuth) {
     // Create a mock user for bypass mode
