@@ -47,8 +47,20 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if user has admin or master role
-    const { data: roleData, error: roleError } = await supabaseAnon
+    // Create admin client to check roles (bypasses RLS)
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
+    // Check if user has admin or master role using admin client
+    const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
@@ -82,8 +94,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Verify the target user exists
-    const { data: targetProfile, error: profileError } = await supabaseAnon
+    // Verify the target user exists using admin client
+    const { data: targetProfile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('email, username')
       .eq('user_id', userId)
@@ -96,18 +108,6 @@ const handler = async (req: Request): Promise<Response> => {
         { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
-
-    // Create Supabase admin client with service role key
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    );
 
     // Reset the user's password using admin client
     const { data: resetData, error: resetError } = await supabaseAdmin.auth.admin.updateUserById(
