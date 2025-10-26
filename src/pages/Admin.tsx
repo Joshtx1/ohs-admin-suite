@@ -17,7 +17,7 @@ const Admin = () => {
         <TabsList className="grid w-full max-w-md grid-cols-3">
           <TabsTrigger value="templates">
             <FileText className="h-4 w-4 mr-2" />
-            Templates
+            Service Templates
           </TabsTrigger>
           <TabsTrigger value="tables" disabled>
             <Database className="h-4 w-4 mr-2" />

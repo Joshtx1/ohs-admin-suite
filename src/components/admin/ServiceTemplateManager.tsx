@@ -12,105 +12,192 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { MetadataFieldBuilder, MetadataField, METADATA_TEMPLATES } from "@/components/MetadataFieldBuilder";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { MetadataFieldBuilder, MetadataField } from "@/components/MetadataFieldBuilder";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, Copy } from "lucide-react";
+import { Plus, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+
+interface ServiceTemplate {
+  id: string;
+  template_key: string;
+  template_name: string;
+  description: string | null;
+  fields: MetadataField[];
+}
 
 export const ServiceTemplateManager = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingService, setEditingService] = useState<any>(null);
-  const [templateKey, setTemplateKey] = useState<string>("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<ServiceTemplate | null>(null);
+  const [deleteTemplate, setDeleteTemplate] = useState<ServiceTemplate | null>(null);
+  const [templateKey, setTemplateKey] = useState("");
+  const [templateName, setTemplateName] = useState("");
+  const [templateDescription, setTemplateDescription] = useState("");
   const [customFields, setCustomFields] = useState<MetadataField[]>([]);
   const queryClient = useQueryClient();
 
-  const { data: services, isLoading } = useQuery({
-    queryKey: ["services-with-templates"],
+  const { data: templates, isLoading } = useQuery({
+    queryKey: ["service-templates"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("services")
+        .from("service_templates")
         .select("*")
-        .order("name");
+        .order("template_name");
       
       if (error) throw error;
-      return data;
+      return (data || []).map(t => ({
+        ...t,
+        fields: (t.fields as any) || []
+      })) as ServiceTemplate[];
     },
   });
 
-  const updateServiceMutation = useMutation({
-    mutationFn: async ({ id, metadata }: { id: string; metadata: any }) => {
+  const createMutation = useMutation({
+    mutationFn: async (template: Omit<ServiceTemplate, "id">) => {
       const { error } = await supabase
-        .from("services")
-        .update({ service_metadata: metadata })
+        .from("service_templates")
+        .insert({
+          template_key: template.template_key,
+          template_name: template.template_name,
+          description: template.description,
+          fields: template.fields as any,
+        });
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["service-templates"] });
+      toast.success("Template created successfully");
+      handleCloseDialog();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to create template");
+      console.error(error);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, template }: { id: string; template: Partial<ServiceTemplate> }) => {
+      const { error } = await supabase
+        .from("service_templates")
+        .update({
+          template_name: template.template_name,
+          description: template.description,
+          fields: template.fields as any,
+        })
         .eq("id", id);
       
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["services-with-templates"] });
-      toast.success("Service template updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["service-templates"] });
+      toast.success("Template updated successfully");
       handleCloseDialog();
     },
     onError: (error) => {
-      toast.error("Failed to update service template");
+      toast.error("Failed to update template");
       console.error(error);
     },
   });
 
-  const handleOpenDialog = (service?: any) => {
-    if (service) {
-      setEditingService(service);
-      const metadata = (service.service_metadata || {}) as any;
-      setCustomFields(metadata.fields || []);
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("service_templates")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["service-templates"] });
+      toast.success("Template deleted successfully");
+      setIsDeleteDialogOpen(false);
+      setDeleteTemplate(null);
+    },
+    onError: (error) => {
+      toast.error("Failed to delete template");
+      console.error(error);
+    },
+  });
+
+  const handleOpenDialog = (template?: ServiceTemplate) => {
+    if (template) {
+      setEditingTemplate(template);
+      setTemplateKey(template.template_key);
+      setTemplateName(template.template_name);
+      setTemplateDescription(template.description || "");
+      setCustomFields(template.fields);
     } else {
-      setEditingService(null);
+      setEditingTemplate(null);
+      setTemplateKey("");
+      setTemplateName("");
+      setTemplateDescription("");
       setCustomFields([]);
     }
-    setTemplateKey("");
     setIsDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
-    setEditingService(null);
-    setCustomFields([]);
+    setEditingTemplate(null);
     setTemplateKey("");
+    setTemplateName("");
+    setTemplateDescription("");
+    setCustomFields([]);
   };
 
-  const handleApplyTemplate = (key: string) => {
-    const template = METADATA_TEMPLATES[key];
-    if (template) {
-      setCustomFields(template.fields);
-      setTemplateKey(key);
-      toast.success("Template applied");
-    }
+  const handleOpenDeleteDialog = (template: ServiceTemplate) => {
+    setDeleteTemplate(template);
+    setIsDeleteDialogOpen(true);
   };
 
   const handleSave = () => {
-    if (!editingService) {
-      toast.error("No service selected");
+    if (!templateName.trim()) {
+      toast.error("Template name is required");
       return;
     }
 
-    const metadata = {
-      fields: customFields,
-      templateKey: templateKey || undefined,
-    };
+    if (!editingTemplate && !templateKey.trim()) {
+      toast.error("Template key is required");
+      return;
+    }
 
-    updateServiceMutation.mutate({
-      id: editingService.id,
-      metadata,
-    });
+    if (editingTemplate) {
+      updateMutation.mutate({
+        id: editingTemplate.id,
+        template: {
+          template_name: templateName,
+          description: templateDescription,
+          fields: customFields,
+        },
+      });
+    } else {
+      createMutation.mutate({
+        template_key: templateKey.toLowerCase().replace(/\s+/g, "-"),
+        template_name: templateName,
+        description: templateDescription,
+        fields: customFields,
+      });
+    }
+  };
+
+  const handleDelete = () => {
+    if (deleteTemplate) {
+      deleteMutation.mutate(deleteTemplate.id);
+    }
   };
 
   const getFieldTypeBadge = (type: string) => {
@@ -126,49 +213,53 @@ export const ServiceTemplateManager = () => {
   };
 
   if (isLoading) {
-    return <div>Loading services...</div>;
+    return <div>Loading templates...</div>;
   }
 
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Service Metadata Templates</CardTitle>
-          <CardDescription>
-            Configure custom fields and templates for each service type. These fields will be collected when creating orders.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Service Templates</CardTitle>
+              <CardDescription>
+                Create and manage metadata templates for different service types
+              </CardDescription>
+            </div>
+            <Button onClick={() => handleOpenDialog()}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Template
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4">
-            {services?.map((service) => {
-              const metadata = (service.service_metadata || {}) as any;
-              const fieldCount = metadata.fields?.length || 0;
-              const hasTemplate = !!metadata.templateKey;
+            {templates?.map((template) => {
+              const fieldCount = template.fields.length;
 
               return (
-                <Card key={service.id} className="p-4">
+                <Card key={template.id} className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">{service.name}</h4>
+                        <h4 className="font-semibold">{template.template_name}</h4>
                         <Badge variant="secondary" className="text-xs">
-                          {service.service_code}
+                          {template.template_key}
                         </Badge>
-                        {hasTemplate && (
-                          <Badge variant="outline" className="text-xs">
-                            <Copy className="h-3 w-3 mr-1" />
-                            {metadata.templateKey}
-                          </Badge>
-                        )}
                       </div>
+                      
+                      {template.description && (
+                        <p className="text-sm text-muted-foreground">{template.description}</p>
+                      )}
                       
                       {fieldCount > 0 ? (
                         <div className="space-y-1">
                           <p className="text-sm text-muted-foreground">
-                            {fieldCount} custom field{fieldCount !== 1 ? 's' : ''} configured
+                            {fieldCount} field{fieldCount !== 1 ? 's' : ''} configured
                           </p>
                           <div className="flex flex-wrap gap-2">
-                            {metadata.fields?.slice(0, 3).map((field: MetadataField, idx: number) => (
+                            {template.fields.slice(0, 3).map((field: MetadataField, idx: number) => (
                               <Badge key={idx} variant={getFieldTypeBadge(field.fieldType) as any}>
                                 {field.fieldLabel}
                                 {field.required && <span className="ml-1 text-destructive">*</span>}
@@ -180,18 +271,27 @@ export const ServiceTemplateManager = () => {
                           </div>
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground">No custom fields configured</p>
+                        <p className="text-sm text-muted-foreground">No fields configured</p>
                       )}
                     </div>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleOpenDialog(service)}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Configure
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenDialog(template)}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenDeleteDialog(template)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </Card>
               );
@@ -204,36 +304,54 @@ export const ServiceTemplateManager = () => {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Configure Template: {editingService?.name}
+              {editingTemplate ? `Edit Template: ${editingTemplate.template_name}` : "Create New Template"}
             </DialogTitle>
             <DialogDescription>
-              Add custom fields that will be collected when this service is added to an order
+              {editingTemplate 
+                ? "Update the template name, description, and fields"
+                : "Create a new metadata template for services"}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Quick Start Templates</Label>
-              <div className="flex flex-wrap gap-2">
-                {Object.keys(METADATA_TEMPLATES).map((key) => (
-                  <Button
-                    key={key}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleApplyTemplate(key)}
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    {key}
-                  </Button>
-                ))}
+            {!editingTemplate && (
+              <div className="space-y-2">
+                <Label htmlFor="template-key">Template Key *</Label>
+                <Input
+                  id="template-key"
+                  placeholder="e.g., drug-screen, respirator-fit"
+                  value={templateKey}
+                  onChange={(e) => setTemplateKey(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Unique identifier (lowercase, use hyphens instead of spaces)
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Click a template to load predefined fields, then customize as needed
-              </p>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="template-name">Template Name *</Label>
+              <Input
+                id="template-name"
+                placeholder="e.g., Drug Screen"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+              />
             </div>
 
             <div className="space-y-2">
-              <Label>Custom Fields</Label>
+              <Label htmlFor="template-description">Description</Label>
+              <Textarea
+                id="template-description"
+                placeholder="Describe when this template should be used"
+                value={templateDescription}
+                onChange={(e) => setTemplateDescription(e.target.value)}
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Template Fields</Label>
               <MetadataFieldBuilder 
                 fields={customFields}
                 onChange={setCustomFields}
@@ -245,12 +363,38 @@ export const ServiceTemplateManager = () => {
             <Button variant="outline" onClick={handleCloseDialog}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={updateServiceMutation.isPending}>
-              {updateServiceMutation.isPending ? "Saving..." : "Save Template"}
+            <Button 
+              onClick={handleSave} 
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending 
+                ? "Saving..." 
+                : editingTemplate ? "Update Template" : "Create Template"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Template</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the template "{deleteTemplate?.template_name}"? 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteTemplate(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

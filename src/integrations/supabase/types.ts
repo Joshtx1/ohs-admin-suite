@@ -706,6 +706,39 @@ export type Database = {
           },
         ]
       }
+      service_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          fields: Json
+          id: string
+          template_key: string
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          template_key: string
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          template_key?: string
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           category: string
