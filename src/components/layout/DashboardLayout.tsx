@@ -27,7 +27,8 @@ import {
   ClipboardList,
   BarChart3,
   StickyNote,
-  ChevronDown
+  ChevronDown,
+  Settings
 } from 'lucide-react';
 import { ProfileSettings } from '@/components/ProfileSettings';
 import { GlobalNoteButton } from '@/components/GlobalNoteButton';
@@ -88,6 +89,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       name: 'Dash Users',
       href: '/dashboard/users',
       icon: Users,
+      adminOnly: true,
+    },
+    {
+      name: 'Admin',
+      href: '/dashboard/admin',
+      icon: Settings,
       adminOnly: true,
     },
   ];
