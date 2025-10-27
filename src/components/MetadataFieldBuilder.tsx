@@ -126,7 +126,7 @@ export const MetadataFieldBuilder = ({ fields, onChange }: MetadataFieldBuilderP
                   value={field.options?.join('\n') || ''}
                   onChange={(e) =>
                     updateField(index, {
-                      options: e.target.value.split('\n').filter((o) => o.trim()),
+                      options: e.target.value.split('\n'),
                     })
                   }
                   rows={3}
