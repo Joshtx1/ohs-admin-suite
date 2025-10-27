@@ -301,7 +301,7 @@ export const ServiceTemplateManager = () => {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {editingTemplate ? `Edit Template: ${editingTemplate.template_name}` : "Create New Template"}
@@ -313,7 +313,7 @@ export const ServiceTemplateManager = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             {!editingTemplate && (
               <div className="space-y-2">
                 <Label htmlFor="template-key">Template Key *</Label>
