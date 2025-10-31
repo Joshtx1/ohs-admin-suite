@@ -35,7 +35,7 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
         order.clients?.company_name.toLowerCase().includes(searchLower) ||
         order.trainees?.name.toLowerCase().includes(searchLower) ||
         order.trainees?.unique_id?.toLowerCase().includes(searchLower) ||
-        order.status.toLowerCase().includes(searchLower);
+        order.trainees?.ssn?.toLowerCase().includes(searchLower);
       
       if (!matchesSearch) return false;
     }
@@ -101,6 +101,7 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
               status === 'Mixed' ? 'outline' : 
               'secondary'
             }
+            className={status === 'Payment Due' ? 'text-red-600' : ''}
           >
             {status}
           </Badge>
@@ -163,7 +164,7 @@ export function OrdersTable({ orders, onViewOrder, onEditOrder, onDeleteOrder }:
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by trainee, client, or status..."
+                placeholder="Search by trainee name, client, or SSN..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
