@@ -172,6 +172,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     <span>Action Log</span>
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard/action-notes">
+                    <StickyNote className="mr-2 h-4 w-4" />
+                    <span>Action Notes</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
