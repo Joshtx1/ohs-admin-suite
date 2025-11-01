@@ -40,7 +40,7 @@ const App = () => (
             <Route path="/dashboard/orders" element={<DashboardLayout><Orders /></DashboardLayout>} />
             <Route path="/dashboard/users" element={<DashboardLayout><Users /></DashboardLayout>} />
             <Route path="/dashboard/admin" element={<DashboardLayout><Admin /></DashboardLayout>} />
-            <Route path="/dashboard/action-items/log" element={<DashboardLayout><ActionItemsLog /></DashboardLayout>} />
+            <Route path="/dashboard/action-items/log" element={<ActionItemsLog />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
