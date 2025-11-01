@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import DashboardLayout from "@/components/layout/DashboardLayout";
 import { ActionItemsList } from "@/components/ActionItemsList";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -61,71 +60,69 @@ export default function ActionItemsLog() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Action Items Log</h2>
-          <p className="text-muted-foreground">
-            View and manage all your action items and notes
-          </p>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Action Items</CardTitle>
-            <CardDescription>
-              Track all action items with their status, attachments, and links
-            </CardDescription>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-              <Input
-                placeholder="Search by title..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <Select value={pageFilter} onValueChange={setPageFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by page" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Pages</SelectItem>
-                  {pages.map(page => (
-                    <SelectItem key={page} value={page}>{page}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={userFilter} onValueChange={setUserFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by user" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  {users.map(user => (
-                    <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="complete">Complete</SelectItem>
-                  <SelectItem value="all">All Status</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ActionItemsList 
-              searchTerm={searchTerm}
-              pageFilter={pageFilter}
-              userFilter={userFilter}
-              statusFilter={statusFilter}
-            />
-          </CardContent>
-        </Card>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">Action Items Log</h2>
+        <p className="text-muted-foreground">
+          View and manage all your action items and notes
+        </p>
       </div>
-    </DashboardLayout>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Action Items</CardTitle>
+          <CardDescription>
+            Track all action items with their status, attachments, and links
+          </CardDescription>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+            <Input
+              placeholder="Search by title..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Select value={pageFilter} onValueChange={setPageFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by page" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Pages</SelectItem>
+                {pages.map(page => (
+                  <SelectItem key={page} value={page}>{page}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={userFilter} onValueChange={setUserFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by user" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Users</SelectItem>
+                {users.map(user => (
+                  <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="complete">Complete</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ActionItemsList 
+            searchTerm={searchTerm}
+            pageFilter={pageFilter}
+            userFilter={userFilter}
+            statusFilter={statusFilter}
+          />
+        </CardContent>
+      </Card>
+    </div>
   );
 }
