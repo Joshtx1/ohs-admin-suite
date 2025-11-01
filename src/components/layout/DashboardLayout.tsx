@@ -104,16 +104,26 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   };
 
   const handleSignOut = async () => {
+    console.log('Attempting to sign out...');
     try {
       await signOut();
+      console.log('Sign out successful');
       window.location.href = '/auth';
     } catch (error) {
       console.error('Sign out error:', error);
     }
   };
+
+  // Debug logging
+  console.log('DashboardLayout - Current userRole:', userRole);
+  console.log('DashboardLayout - User object:', user);
   
   const filteredNavigation = navigation.filter(item => {
-    return !item.adminOnly || userRole === 'admin' || userRole === 'master';
+    const hasAccess = !item.adminOnly || userRole === 'admin' || userRole === 'master';
+    if (item.adminOnly) {
+      console.log(`Navigation item "${item.name}" - adminOnly: true, userRole: "${userRole}", hasAccess: ${hasAccess}`);
+    }
+    return hasAccess;
   });
 
   return (
@@ -157,9 +167,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <span>Profile</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/dashboard/action-notes">
+                  <Link to="/dashboard/action-items/log">
                     <StickyNote className="mr-2 h-4 w-4" />
-                    <span>Action Notes</span>
+                    <span>Action Log</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

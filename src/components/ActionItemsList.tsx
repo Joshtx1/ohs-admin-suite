@@ -90,26 +90,6 @@ export function ActionItemsList({
 
   useEffect(() => {
     loadItems();
-
-    // Subscribe to real-time changes
-    const channel = supabase
-      .channel('action_items_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'action_items'
-        },
-        () => {
-          loadItems();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   const toggleComplete = async (id: string, currentStatus: boolean) => {

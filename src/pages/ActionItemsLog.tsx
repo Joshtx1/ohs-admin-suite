@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 
-export default function ActionNotes() {
+export default function ActionItemsLog() {
   const [searchTerm, setSearchTerm] = useState("");
   const [pageFilter, setPageFilter] = useState("all");
   const [userFilter, setUserFilter] = useState("all");
@@ -62,7 +62,7 @@ export default function ActionNotes() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Action Notes</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Action Items Log</h2>
         <p className="text-muted-foreground">
           View and manage all your action items and notes
         </p>
