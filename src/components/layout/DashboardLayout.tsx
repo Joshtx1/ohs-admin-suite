@@ -107,9 +107,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     await signOut();
   };
 
-  const filteredNavigation = navigation.filter(item => 
-    !item.adminOnly || userRole === 'admin' || userRole === 'master'
-  );
+  // Debug logging
+  console.log('DashboardLayout - Current userRole:', userRole);
+  console.log('DashboardLayout - User object:', user);
+  
+  const filteredNavigation = navigation.filter(item => {
+    const hasAccess = !item.adminOnly || userRole === 'admin' || userRole === 'master';
+    if (item.adminOnly) {
+      console.log(`Navigation item "${item.name}" - adminOnly: true, userRole: "${userRole}", hasAccess: ${hasAccess}`);
+    }
+    return hasAccess;
+  });
 
   return (
     <div className="min-h-screen bg-background">
