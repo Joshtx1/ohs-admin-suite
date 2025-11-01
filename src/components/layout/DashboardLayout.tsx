@@ -104,7 +104,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   };
 
   const handleSignOut = async () => {
-    await signOut();
+    console.log('Attempting to sign out...');
+    try {
+      await signOut();
+      console.log('Sign out successful');
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   // Debug logging
