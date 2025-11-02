@@ -30,34 +30,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('Authorization header present');
-
-    // Create Supabase client with Authorization header in global config
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: {
-            Authorization: authHeader
-          }
-        }
-      }
-    );
-
-    // Verify the calling user (uses the Authorization header from client config)
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    if (userError || !user) {
-      console.error('User verification failed:', userError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication' }),
-        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      );
-    }
-
-    console.log('User verified:', user.id);
-
-    // Create admin client for privileged operations (bypasses RLS)
+    // Create admin client for ALL operations including user verification
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -69,14 +42,28 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
 
-    // Check if user has admin or master role using admin client
+    // Extract JWT token
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Verify the JWT token using admin client
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (userError || !user) {
+      console.error('User verification failed:', userError?.message || 'No user found');
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
+    console.log('User verified:', user.id);
+
+    // Check if user has admin or master role
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
       .single();
-
-    console.log('Role check:', { roleData, roleError });
 
     if (roleError || !roleData || !['admin', 'master'].includes(roleData.role)) {
       console.error('Insufficient privileges:', roleData?.role);
@@ -86,11 +73,11 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    console.log('Admin privileges verified for user:', user.id);
+
     // Parse request body
     const { userId, newPassword }: ResetPasswordRequest = await req.json();
-    console.log('Resetting password for user:', userId);
 
-    // Validate required fields
     if (!userId || !newPassword) {
       return new Response(
         JSON.stringify({ error: 'Missing userId or newPassword' }),
@@ -106,49 +93,30 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Verify the target user exists using admin client
-    const { data: targetProfile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('email, username')
-      .eq('user_id', userId)
-      .single();
-
-    if (profileError || !targetProfile) {
-      console.error('Target user not found:', profileError);
-      return new Response(
-        JSON.stringify({ error: 'User not found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      );
-    }
-
-    // Reset the user's password using admin client
-    const { data: resetData, error: resetError } = await supabaseAdmin.auth.admin.updateUserById(
+    // Reset the password using admin client
+    const { data: updateData, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
       { password: newPassword }
     );
 
-    if (resetError) {
-      console.error('Error resetting password:', resetError);
+    if (updateError) {
+      console.error('Password update failed:', updateError);
       return new Response(
-        JSON.stringify({ error: resetError.message }),
-        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        JSON.stringify({ error: 'Failed to reset password: ' + updateError.message }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
 
-    console.log('Password reset successfully for user:', targetProfile.username || targetProfile.email);
+    console.log('Password reset successful for user:', userId);
 
     return new Response(
       JSON.stringify({ 
-        message: 'Password reset successfully',
-        user: {
-          id: userId,
-          email: targetProfile.email,
-          username: targetProfile.username
-        }
+        success: true, 
+        message: 'Password reset successfully' 
       }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      { 
+        status: 200, 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders } 
       }
     );
 
@@ -156,10 +124,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error('Error in reset-password function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      }
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   }
 };
