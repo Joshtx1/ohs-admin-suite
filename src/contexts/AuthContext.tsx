@@ -65,12 +65,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } catch (error) {
             console.error('Error fetching role:', error);
             setUserRole('user');
+          } finally {
+            // Only set loading to false AFTER role is fetched
+            setLoading(false);
           }
         } else {
           setUserRole(null);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
