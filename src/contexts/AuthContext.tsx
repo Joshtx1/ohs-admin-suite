@@ -44,31 +44,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Set up auth state listener first
+    // Function to fetch user role
+    const fetchUserRole = async (userId: string) => {
+      console.log('Fetching role for user:', userId);
+      try {
+        const { data: roleData, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching role:', error);
+          setUserRole('user');
+        } else {
+          console.log('User role fetched:', roleData?.role);
+          setUserRole(roleData?.role || 'user');
+        }
+      } catch (error) {
+        console.error('Exception fetching role:', error);
+        setUserRole('user');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user role immediately
-          try {
-            const { data: roleData } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .single();
-            
-            console.log('User role fetched:', roleData?.role);
-            setUserRole(roleData?.role || 'user');
-          } catch (error) {
-            console.error('Error fetching role:', error);
-            setUserRole('user');
-          } finally {
-            // Only set loading to false AFTER role is fetched
-            setLoading(false);
-          }
+          // Fetch role in separate async call
+          fetchUserRole(session.user.id);
         } else {
           setUserRole(null);
           setLoading(false);
