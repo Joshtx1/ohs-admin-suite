@@ -112,7 +112,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   };
   
   const filteredNavigation = navigation.filter(item => {
-    return !item.adminOnly || userRole === 'admin' || userRole === 'master';
+    const hasAccess = !item.adminOnly || userRole === 'admin' || userRole === 'master';
+    console.log(`Navigation item "${item.name}": adminOnly=${item.adminOnly}, userRole=${userRole}, hasAccess=${hasAccess}`);
+    return hasAccess;
   });
 
   return (
