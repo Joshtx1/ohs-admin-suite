@@ -30,7 +30,40 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Create admin client for ALL operations including user verification
+    console.log('Authorization header received');
+
+    // Create client with ANON_KEY and auth header to verify JWT via RLS
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            Authorization: authHeader
+          }
+        }
+      }
+    );
+
+    // Verify JWT and admin role by querying RLS-protected table
+    // If this succeeds, the JWT is valid and user has admin/master role
+    const { data: roleData, error: roleError } = await supabaseClient
+      .from('user_roles')
+      .select('role, user_id')
+      .in('role', ['admin', 'master'])
+      .single();
+
+    if (roleError || !roleData) {
+      console.error('Authentication failed - not an admin:', roleError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication or insufficient privileges' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
+    console.log('Admin verified:', roleData.user_id);
+
+    // Create admin client for password reset operation
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -41,39 +74,6 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
     );
-
-    // Extract JWT token
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Verify the JWT token using admin client
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    
-    if (userError || !user) {
-      console.error('User verification failed:', userError?.message || 'No user found');
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication' }),
-        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      );
-    }
-
-    console.log('User verified:', user.id);
-
-    // Check if user has admin or master role
-    const { data: roleData, error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (roleError || !roleData || !['admin', 'master'].includes(roleData.role)) {
-      console.error('Insufficient privileges:', roleData?.role);
-      return new Response(
-        JSON.stringify({ error: 'Insufficient privileges' }),
-        { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      );
-    }
-
-    console.log('Admin privileges verified for user:', user.id);
 
     // Parse request body
     const { userId, newPassword }: ResetPasswordRequest = await req.json();
