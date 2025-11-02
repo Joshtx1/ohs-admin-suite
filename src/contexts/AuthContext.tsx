@@ -52,27 +52,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user role immediately - no delay needed
-          try {
-            const { data: roleData, error } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .single();
-            
-            console.log('User role fetched:', roleData?.role, 'Error:', error);
-            setUserRole(roleData?.role || 'user');
-          } catch (error) {
-            console.error('Error fetching role:', error);
-            setUserRole('user');
-          } finally {
-            // Only set loading to false AFTER role is fetched
-            setLoading(false);
-          }
+          // Fetch user role with a small delay to ensure data is ready
+          setTimeout(async () => {
+            try {
+              const { data: roleData } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', session.user.id)
+                .single();
+              
+              console.log('User role fetched:', roleData?.role);
+              setUserRole(roleData?.role || 'user');
+            } catch (error) {
+              console.error('Error fetching role:', error);
+              setUserRole('user');
+            }
+          }, 100);
         } else {
           setUserRole(null);
-          setLoading(false);
         }
+        
+        setLoading(false);
       }
     );
 

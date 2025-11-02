@@ -42,7 +42,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const location = useLocation();
   const [profileOpen, setProfileOpen] = useState(false);
 
-  if (loading) {
+  if (loading || (user && !userRole)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
@@ -95,6 +95,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       name: 'Admin',
       href: '/dashboard/admin',
       icon: Settings,
+      adminOnly: true,
     },
   ];
 
@@ -112,9 +113,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   };
   
   const filteredNavigation = navigation.filter(item => {
-    const hasAccess = !item.adminOnly || userRole === 'admin' || userRole === 'master';
-    console.log(`Navigation item "${item.name}": adminOnly=${item.adminOnly}, userRole=${userRole}, hasAccess=${hasAccess}`);
-    return hasAccess;
+    return !item.adminOnly || userRole === 'admin' || userRole === 'master';
   });
 
   return (
