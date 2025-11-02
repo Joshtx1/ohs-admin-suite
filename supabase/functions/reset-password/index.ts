@@ -20,7 +20,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     console.log('Reset password function called');
 
-    // Get the authorization header and extract JWT token
+    // Get the authorization header
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
       console.error('No authorization header');
@@ -30,17 +30,23 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Extract the JWT token from "Bearer <token>"
-    const token = authHeader.replace('Bearer ', '');
+    console.log('Authorization header present');
 
-    // Create Supabase clients
+    // Create Supabase client with Authorization header in global config
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            Authorization: authHeader
+          }
+        }
+      }
     );
 
-    // Verify the calling user by passing the token to getUser()
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+    // Verify the calling user (uses the Authorization header from client config)
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
       console.error('User verification failed:', userError);
       return new Response(
