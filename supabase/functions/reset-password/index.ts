@@ -34,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
     const token = authHeader.replace('Bearer ', '');
 
     // Get JWT secret from environment
-    const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET');
+    const jwtSecret = Deno.env.get('JWT_SECRET');
     if (!jwtSecret) {
       console.error('JWT secret not configured');
       return new Response(
