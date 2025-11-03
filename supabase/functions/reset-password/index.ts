@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { create, verify } from "https://deno.land/x/djwt@v2.8/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 const corsHeaders = {
@@ -12,7 +13,6 @@ interface ResetPasswordRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -30,40 +30,49 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('Authorization header received');
+    // Extract JWT token
+    const token = authHeader.replace('Bearer ', '');
 
-    // Create client with ANON_KEY and auth header to verify JWT via RLS
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: {
-            Authorization: authHeader
-          }
-        }
-      }
-    );
-
-    // Verify JWT and admin role by querying RLS-protected table
-    // If this succeeds, the JWT is valid and user has admin/master role
-    const { data: roleData, error: roleError } = await supabaseClient
-      .from('user_roles')
-      .select('role, user_id')
-      .in('role', ['admin', 'master'])
-      .single();
-
-    if (roleError || !roleData) {
-      console.error('Authentication failed - not an admin:', roleError?.message);
+    // Get JWT secret from environment
+    const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET');
+    if (!jwtSecret) {
+      console.error('JWT secret not configured');
       return new Response(
-        JSON.stringify({ error: 'Invalid authentication or insufficient privileges' }),
+        JSON.stringify({ error: 'Server configuration error' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
+    // Manually verify the JWT
+    let payload;
+    try {
+      const key = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(jwtSecret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['verify']
+      );
+      payload = await verify(token, key);
+    } catch (verifyError) {
+      console.error('JWT verification failed:', verifyError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication token' }),
         { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
 
-    console.log('Admin verified:', roleData.user_id);
+    const userId = payload.sub as string;
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid token payload' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
 
-    // Create admin client for password reset operation
+    console.log('User verified:', userId);
+
+    // Create admin client for database operations
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -75,10 +84,27 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
 
-    // Parse request body
-    const { userId, newPassword }: ResetPasswordRequest = await req.json();
+    // Check if user has admin or master role
+    const { data: roleData, error: roleError } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
 
-    if (!userId || !newPassword) {
+    if (roleError || !roleData || !['admin', 'master'].includes(roleData.role)) {
+      console.error('Insufficient privileges:', roleData?.role || 'no role found');
+      return new Response(
+        JSON.stringify({ error: 'Insufficient privileges' }),
+        { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+
+    console.log('Admin privileges verified for user:', userId);
+
+    // Parse request body
+    const { userId: targetUserId, newPassword }: ResetPasswordRequest = await req.json();
+
+    if (!targetUserId || !newPassword) {
       return new Response(
         JSON.stringify({ error: 'Missing userId or newPassword' }),
         { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
@@ -95,7 +121,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Reset the password using admin client
     const { data: updateData, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      userId,
+      targetUserId,
       { password: newPassword }
     );
 
@@ -107,7 +133,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('Password reset successful for user:', userId);
+    console.log('Password reset successful for user:', targetUserId);
 
     return new Response(
       JSON.stringify({ 
