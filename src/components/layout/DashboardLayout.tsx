@@ -95,7 +95,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       name: 'Admin',
       href: '/dashboard/admin',
       icon: Settings,
-      adminOnly: true,
     },
   ];
 
