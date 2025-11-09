@@ -9,16 +9,18 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DataTable } from '@/components/common/DataTable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Search, Download, Filter, Check, Eye, ChevronDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Download, Filter, Check, Eye, ChevronDown, FileText, Package } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { z } from 'zod';
 import { getStatusBadgeVariant, getStatusDisplay } from '@/lib/status';
 import { MetadataFieldBuilder, ServiceMetadata, MetadataField, METADATA_TEMPLATES } from '@/components/MetadataFieldBuilder';
+import { ServiceTemplateManager } from '@/components/admin/ServiceTemplateManager';
 
 const serviceSchema = z.object({
   service_code: z.string().min(1, 'Service code is required').max(20),
@@ -459,21 +461,37 @@ const Services = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">SERVICE Manager</h1>
-        </div>
-        
-        <Dialog open={dialogOpen} onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add New
-            </Button>
-          </DialogTrigger>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Service Manager</h1>
+        <p className="text-muted-foreground">
+          Manage services and service templates
+        </p>
+      </div>
+
+      <Tabs defaultValue="services" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="services">
+            <Package className="h-4 w-4 mr-2" />
+            Services
+          </TabsTrigger>
+          <TabsTrigger value="templates">
+            <FileText className="h-4 w-4 mr-2" />
+            Service Templates
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="services" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <Dialog open={dialogOpen} onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) resetForm();
+            }}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add New Service
+                </Button>
+              </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>
@@ -748,10 +766,10 @@ const Services = () => {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+          </div>
 
-      {/* Filters Section */}
-      <Card>
+          {/* Filters Section */}
+          <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-[200px]">
@@ -821,8 +839,8 @@ const Services = () => {
         </CardContent>
       </Card>
 
-      {/* Services Table */}
-      <Card>
+          {/* Services Table */}
+          <Card>
         <CardContent className="p-0">
           <DataTable 
             data={filteredServices}
@@ -927,10 +945,10 @@ const Services = () => {
             pageSize={10}
           />
         </CardContent>
-      </Card>
+          </Card>
 
-      {/* Metadata Preview Dialog */}
-      <Dialog open={metadataPreviewOpen} onOpenChange={setMetadataPreviewOpen}>
+          {/* Metadata Preview Dialog */}
+          <Dialog open={metadataPreviewOpen} onOpenChange={setMetadataPreviewOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Service Metadata: {previewService?.name}</DialogTitle>
@@ -976,10 +994,10 @@ const Services = () => {
             <p className="text-muted-foreground py-8 text-center">No custom fields configured</p>
           )}
         </DialogContent>
-      </Dialog>
+          </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          {/* Delete Confirmation Dialog */}
+          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Service?</AlertDialogTitle>
@@ -1015,7 +1033,13 @@ const Services = () => {
             )}
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+          </AlertDialog>
+        </TabsContent>
+
+        <TabsContent value="templates" className="space-y-4">
+          <ServiceTemplateManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
