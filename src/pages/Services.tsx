@@ -492,15 +492,18 @@ const Services = () => {
                   Add New Service
                 </Button>
               </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>
-                {editingService ? 'Edit Service' : 'Add New Service'}
-              </DialogTitle>
-              <DialogDescription>
-                {editingService ? 'Update service information' : 'Enter the details for the new service'}
-              </DialogDescription>
-            </DialogHeader>
+            <DialogContent
+              className="max-w-lg"
+              onInteractOutside={(event) => event.preventDefault()}
+            >
+              <DialogHeader>
+                <DialogTitle>
+                  {editingService ? 'Edit Service' : 'Add New Service'}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingService ? 'Update service information' : 'Enter the details for the new service'}
+                </DialogDescription>
+              </DialogHeader>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
