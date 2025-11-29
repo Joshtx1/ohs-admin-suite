@@ -184,7 +184,7 @@ export function GlobalNoteButton({ open: externalOpen, onOpenChange }: GlobalNot
       <Button
         onClick={() => setOpen(true)}
         size="icon"
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-[100]"
         title="Add Quick Note"
       >
         <StickyNote className="h-6 w-6" />
