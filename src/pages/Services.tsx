@@ -858,12 +858,9 @@ const Services = () => {
                 header: 'Description',
                 cell: (service) => (
                   <div>
-                    <button
-                      onClick={() => navigate(`/dashboard/services/${service.id}`)}
-                      className="font-medium text-primary hover:underline text-left"
-                    >
+                    <div className="font-medium">
                       {service.name}
-                    </button>
+                    </div>
                     {service.description && (
                       <div className="text-sm text-muted-foreground mt-1">
                         {service.description}
@@ -933,10 +930,10 @@ const Services = () => {
                     <Button
                       variant="link"
                       size="sm"
-                      onClick={() => handleEdit(service)}
+                      onClick={() => navigate(`/dashboard/services/${service.id}`)}
                       className="text-cyan-600 h-auto p-0"
                     >
-                      Edit
+                      Details
                     </Button>
                     {userRole === 'admin' && (
                       <Button
