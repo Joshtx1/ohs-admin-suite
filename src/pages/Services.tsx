@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,6 +61,7 @@ interface Service {
 
 const Services = () => {
   const { user, userRole } = useAuth();
+  const navigate = useNavigate();
   const [services, setServices] = useState<Service[]>([]);
   const [filteredServices, setFilteredServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
@@ -856,7 +858,12 @@ const Services = () => {
                 header: 'Description',
                 cell: (service) => (
                   <div>
-                    <div className="font-medium">{service.name}</div>
+                    <button
+                      onClick={() => navigate(`/dashboard/services/${service.id}`)}
+                      className="font-medium text-primary hover:underline text-left"
+                    >
+                      {service.name}
+                    </button>
                     {service.description && (
                       <div className="text-sm text-muted-foreground mt-1">
                         {service.description}
