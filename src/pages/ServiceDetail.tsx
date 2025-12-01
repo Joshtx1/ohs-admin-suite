@@ -208,7 +208,8 @@ const ServiceDetail = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -216,440 +217,389 @@ const ServiceDetail = () => {
             onClick={() => navigate('/dashboard/services')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Services
+            Back
           </Button>
+          <h1 className="text-2xl font-bold">Service Details: {service.name}</h1>
         </div>
         <div className="flex items-center gap-2">
-          {!isEditing ? (
-            <Button onClick={handleEdit}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Service
-            </Button>
-          ) : (
+          {isEditing ? (
             <>
-              <Button variant="outline" onClick={handleCancel}>
+              <Button onClick={handleCancel} variant="outline" size="sm">
                 <X className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
-              <Button onClick={handleSave}>
+              <Button onClick={handleSave} size="sm">
                 <Save className="h-4 w-4 mr-2" />
                 Save Changes
               </Button>
             </>
+          ) : (
+            <Button onClick={() => setIsEditing(true)} size="sm">
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
           )}
         </div>
       </div>
 
-      <div>
-        <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold tracking-tight">{service.name}</h1>
-          <Badge variant={getStatusBadgeVariant(service.status)}>
-            {getStatusDisplay(service.status)}
-          </Badge>
-          {!service.is_active && (
-            <Badge variant="destructive">Inactive</Badge>
-          )}
-        </div>
-        <p className="text-muted-foreground mt-1">
-          Service Code: {service.service_code}
-        </p>
-      </div>
-
+      {/* Tabs */}
       <Tabs defaultValue="general" className="w-full">
-        <TabsList>
-          <TabsTrigger value="general">
-            <Package className="h-4 w-4 mr-2" />
-            General
+        <TabsList className="w-full justify-start bg-transparent border-b rounded-none h-auto p-0 space-x-8">
+          <TabsTrigger 
+            value="general" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent bg-transparent px-0 pb-3 font-semibold"
+          >
+            GENERAL
           </TabsTrigger>
-          <TabsTrigger value="metadata">
-            <Database className="h-4 w-4 mr-2" />
-            Metadata Fields
+          <TabsTrigger 
+            value="metadata" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent bg-transparent px-0 pb-3 font-semibold"
+          >
+            METADATA FIELDS
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Core Information</CardTitle>
-              <CardDescription>
-                Essential service details and configuration
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label>Service Code</Label>
-                  {isEditing ? (
-                    <Input
-                      value={formData.service_code}
-                      onChange={(e) => setFormData({ ...formData, service_code: e.target.value })}
-                    />
-                  ) : (
-                    <p className="text-base">{service.service_code}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Service Name</Label>
-                  {isEditing ? (
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    />
-                  ) : (
-                    <p className="text-base">{service.name}</p>
-                  )}
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label>Description</Label>
-                  {isEditing ? (
-                    <Textarea
-                      value={formData.description || ''}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      rows={3}
-                    />
-                  ) : (
-                    <p className="text-base">{service.description || 'No description provided'}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Category</Label>
-                  {isEditing ? (
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => setFormData({ ...formData, category: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {serviceCategories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <p className="text-base">{service.category}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Service Groups</Label>
-                  {isEditing ? (
-                    <div className="flex flex-wrap gap-2 p-3 border rounded-md">
-                      {serviceCategories.map((group) => (
-                        <div key={group} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={group}
-                            checked={formData.service_group?.includes(group)}
-                            onCheckedChange={() => toggleServiceGroup(group)}
-                          />
-                          <label
-                            htmlFor={group}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            {group}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {service.service_group.map((group, index) => (
-                        <Badge key={index} variant="secondary">
-                          {group}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  {isEditing ? (
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value) => setFormData({ ...formData, status: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Badge variant={getStatusBadgeVariant(service.status)}>
-                        {getStatusDisplay(service.status)}
-                      </Badge>
-                      <Badge variant={service.is_active ? 'default' : 'destructive'}>
-                        {service.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Is Active</Label>
-                  {isEditing ? (
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={formData.is_active}
-                        onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                      />
-                      <span className="text-sm">{formData.is_active ? 'Active' : 'Inactive'}</span>
-                    </div>
-                  ) : (
-                    <Badge variant={service.is_active ? 'default' : 'destructive'}>
-                      {service.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Department</Label>
-                  {isEditing ? (
-                    <Select
-                      value={formData.department || ''}
-                      onValueChange={(value) => setFormData({ ...formData, department: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departmentOptions.map((dept) => (
-                          <SelectItem key={dept} value={dept}>
-                            {dept}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <p className="text-base">{service.department || 'Not specified'}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Room</Label>
-                  {isEditing ? (
-                    <Input
-                      value={formData.room || ''}
-                      onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                    />
-                  ) : (
-                    <p className="text-base">{service.room || 'Not specified'}</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Pricing & Duration</CardTitle>
-              <CardDescription>
-                Service pricing and time allocation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="space-y-2">
-                  <Label>Member Price</Label>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.member_price}
-                      onChange={(e) => setFormData({ ...formData, member_price: parseFloat(e.target.value) })}
-                    />
-                  ) : (
-                    <p className="text-2xl font-bold">${service.member_price.toFixed(2)}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Non-Member Price</Label>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.non_member_price}
-                      onChange={(e) => setFormData({ ...formData, non_member_price: parseFloat(e.target.value) })}
-                    />
-                  ) : (
-                    <p className="text-2xl font-bold">${service.non_member_price.toFixed(2)}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Duration</Label>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      value={formData.duration_minutes}
-                      onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) })}
-                    />
-                  ) : (
-                    <p className="text-2xl font-bold">{service.duration_minutes} min</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Valid For</Label>
-                  {isEditing ? (
-                    <Input
-                      type="number"
-                      value={formData.valid_for_days}
-                      onChange={(e) => setFormData({ ...formData, valid_for_days: parseInt(e.target.value) })}
-                    />
-                  ) : (
-                    <p className="text-2xl font-bold">{service.valid_for_days} days</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Timestamps</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label>Created At</Label>
-                  <p className="text-base">{new Date(service.created_at).toLocaleString()}</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Updated At</Label>
-                  <p className="text-base">{new Date(service.updated_at).toLocaleString()}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="metadata" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Custom Metadata Fields</CardTitle>
-                  <CardDescription>
-                    Service-specific fields for data collection
-                  </CardDescription>
-                </div>
-                {isEditing && (
-                  <div className="flex items-center gap-2">
-                    <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                      <SelectTrigger className="w-[250px]">
-                        <SelectValue placeholder="Select a template" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {templates?.map((template) => (
-                          <SelectItem key={template.id} value={template.id}>
-                            {template.template_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button 
-                      onClick={applyTemplate} 
-                      disabled={!selectedTemplate}
-                      variant="outline"
-                      size="sm"
-                    >
-                      <Wand2 className="h-4 w-4 mr-2" />
-                      Apply Template
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
+        <TabsContent value="general" className="space-y-0 pt-8">
+          <div className="grid grid-cols-2 gap-x-16 gap-y-4 max-w-5xl">
+            {/* Service Code */}
+            <div className="flex items-baseline">
+              <span className="font-semibold min-w-[200px]">Service Code:</span>
               {isEditing ? (
-                <MetadataFieldBuilder
-                  fields={formData.service_metadata?.fields || []}
-                  onChange={(fields) => setFormData({ ...formData, service_metadata: { fields } })}
+                <Input
+                  value={formData?.service_code || ''}
+                  onChange={(e) => setFormData({ ...formData!, service_code: e.target.value })}
+                  className="flex-1 max-w-xs"
                 />
               ) : (
-                <>
-                  {service.service_metadata?.fields && service.service_metadata.fields.length > 0 ? (
-                    <div className="space-y-4">
-                      {service.service_metadata.fields.map((field, index) => (
-                        <Card key={index} className="border-muted">
-                          <CardContent className="pt-6">
-                            <div className="space-y-3">
-                              <div className="flex items-start justify-between">
-                                <div className="space-y-1 flex-1">
-                                  <div className="flex items-center gap-3">
-                                    <h4 className="text-lg font-semibold">{field.fieldLabel}</h4>
-                                    {field.required && (
-                                      <Badge variant="destructive" className="text-xs">Required</Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-muted-foreground">
-                                    Field Name: <code className="bg-muted px-2 py-1 rounded text-xs">{field.fieldName}</code>
-                                  </p>
-                                </div>
-                                <Badge variant="outline">{field.fieldType}</Badge>
-                              </div>
-                              
-                              {field.placeholder && (
-                                <div className="space-y-1">
-                                  <label className="text-xs font-medium text-muted-foreground">Placeholder</label>
-                                  <p className="text-sm">{field.placeholder}</p>
-                                </div>
+                <span>{service.service_code}</span>
+              )}
+            </div>
+
+            {/* Service Name */}
+            <div className="flex items-baseline">
+              <span className="font-semibold min-w-[200px]">Service Name:</span>
+              {isEditing ? (
+                <Input
+                  value={formData?.name || ''}
+                  onChange={(e) => setFormData({ ...formData!, name: e.target.value })}
+                  className="flex-1 max-w-xs"
+                />
+              ) : (
+                <span>{service.name}</span>
+              )}
+            </div>
+
+            {/* Category */}
+            <div className="flex items-baseline">
+              <span className="font-semibold min-w-[200px]">Category:</span>
+              {isEditing ? (
+                <Select
+                  value={formData?.category || ''}
+                  onValueChange={(value) => setFormData({ ...formData!, category: value })}
+                >
+                  <SelectTrigger className="flex-1 max-w-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceCategories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <span>{service.category}</span>
+              )}
+            </div>
+
+            {/* Status */}
+            <div className="flex items-baseline">
+              <span className="font-semibold min-w-[200px]">Status:</span>
+              {isEditing ? (
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={formData?.is_active || false}
+                    onCheckedChange={(checked) => setFormData({ ...formData!, is_active: checked })}
+                  />
+                  <span className="text-sm">{formData?.is_active ? 'Active' : 'Inactive'}</span>
+                </div>
+              ) : (
+                <span>{service.is_active ? 'Active' : 'Inactive'}</span>
+              )}
+            </div>
+
+            {/* Department */}
+            <div className="flex items-baseline">
+              <span className="font-semibold min-w-[200px]">Department:</span>
+              {isEditing ? (
+                <Select
+                  value={formData?.department || ''}
+                  onValueChange={(value) => setFormData({ ...formData!, department: value })}
+                >
+                  <SelectTrigger className="flex-1 max-w-xs">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departmentOptions.map((dept) => (
+                      <SelectItem key={dept} value={dept}>
+                        {dept}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <span>{service.department || 'Not specified'}</span>
+              )}
+            </div>
+
+            {/* Room */}
+            <div className="flex items-baseline">
+              <span className="font-semibold min-w-[200px]">Room:</span>
+              {isEditing ? (
+                <Input
+                  value={formData?.room || ''}
+                  onChange={(e) => setFormData({ ...formData!, room: e.target.value })}
+                  className="flex-1 max-w-xs"
+                />
+              ) : (
+                <span>{service.room || 'Not specified'}</span>
+              )}
+            </div>
+
+            {/* Member Price */}
+            <div className="flex items-baseline">
+              <span className="font-semibold min-w-[200px]">Member Price:</span>
+              {isEditing ? (
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData?.member_price || ''}
+                  onChange={(e) => setFormData({ ...formData!, member_price: parseFloat(e.target.value) })}
+                  className="flex-1 max-w-xs"
+                />
+              ) : (
+                <span>${service.member_price?.toFixed(2) || '0.00'}</span>
+              )}
+            </div>
+
+            {/* Non-Member Price */}
+            <div className="flex items-baseline">
+              <span className="font-semibold min-w-[200px]">Non-Member Price:</span>
+              {isEditing ? (
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData?.non_member_price || ''}
+                  onChange={(e) => setFormData({ ...formData!, non_member_price: parseFloat(e.target.value) })}
+                  className="flex-1 max-w-xs"
+                />
+              ) : (
+                <span>${service.non_member_price?.toFixed(2) || '0.00'}</span>
+              )}
+            </div>
+
+            {/* Duration */}
+            <div className="flex items-baseline">
+              <span className="font-semibold min-w-[200px]">Duration (minutes):</span>
+              {isEditing ? (
+                <Input
+                  type="number"
+                  value={formData?.duration_minutes || ''}
+                  onChange={(e) => setFormData({ ...formData!, duration_minutes: parseInt(e.target.value) })}
+                  className="flex-1 max-w-xs"
+                />
+              ) : (
+                <span>{service.duration_minutes}</span>
+              )}
+            </div>
+
+            {/* Valid For Days */}
+            <div className="flex items-baseline">
+              <span className="font-semibold min-w-[200px]">Valid For (days):</span>
+              {isEditing ? (
+                <Input
+                  type="number"
+                  value={formData?.valid_for_days || ''}
+                  onChange={(e) => setFormData({ ...formData!, valid_for_days: parseInt(e.target.value) })}
+                  className="flex-1 max-w-xs"
+                />
+              ) : (
+                <span>{service.valid_for_days || 'Not specified'}</span>
+              )}
+            </div>
+
+            {/* Description - Full Width */}
+            <div className="col-span-2 flex items-start">
+              <span className="font-semibold min-w-[200px]">Description:</span>
+              {isEditing ? (
+                <Textarea
+                  value={formData?.description || ''}
+                  onChange={(e) => setFormData({ ...formData!, description: e.target.value })}
+                  rows={3}
+                  className="flex-1 max-w-2xl"
+                />
+              ) : (
+                <span className="flex-1">{service.description || 'No description'}</span>
+              )}
+            </div>
+
+            {/* Service Groups - Full Width */}
+            <div className="col-span-2 flex items-start">
+              <span className="font-semibold min-w-[200px]">Service Groups:</span>
+              {isEditing ? (
+                <div className="flex-1 space-y-2">
+                  {serviceCategories.map((group) => (
+                    <div key={group} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`group-${group}`}
+                        checked={formData?.service_group?.includes(group) || false}
+                        onCheckedChange={() => toggleServiceGroup(group)}
+                      />
+                      <Label htmlFor={`group-${group}`} className="font-normal">
+                        {group}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-wrap gap-2">
+                  {service.service_group && service.service_group.length > 0 ? (
+                    service.service_group.map((group) => (
+                      <Badge key={group} variant="outline">
+                        {group}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-muted-foreground">No groups assigned</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Timestamps */}
+            <div className="col-span-2 border-t pt-4 mt-4 grid grid-cols-2 gap-x-16 gap-y-4">
+              <div className="flex items-baseline">
+                <span className="font-semibold min-w-[200px]">Created At:</span>
+                <span className="text-muted-foreground">
+                  {new Date(service.created_at).toLocaleString()}
+                </span>
+              </div>
+              <div className="flex items-baseline">
+                <span className="font-semibold min-w-[200px]">Last Updated:</span>
+                <span className="text-muted-foreground">
+                  {new Date(service.updated_at).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="metadata" className="space-y-0 pt-8">
+          <div className="space-y-6">
+            {/* Template Selection */}
+            {isEditing && (
+              <div className="flex items-center gap-2 pb-4 border-b">
+                <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                  <SelectTrigger className="w-[250px]">
+                    <SelectValue placeholder="Select a template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates?.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.template_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  onClick={applyTemplate} 
+                  disabled={!selectedTemplate}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Apply Template
+                </Button>
+              </div>
+            )}
+
+            {/* Metadata Content */}
+            {isEditing ? (
+              <MetadataFieldBuilder
+                fields={formData?.service_metadata?.fields || []}
+                onChange={(fields) => setFormData({ ...formData!, service_metadata: { fields } })}
+              />
+            ) : (
+              <div className="space-y-8">
+                {service.service_metadata?.fields && service.service_metadata.fields.length > 0 ? (
+                  service.service_metadata.fields.map((field, index) => (
+                    <div key={index} className="space-y-4 pb-6 border-b last:border-0">
+                      <h3 className="font-semibold text-base">{field.fieldLabel}</h3>
+                      <div className="grid grid-cols-2 gap-x-16 gap-y-3 max-w-4xl">
+                        <div className="flex items-baseline">
+                          <span className="font-semibold min-w-[180px]">Field Name:</span>
+                          <span className="font-mono text-sm">{field.fieldName}</span>
+                        </div>
+                        <div className="flex items-baseline">
+                          <span className="font-semibold min-w-[180px]">Type:</span>
+                          <span>{field.fieldType}</span>
+                        </div>
+                        <div className="flex items-baseline">
+                          <span className="font-semibold min-w-[180px]">Required:</span>
+                          <span>{field.required ? 'Yes' : 'No'}</span>
+                        </div>
+                        {field.placeholder && (
+                          <div className="flex items-baseline">
+                            <span className="font-semibold min-w-[180px]">Placeholder:</span>
+                            <span>{field.placeholder}</span>
+                          </div>
+                        )}
+                        {field.defaultValue && (
+                          <div className="flex items-baseline">
+                            <span className="font-semibold min-w-[180px]">Default Value:</span>
+                            <span>{field.defaultValue}</span>
+                          </div>
+                        )}
+                        {field.options && field.options.length > 0 && (
+                          <div className="col-span-2 flex items-start">
+                            <span className="font-semibold min-w-[180px]">Options:</span>
+                            <div className="flex flex-wrap gap-2">
+                              {field.options.map((option, idx) => (
+                                <Badge key={idx} variant="secondary">
+                                  {option}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {field.validation && (
+                          <div className="col-span-2 flex items-start">
+                            <span className="font-semibold min-w-[180px]">Validation:</span>
+                            <div className="space-y-1">
+                              {field.validation.min !== undefined && (
+                                <p>Min: {field.validation.min}</p>
                               )}
-                              
-                              {field.defaultValue && (
-                                <div className="space-y-1">
-                                  <label className="text-xs font-medium text-muted-foreground">Default Value</label>
-                                  <p className="text-sm">{field.defaultValue}</p>
-                                </div>
+                              {field.validation.max !== undefined && (
+                                <p>Max: {field.validation.max}</p>
                               )}
-                              
-                              {field.options && field.options.length > 0 && (
-                                <div className="space-y-2">
-                                  <label className="text-xs font-medium text-muted-foreground">Options</label>
-                                  <div className="flex flex-wrap gap-2">
-                                    {field.options.map((option, optIndex) => (
-                                      <Badge key={optIndex} variant="secondary">
-                                        {option}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {field.validation && (
-                                <div className="space-y-2">
-                                  <label className="text-xs font-medium text-muted-foreground">Validation Rules</label>
-                                  <div className="bg-muted/50 rounded p-3 space-y-1">
-                                    {field.validation.min !== undefined && (
-                                      <p className="text-xs">Min: {field.validation.min}</p>
-                                    )}
-                                    {field.validation.max !== undefined && (
-                                      <p className="text-xs">Max: {field.validation.max}</p>
-                                    )}
-                                    {field.validation.pattern && (
-                                      <p className="text-xs">Pattern: <code>{field.validation.pattern}</code></p>
-                                    )}
-                                  </div>
-                                </div>
+                              {field.validation.pattern && (
+                                <p>Pattern: {field.validation.pattern}</p>
                               )}
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <Database className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                      <p className="text-muted-foreground">
-                        No custom metadata fields configured for this service
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">
+                    No metadata fields configured
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>
