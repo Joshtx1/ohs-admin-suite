@@ -252,6 +252,12 @@ const ServiceDetail = () => {
             GENERAL
           </TabsTrigger>
           <TabsTrigger 
+            value="pricing" 
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent bg-transparent px-0 pb-3 font-semibold"
+          >
+            PRICING
+          </TabsTrigger>
+          <TabsTrigger 
             value="metadata" 
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent bg-transparent px-0 pb-3 font-semibold"
           >
@@ -367,38 +373,6 @@ const ServiceDetail = () => {
               )}
             </div>
 
-            {/* Member Price */}
-            <div className="flex items-baseline">
-              <span className="font-semibold min-w-[200px]">Member Price:</span>
-              {isEditing ? (
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData?.member_price || ''}
-                  onChange={(e) => setFormData({ ...formData!, member_price: parseFloat(e.target.value) })}
-                  className="flex-1 max-w-xs"
-                />
-              ) : (
-                <span>${service.member_price?.toFixed(2) || '0.00'}</span>
-              )}
-            </div>
-
-            {/* Non-Member Price */}
-            <div className="flex items-baseline">
-              <span className="font-semibold min-w-[200px]">Non-Member Price:</span>
-              {isEditing ? (
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData?.non_member_price || ''}
-                  onChange={(e) => setFormData({ ...formData!, non_member_price: parseFloat(e.target.value) })}
-                  className="flex-1 max-w-xs"
-                />
-              ) : (
-                <span>${service.non_member_price?.toFixed(2) || '0.00'}</span>
-              )}
-            </div>
-
             {/* Duration */}
             <div className="flex items-baseline">
               <span className="font-semibold min-w-[200px]">Duration (minutes):</span>
@@ -495,6 +469,42 @@ const ServiceDetail = () => {
           </div>
         </TabsContent>
 
+        <TabsContent value="pricing" className="space-y-0 pt-8">
+          <div className="grid grid-cols-2 gap-x-16 gap-y-4 max-w-5xl">
+            {/* Member Price */}
+            <div className="flex items-baseline">
+              <span className="font-semibold min-w-[200px]">Member Price:</span>
+              {isEditing ? (
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData?.member_price || ''}
+                  onChange={(e) => setFormData({ ...formData!, member_price: parseFloat(e.target.value) })}
+                  className="flex-1 max-w-xs"
+                />
+              ) : (
+                <span>${service.member_price?.toFixed(2) || '0.00'}</span>
+              )}
+            </div>
+
+            {/* Non-Member Price */}
+            <div className="flex items-baseline">
+              <span className="font-semibold min-w-[200px]">Non-Member Price:</span>
+              {isEditing ? (
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData?.non_member_price || ''}
+                  onChange={(e) => setFormData({ ...formData!, non_member_price: parseFloat(e.target.value) })}
+                  className="flex-1 max-w-xs"
+                />
+              ) : (
+                <span>${service.non_member_price?.toFixed(2) || '0.00'}</span>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
         <TabsContent value="metadata" className="space-y-0 pt-8">
           <div className="space-y-6">
             {/* Template Selection */}
@@ -531,39 +541,42 @@ const ServiceDetail = () => {
                 onChange={(fields) => setFormData({ ...formData!, service_metadata: { fields } })}
               />
             ) : (
-              <div className="space-y-8">
+              <div className="grid grid-cols-1 gap-y-8 max-w-5xl">
                 {service.service_metadata?.fields && service.service_metadata.fields.length > 0 ? (
                   service.service_metadata.fields.map((field, index) => (
                     <div key={index} className="space-y-4 pb-6 border-b last:border-0">
-                      <h3 className="font-semibold text-base">{field.fieldLabel}</h3>
-                      <div className="grid grid-cols-2 gap-x-16 gap-y-3 max-w-4xl">
+                      <div className="grid grid-cols-2 gap-x-16 gap-y-4">
+                        <div className="flex items-baseline col-span-2">
+                          <span className="font-semibold min-w-[200px]">Field Label:</span>
+                          <span>{field.fieldLabel}</span>
+                        </div>
                         <div className="flex items-baseline">
-                          <span className="font-semibold min-w-[180px]">Field Name:</span>
+                          <span className="font-semibold min-w-[200px]">Field Name:</span>
                           <span className="font-mono text-sm">{field.fieldName}</span>
                         </div>
                         <div className="flex items-baseline">
-                          <span className="font-semibold min-w-[180px]">Type:</span>
+                          <span className="font-semibold min-w-[200px]">Type:</span>
                           <span>{field.fieldType}</span>
                         </div>
                         <div className="flex items-baseline">
-                          <span className="font-semibold min-w-[180px]">Required:</span>
+                          <span className="font-semibold min-w-[200px]">Required:</span>
                           <span>{field.required ? 'Yes' : 'No'}</span>
                         </div>
                         {field.placeholder && (
                           <div className="flex items-baseline">
-                            <span className="font-semibold min-w-[180px]">Placeholder:</span>
+                            <span className="font-semibold min-w-[200px]">Placeholder:</span>
                             <span>{field.placeholder}</span>
                           </div>
                         )}
                         {field.defaultValue && (
                           <div className="flex items-baseline">
-                            <span className="font-semibold min-w-[180px]">Default Value:</span>
+                            <span className="font-semibold min-w-[200px]">Default Value:</span>
                             <span>{field.defaultValue}</span>
                           </div>
                         )}
                         {field.options && field.options.length > 0 && (
                           <div className="col-span-2 flex items-start">
-                            <span className="font-semibold min-w-[180px]">Options:</span>
+                            <span className="font-semibold min-w-[200px]">Options:</span>
                             <div className="flex flex-wrap gap-2">
                               {field.options.map((option, idx) => (
                                 <Badge key={idx} variant="secondary">
@@ -575,7 +588,7 @@ const ServiceDetail = () => {
                         )}
                         {field.validation && (
                           <div className="col-span-2 flex items-start">
-                            <span className="font-semibold min-w-[180px]">Validation:</span>
+                            <span className="font-semibold min-w-[200px]">Validation:</span>
                             <div className="space-y-1">
                               {field.validation.min !== undefined && (
                                 <p>Min: {field.validation.min}</p>
