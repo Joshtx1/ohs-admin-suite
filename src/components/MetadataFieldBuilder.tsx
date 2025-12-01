@@ -70,93 +70,117 @@ export const MetadataFieldBuilder = ({ fields, onChange }: MetadataFieldBuilderP
   };
 
   return (
-    <div className="space-y-3">
-      {fields.map((field, index) => (
-        <Card key={index} className="p-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Field {index + 1}</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => removeField(index)}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs">Field Label</Label>
-                <Input
-                  placeholder="e.g., Specimen Type"
-                  value={field.fieldLabel}
-                  onChange={(e) => updateField(index, { fieldLabel: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs">Field Type</Label>
-                <Select
-                  value={field.fieldType}
-                  onValueChange={(value) => updateField(index, { fieldType: value as any })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="text">Text</SelectItem>
-                    <SelectItem value="number">Number</SelectItem>
-                    <SelectItem value="select">Dropdown</SelectItem>
-                    <SelectItem value="multiselect">Multi-Select</SelectItem>
-                    <SelectItem value="boolean">Checkbox</SelectItem>
-                    <SelectItem value="date">Date</SelectItem>
-                    <SelectItem value="textarea">Text Area</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {['select', 'multiselect'].includes(field.fieldType) && (
-              <div className="space-y-1">
-                <Label className="text-xs">Options (one per line)</Label>
-                <Textarea
-                  placeholder="Option 1&#10;Option 2&#10;Option 3"
-                  value={field.options?.join('\n') || ''}
-                  onChange={(e) =>
-                    updateField(index, {
-                      options: e.target.value.split('\n'),
-                    })
-                  }
-                  rows={3}
-                />
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <Label className="text-xs">Placeholder (optional)</Label>
-              <Input
-                placeholder="Enter placeholder text"
-                value={field.placeholder || ''}
-                onChange={(e) => updateField(index, { placeholder: e.target.value })}
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={field.required}
-                onCheckedChange={(checked) => updateField(index, { required: !!checked })}
-              />
-              <Label className="text-sm">Required field</Label>
-            </div>
+    <div className="space-y-2">
+      {fields.length > 0 && (
+        <div className="border rounded-md">
+          <div className="grid grid-cols-12 gap-2 p-2 bg-muted/50 text-xs font-medium border-b">
+            <div className="col-span-3">Field Label</div>
+            <div className="col-span-2">Type</div>
+            <div className="col-span-3">Placeholder</div>
+            <div className="col-span-2">Options</div>
+            <div className="col-span-1">Required</div>
+            <div className="col-span-1"></div>
           </div>
-        </Card>
-      ))}
+          {fields.map((field, index) => {
+            const isExpanded = editingIndex === index;
+            
+            return (
+              <div key={index} className="border-b last:border-b-0">
+                <div className="grid grid-cols-12 gap-2 p-2 items-center hover:bg-muted/30 transition-colors">
+                  <div className="col-span-3">
+                    <Input
+                      className="h-8 text-sm"
+                      placeholder="Field Label"
+                      value={field.fieldLabel}
+                      onChange={(e) => updateField(index, { fieldLabel: e.target.value })}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Select
+                      value={field.fieldType}
+                      onValueChange={(value) => updateField(index, { fieldType: value as any })}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="text">Text</SelectItem>
+                        <SelectItem value="number">Number</SelectItem>
+                        <SelectItem value="select">Dropdown</SelectItem>
+                        <SelectItem value="multiselect">Multi-Select</SelectItem>
+                        <SelectItem value="boolean">Checkbox</SelectItem>
+                        <SelectItem value="date">Date</SelectItem>
+                        <SelectItem value="textarea">Text Area</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-3">
+                    <Input
+                      className="h-8 text-sm"
+                      placeholder="Placeholder text"
+                      value={field.placeholder || ''}
+                      onChange={(e) => updateField(index, { placeholder: e.target.value })}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    {['select', 'multiselect'].includes(field.fieldType) ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => setEditingIndex(isExpanded ? null : index)}
+                      >
+                        {field.options?.filter(o => o.trim()).length || 0} options
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </div>
+                  <div className="col-span-1 flex justify-center">
+                    <Checkbox
+                      checked={field.required}
+                      onCheckedChange={(checked) => updateField(index, { required: !!checked })}
+                    />
+                  </div>
+                  <div className="col-span-1 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => removeField(index)}
+                    >
+                      <Trash2 className="h-3 w-3 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+
+                {isExpanded && ['select', 'multiselect'].includes(field.fieldType) && (
+                  <div className="p-3 bg-muted/20 border-t">
+                    <Label className="text-xs mb-1 block">Options (one per line)</Label>
+                    <Textarea
+                      placeholder="Option 1&#10;Option 2&#10;Option 3"
+                      value={field.options?.join('\n') || ''}
+                      onChange={(e) =>
+                        updateField(index, {
+                          options: e.target.value.split('\n'),
+                        })
+                      }
+                      rows={4}
+                      className="text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <Button type="button" variant="outline" onClick={addField} className="w-full">
         <Plus className="h-4 w-4 mr-2" />
-        Add Custom Field
+        Add Field
       </Button>
     </div>
   );

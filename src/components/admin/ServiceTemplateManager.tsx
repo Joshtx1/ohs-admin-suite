@@ -301,7 +301,7 @@ export const ServiceTemplateManager = () => {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {editingTemplate ? `Edit Template: ${editingTemplate.template_name}` : "Create New Template"}
@@ -313,45 +313,49 @@ export const ServiceTemplateManager = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
-            {!editingTemplate && (
+          <div className="space-y-6 overflow-y-auto flex-1 pr-2">
+            <div className="grid grid-cols-2 gap-4">
+              {!editingTemplate && (
+                <div className="space-y-2">
+                  <Label htmlFor="template-key" className="text-sm font-medium">Template Key *</Label>
+                  <Input
+                    id="template-key"
+                    placeholder="e.g., drug-screen, respirator-fit"
+                    value={templateKey}
+                    onChange={(e) => setTemplateKey(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Unique identifier (lowercase, use hyphens)
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="template-key">Template Key *</Label>
+                <Label htmlFor="template-name" className="text-sm font-medium">Template Name *</Label>
                 <Input
-                  id="template-key"
-                  placeholder="e.g., drug-screen, respirator-fit"
-                  value={templateKey}
-                  onChange={(e) => setTemplateKey(e.target.value)}
+                  id="template-name"
+                  placeholder="e.g., Drug Screen"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Unique identifier (lowercase, use hyphens instead of spaces)
-                </p>
               </div>
-            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="template-name">Template Name *</Label>
-              <Input
-                id="template-name"
-                placeholder="e.g., Drug Screen"
-                value={templateName}
-                onChange={(e) => setTemplateName(e.target.value)}
-              />
+              <div className={!editingTemplate ? "col-span-2" : ""}>
+                <div className="space-y-2">
+                  <Label htmlFor="template-description" className="text-sm font-medium">Description</Label>
+                  <Textarea
+                    id="template-description"
+                    placeholder="Describe when this template should be used"
+                    value={templateDescription}
+                    onChange={(e) => setTemplateDescription(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="template-description">Description</Label>
-              <Textarea
-                id="template-description"
-                placeholder="Describe when this template should be used"
-                value={templateDescription}
-                onChange={(e) => setTemplateDescription(e.target.value)}
-                rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Template Fields</Label>
+              <Label className="text-sm font-medium">Template Fields</Label>
               <MetadataFieldBuilder 
                 fields={customFields}
                 onChange={setCustomFields}
@@ -359,7 +363,7 @@ export const ServiceTemplateManager = () => {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="border-t pt-4">
             <Button variant="outline" onClick={handleCloseDialog}>
               Cancel
             </Button>
