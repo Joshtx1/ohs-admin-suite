@@ -11,10 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, Package, Database, Edit, Save, X } from 'lucide-react';
+import { ArrowLeft, Package, Database, Edit, Save, X, Wand2 } from 'lucide-react';
 import { getStatusBadgeVariant, getStatusDisplay } from '@/lib/status';
-import { ServiceMetadata, MetadataFieldBuilder } from '@/components/MetadataFieldBuilder';
+import { ServiceMetadata, MetadataFieldBuilder, MetadataField } from '@/components/MetadataFieldBuilder';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useQuery } from '@tanstack/react-query';
 
 interface Service {
   id: string;
@@ -43,6 +44,7 @@ const ServiceDetail = () => {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Service | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
 
   const serviceCategories = [
     'AUDIO',
@@ -65,6 +67,19 @@ const ServiceDetail = () => {
     'Physical/FCE',
     'Training'
   ];
+
+  const { data: templates } = useQuery({
+    queryKey: ['service-templates'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('service_templates')
+        .select('*')
+        .order('template_name');
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   useEffect(() => {
     fetchService();
@@ -161,6 +176,26 @@ const ServiceDetail = () => {
       : [...currentGroups, group];
     
     setFormData({ ...formData, service_group: newGroups });
+  };
+
+  const applyTemplate = () => {
+    if (!selectedTemplate || !formData) return;
+
+    const template = templates?.find(t => t.id === selectedTemplate);
+    if (!template) return;
+
+    const templateFields = (template.fields as any) as MetadataField[];
+    
+    const newMetadata: ServiceMetadata = {
+      fields: templateFields
+    };
+
+    setFormData({ ...formData, service_metadata: newMetadata });
+    toast({
+      title: 'Template Applied',
+      description: `${template.template_name} template has been applied successfully.`,
+    });
+    setSelectedTemplate('');
   };
 
   if (loading) {
@@ -492,10 +527,39 @@ const ServiceDetail = () => {
         <TabsContent value="metadata" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Custom Metadata Fields</CardTitle>
-              <CardDescription>
-                Service-specific fields for data collection
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Custom Metadata Fields</CardTitle>
+                  <CardDescription>
+                    Service-specific fields for data collection
+                  </CardDescription>
+                </div>
+                {isEditing && (
+                  <div className="flex items-center gap-2">
+                    <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                      <SelectTrigger className="w-[250px]">
+                        <SelectValue placeholder="Select a template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templates?.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.template_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      onClick={applyTemplate} 
+                      disabled={!selectedTemplate}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      Apply Template
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {isEditing ? (
