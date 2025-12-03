@@ -25,6 +25,7 @@ export interface MetadataField {
 
 export interface ServiceMetadata {
   fields: MetadataField[];
+  fieldValues?: Record<string, any>;  // Stores actual values for this service (e.g., { specimen_type: "OF" })
   templates?: Record<string, any>;
 }
 
