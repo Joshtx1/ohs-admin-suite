@@ -32,9 +32,11 @@ export interface ServiceMetadata {
 interface MetadataFieldBuilderProps {
   fields: MetadataField[];
   onChange: (fields: MetadataField[]) => void;
+  fieldValues?: Record<string, any>;
+  onFieldValuesChange?: (values: Record<string, any>) => void;
 }
 
-export const MetadataFieldBuilder = ({ fields, onChange }: MetadataFieldBuilderProps) => {
+export const MetadataFieldBuilder = ({ fields, onChange, fieldValues = {}, onFieldValuesChange }: MetadataFieldBuilderProps) => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   const addField = () => {
@@ -70,25 +72,33 @@ export const MetadataFieldBuilder = ({ fields, onChange }: MetadataFieldBuilderP
     }
   };
 
+  const updateFieldValue = (fieldName: string, value: any) => {
+    if (onFieldValuesChange) {
+      onFieldValuesChange({ ...fieldValues, [fieldName]: value });
+    }
+  };
+
   return (
     <div className="space-y-2">
       {fields.length > 0 && (
         <div className="border rounded-md">
           <div className="grid grid-cols-12 gap-2 p-2 bg-muted/50 text-xs font-medium border-b">
-            <div className="col-span-3">Field Label</div>
+            <div className="col-span-2">Field Label</div>
             <div className="col-span-2">Type</div>
-            <div className="col-span-3">Placeholder</div>
-            <div className="col-span-2">Options</div>
-            <div className="col-span-1">Required</div>
+            <div className="col-span-2">Placeholder</div>
+            <div className="col-span-1">Options</div>
+            <div className="col-span-3">Value</div>
+            <div className="col-span-1">Req</div>
             <div className="col-span-1"></div>
           </div>
           {fields.map((field, index) => {
             const isExpanded = editingIndex === index;
+            const currentValue = fieldValues[field.fieldName] ?? '';
             
             return (
               <div key={index} className="border-b last:border-b-0">
                 <div className="grid grid-cols-12 gap-2 p-2 items-center hover:bg-muted/30 transition-colors">
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     <Input
                       className="h-8 text-sm"
                       placeholder="Field Label"
@@ -115,7 +125,7 @@ export const MetadataFieldBuilder = ({ fields, onChange }: MetadataFieldBuilderP
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     <Input
                       className="h-8 text-sm"
                       placeholder="Placeholder text"
@@ -123,19 +133,54 @@ export const MetadataFieldBuilder = ({ fields, onChange }: MetadataFieldBuilderP
                       onChange={(e) => updateField(index, { placeholder: e.target.value })}
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-1">
                     {['select', 'multiselect'].includes(field.fieldType) ? (
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-8 text-xs"
+                        className="h-8 text-xs px-1"
                         onClick={() => setEditingIndex(isExpanded ? null : index)}
                       >
-                        {field.options?.filter(o => o.trim()).length || 0} options
+                        {field.options?.filter(o => o.trim()).length || 0}
                       </Button>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </div>
+                  <div className="col-span-3">
+                    {field.fieldType === 'select' && field.options && field.options.filter(o => o.trim()).length > 0 ? (
+                      <Select
+                        value={currentValue}
+                        onValueChange={(value) => updateFieldValue(field.fieldName, value)}
+                      >
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue placeholder="Select value" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {field.options.filter(o => o.trim()).map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : field.fieldType === 'boolean' ? (
+                      <div className="flex items-center h-8">
+                        <Checkbox
+                          checked={currentValue === true || currentValue === 'true'}
+                          onCheckedChange={(checked) => updateFieldValue(field.fieldName, checked)}
+                        />
+                        <span className="ml-2 text-sm">{currentValue ? 'Yes' : 'No'}</span>
+                      </div>
+                    ) : (
+                      <Input
+                        className="h-8 text-sm"
+                        type={field.fieldType === 'number' ? 'number' : field.fieldType === 'date' ? 'date' : 'text'}
+                        placeholder="Enter value"
+                        value={currentValue}
+                        onChange={(e) => updateFieldValue(field.fieldName, e.target.value)}
+                      />
                     )}
                   </div>
                   <div className="col-span-1 flex justify-center">

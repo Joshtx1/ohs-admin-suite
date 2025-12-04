@@ -534,128 +534,6 @@ const ServiceDetail = () => {
               </div>
             )}
 
-            {/* Field Values Section - Set actual values for this service */}
-            {formData?.service_metadata?.fields && formData.service_metadata.fields.length > 0 && (
-              <Card className="mb-6">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Field Values</CardTitle>
-                  <CardDescription>Set the default values for this service's metadata fields</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    {formData.service_metadata.fields.map((field) => {
-                      const currentValue = formData.service_metadata?.fieldValues?.[field.fieldName] ?? '';
-                      
-                      return (
-                        <div key={field.fieldName} className="flex items-center gap-2">
-                          <Label className="min-w-[150px] text-sm font-medium">
-                            {field.fieldLabel}:
-                          </Label>
-                          {isEditing ? (
-                            <>
-                              {field.fieldType === 'select' && field.options ? (
-                                <Select
-                                  value={currentValue}
-                                  onValueChange={(value) => {
-                                    const newFieldValues = {
-                                      ...formData.service_metadata?.fieldValues,
-                                      [field.fieldName]: value
-                                    };
-                                    setFormData({
-                                      ...formData,
-                                      service_metadata: {
-                                        ...formData.service_metadata!,
-                                        fieldValues: newFieldValues
-                                      }
-                                    });
-                                  }}
-                                >
-                                  <SelectTrigger className="flex-1 max-w-xs h-8">
-                                    <SelectValue placeholder={`Select ${field.fieldLabel}`} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {field.options.filter(o => o.trim()).map((option) => (
-                                      <SelectItem key={option} value={option}>
-                                        {option}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : field.fieldType === 'boolean' ? (
-                                <Switch
-                                  checked={currentValue === true || currentValue === 'true'}
-                                  onCheckedChange={(checked) => {
-                                    const newFieldValues = {
-                                      ...formData.service_metadata?.fieldValues,
-                                      [field.fieldName]: checked
-                                    };
-                                    setFormData({
-                                      ...formData,
-                                      service_metadata: {
-                                        ...formData.service_metadata!,
-                                        fieldValues: newFieldValues
-                                      }
-                                    });
-                                  }}
-                                />
-                              ) : field.fieldType === 'textarea' ? (
-                                <Textarea
-                                  value={currentValue}
-                                  onChange={(e) => {
-                                    const newFieldValues = {
-                                      ...formData.service_metadata?.fieldValues,
-                                      [field.fieldName]: e.target.value
-                                    };
-                                    setFormData({
-                                      ...formData,
-                                      service_metadata: {
-                                        ...formData.service_metadata!,
-                                        fieldValues: newFieldValues
-                                      }
-                                    });
-                                  }}
-                                  placeholder={field.placeholder}
-                                  className="flex-1 max-w-xs"
-                                  rows={2}
-                                />
-                              ) : (
-                                <Input
-                                  type={field.fieldType === 'number' ? 'number' : field.fieldType === 'date' ? 'date' : 'text'}
-                                  value={currentValue}
-                                  onChange={(e) => {
-                                    const newFieldValues = {
-                                      ...formData.service_metadata?.fieldValues,
-                                      [field.fieldName]: e.target.value
-                                    };
-                                    setFormData({
-                                      ...formData,
-                                      service_metadata: {
-                                        ...formData.service_metadata!,
-                                        fieldValues: newFieldValues
-                                      }
-                                    });
-                                  }}
-                                  placeholder={field.placeholder}
-                                  className="flex-1 max-w-xs h-8"
-                                />
-                              )}
-                            </>
-                          ) : (
-                            <span className="text-sm">
-                              {currentValue !== '' && currentValue !== undefined 
-                                ? (typeof currentValue === 'boolean' ? (currentValue ? 'Yes' : 'No') : String(currentValue))
-                                : <span className="text-muted-foreground italic">Not set</span>
-                              }
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
             {/* Metadata Fields Structure */}
             <div>
               <h3 className="text-sm font-semibold mb-3">Field Definitions</h3>
@@ -670,72 +548,69 @@ const ServiceDetail = () => {
                       fieldValues: formData!.service_metadata?.fieldValues || {}
                     } 
                   })}
+                  fieldValues={formData?.service_metadata?.fieldValues || {}}
+                  onFieldValuesChange={(values) => setFormData({
+                    ...formData!,
+                    service_metadata: {
+                      ...formData!.service_metadata!,
+                      fieldValues: values
+                    }
+                  })}
                 />
               ) : (
                 <div className="grid grid-cols-1 gap-y-8 max-w-5xl">
                   {service.service_metadata?.fields && service.service_metadata.fields.length > 0 ? (
-                    service.service_metadata.fields.map((field, index) => (
-                      <div key={index} className="space-y-4 pb-6 border-b last:border-0">
-                        <div className="grid grid-cols-2 gap-x-16 gap-y-4">
-                          <div className="flex items-baseline col-span-2">
-                            <span className="font-semibold min-w-[200px]">Field Label:</span>
-                            <span>{field.fieldLabel}</span>
-                          </div>
-                          <div className="flex items-baseline">
-                            <span className="font-semibold min-w-[200px]">Field Name:</span>
-                            <span className="font-mono text-sm">{field.fieldName}</span>
-                          </div>
-                          <div className="flex items-baseline">
-                            <span className="font-semibold min-w-[200px]">Type:</span>
-                            <span>{field.fieldType}</span>
-                          </div>
-                          <div className="flex items-baseline">
-                            <span className="font-semibold min-w-[200px]">Required:</span>
-                            <span>{field.required ? 'Yes' : 'No'}</span>
-                          </div>
-                          {field.placeholder && (
+                    service.service_metadata.fields.map((field, index) => {
+                      const fieldValue = service.service_metadata?.fieldValues?.[field.fieldName];
+                      return (
+                        <div key={index} className="space-y-4 pb-6 border-b last:border-0">
+                          <div className="grid grid-cols-2 gap-x-16 gap-y-4">
+                            <div className="flex items-baseline col-span-2">
+                              <span className="font-semibold min-w-[200px]">Field Label:</span>
+                              <span>{field.fieldLabel}</span>
+                            </div>
                             <div className="flex items-baseline">
-                              <span className="font-semibold min-w-[200px]">Placeholder:</span>
-                              <span>{field.placeholder}</span>
+                              <span className="font-semibold min-w-[200px]">Field Name:</span>
+                              <span className="font-mono text-sm">{field.fieldName}</span>
                             </div>
-                          )}
-                          {field.defaultValue && (
                             <div className="flex items-baseline">
-                              <span className="font-semibold min-w-[200px]">Default Value:</span>
-                              <span>{field.defaultValue}</span>
+                              <span className="font-semibold min-w-[200px]">Type:</span>
+                              <span>{field.fieldType}</span>
                             </div>
-                          )}
-                          {field.options && field.options.length > 0 && (
-                            <div className="col-span-2 flex items-start">
-                              <span className="font-semibold min-w-[200px]">Options:</span>
-                              <div className="flex flex-wrap gap-2">
-                                {field.options.map((option, idx) => (
-                                  <Badge key={idx} variant="secondary">
-                                    {option}
-                                  </Badge>
-                                ))}
+                            <div className="flex items-baseline">
+                              <span className="font-semibold min-w-[200px]">Required:</span>
+                              <span>{field.required ? 'Yes' : 'No'}</span>
+                            </div>
+                            <div className="flex items-baseline">
+                              <span className="font-semibold min-w-[200px]">Value:</span>
+                              <span className={fieldValue ? 'font-medium text-primary' : 'text-muted-foreground italic'}>
+                                {fieldValue !== undefined && fieldValue !== '' 
+                                  ? (typeof fieldValue === 'boolean' ? (fieldValue ? 'Yes' : 'No') : String(fieldValue))
+                                  : 'Not set'}
+                              </span>
+                            </div>
+                            {field.placeholder && (
+                              <div className="flex items-baseline">
+                                <span className="font-semibold min-w-[200px]">Placeholder:</span>
+                                <span>{field.placeholder}</span>
                               </div>
-                            </div>
-                          )}
-                          {field.validation && (
-                            <div className="col-span-2 flex items-start">
-                              <span className="font-semibold min-w-[200px]">Validation:</span>
-                              <div className="space-y-1">
-                                {field.validation.min !== undefined && (
-                                  <p>Min: {field.validation.min}</p>
-                                )}
-                                {field.validation.max !== undefined && (
-                                  <p>Max: {field.validation.max}</p>
-                                )}
-                                {field.validation.pattern && (
-                                  <p>Pattern: {field.validation.pattern}</p>
-                                )}
+                            )}
+                            {field.options && field.options.length > 0 && (
+                              <div className="col-span-2 flex items-start">
+                                <span className="font-semibold min-w-[200px]">Options:</span>
+                                <div className="flex flex-wrap gap-2">
+                                  {field.options.map((option, idx) => (
+                                    <Badge key={idx} variant="secondary">
+                                      {option}
+                                    </Badge>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <p className="text-muted-foreground text-center py-8">
                       No metadata fields configured
