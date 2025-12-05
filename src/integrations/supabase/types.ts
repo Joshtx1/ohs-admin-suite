@@ -749,6 +749,7 @@ export type Database = {
           duration_minutes: number
           id: string
           is_active: boolean
+          marketplace_test: boolean | null
           member_price: number | null
           name: string
           non_member_price: number | null
@@ -769,6 +770,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           is_active?: boolean
+          marketplace_test?: boolean | null
           member_price?: number | null
           name: string
           non_member_price?: number | null
@@ -789,6 +791,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           is_active?: boolean
+          marketplace_test?: boolean | null
           member_price?: number | null
           name?: string
           non_member_price?: number | null
