@@ -555,10 +555,10 @@ const ServiceDetail = () => {
                                   : 'Not set'}
                               </span>
                             </div>
-                            {field.placeholder && (
+                            {field.category && (
                               <div className="flex items-baseline">
-                                <span className="font-semibold min-w-[200px]">Placeholder:</span>
-                                <span>{field.placeholder}</span>
+                                <span className="font-semibold min-w-[200px]">Category:</span>
+                                <span>{field.category}</span>
                               </div>
                             )}
                             {field.options && field.options.length > 0 && (

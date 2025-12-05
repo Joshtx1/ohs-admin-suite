@@ -14,7 +14,8 @@ export interface MetadataField {
   fieldType: 'text' | 'number' | 'select' | 'multiselect' | 'date' | 'boolean' | 'textarea';
   required: boolean;
   options?: string[];
-  placeholder?: string;
+  category?: string;
+  marketplaceTest?: boolean;
   defaultValue?: any;
   validation?: {
     min?: number;
@@ -82,12 +83,13 @@ export const MetadataFieldBuilder = ({ fields, onChange, fieldValues = {}, onFie
     <div className="space-y-2">
       {fields.length > 0 && (
         <div className="border rounded-md">
-          <div className="grid grid-cols-12 gap-2 p-2 bg-muted/50 text-xs font-medium border-b">
+        <div className="grid grid-cols-12 gap-2 p-2 bg-muted/50 text-xs font-medium border-b">
             <div className="col-span-2">Field Label</div>
             <div className="col-span-2">Type</div>
-            <div className="col-span-2">Placeholder</div>
+            <div className="col-span-2">Category</div>
             <div className="col-span-1">Options</div>
-            <div className="col-span-3">Value</div>
+            <div className="col-span-2">Value</div>
+            <div className="col-span-1">Mkt</div>
             <div className="col-span-1">Req</div>
             <div className="col-span-1"></div>
           </div>
@@ -128,9 +130,9 @@ export const MetadataFieldBuilder = ({ fields, onChange, fieldValues = {}, onFie
                   <div className="col-span-2">
                     <Input
                       className="h-8 text-sm"
-                      placeholder="Placeholder text"
-                      value={field.placeholder || ''}
-                      onChange={(e) => updateField(index, { placeholder: e.target.value })}
+                      placeholder="Category"
+                      value={field.category || ''}
+                      onChange={(e) => updateField(index, { category: e.target.value })}
                     />
                   </div>
                   <div className="col-span-1">
@@ -148,7 +150,7 @@ export const MetadataFieldBuilder = ({ fields, onChange, fieldValues = {}, onFie
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     {field.fieldType === 'select' && field.options && field.options.filter(o => o.trim()).length > 0 ? (
                       <Select
                         value={currentValue}
@@ -182,6 +184,12 @@ export const MetadataFieldBuilder = ({ fields, onChange, fieldValues = {}, onFie
                         onChange={(e) => updateFieldValue(field.fieldName, e.target.value)}
                       />
                     )}
+                  </div>
+                  <div className="col-span-1 flex justify-center">
+                    <Checkbox
+                      checked={field.marketplaceTest || false}
+                      onCheckedChange={(checked) => updateField(index, { marketplaceTest: !!checked })}
+                    />
                   </div>
                   <div className="col-span-1 flex justify-center">
                     <Checkbox
@@ -273,7 +281,6 @@ export const METADATA_TEMPLATES: Record<string, ServiceMetadata> = {
         fieldLabel: 'Mask Name/Model',
         fieldType: 'text',
         required: true,
-        placeholder: 'e.g., 3M 6200',
       },
       {
         fieldName: 'mask_type',
@@ -312,7 +319,6 @@ export const METADATA_TEMPLATES: Record<string, ServiceMetadata> = {
         fieldLabel: 'Notes',
         fieldType: 'textarea',
         required: false,
-        placeholder: 'Additional notes about the test...',
       },
     ],
   },
