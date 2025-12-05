@@ -8,14 +8,28 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2 } from 'lucide-react';
 
+export type MetadataFieldCategory = 
+  | 'Catalog Service Fields'
+  | 'Billing Codes'
+  | 'Fulfillment Fields'
+  | 'Requirements'
+  | 'Lab Partners';
+
+export const METADATA_FIELD_CATEGORIES: MetadataFieldCategory[] = [
+  'Catalog Service Fields',
+  'Billing Codes',
+  'Fulfillment Fields',
+  'Requirements',
+  'Lab Partners'
+];
+
 export interface MetadataField {
   fieldName: string;
   fieldLabel: string;
   fieldType: 'text' | 'number' | 'select' | 'multiselect' | 'date' | 'boolean' | 'textarea';
   required: boolean;
   options?: string[];
-  category?: string;
-  marketplaceTest?: boolean;
+  category?: MetadataFieldCategory;
   defaultValue?: any;
   validation?: {
     min?: number;
@@ -79,64 +93,96 @@ export const MetadataFieldBuilder = ({ fields, onChange, fieldValues = {}, onFie
     }
   };
 
+  // Group fields by category
+  const groupedFields = fields.reduce((acc, field, index) => {
+    const category = field.category || 'Uncategorized';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push({ field, index });
+    return acc;
+  }, {} as Record<string, { field: MetadataField; index: number }[]>);
+
+  // Order categories
+  const orderedCategories = [
+    ...METADATA_FIELD_CATEGORIES.filter(cat => groupedFields[cat]),
+    ...Object.keys(groupedFields).filter(cat => !METADATA_FIELD_CATEGORIES.includes(cat as MetadataFieldCategory) && cat !== 'Uncategorized'),
+    ...(groupedFields['Uncategorized'] ? ['Uncategorized'] : [])
+  ];
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {fields.length > 0 && (
         <div className="border rounded-md">
-        <div className="grid grid-cols-12 gap-2 p-2 bg-muted/50 text-xs font-medium border-b">
-            <div className="col-span-2">Field Label</div>
+          <div className="grid grid-cols-12 gap-2 p-2 bg-muted/50 text-xs font-medium border-b">
+            <div className="col-span-3">Field Label</div>
             <div className="col-span-2">Type</div>
             <div className="col-span-2">Category</div>
             <div className="col-span-1">Options</div>
             <div className="col-span-2">Value</div>
-            <div className="col-span-1">Mkt</div>
             <div className="col-span-1">Req</div>
             <div className="col-span-1"></div>
           </div>
-          {fields.map((field, index) => {
-            const isExpanded = editingIndex === index;
-            const currentValue = fieldValues[field.fieldName] ?? '';
-            
-            return (
-              <div key={index} className="border-b last:border-b-0">
-                <div className="grid grid-cols-12 gap-2 p-2 items-center hover:bg-muted/30 transition-colors">
-                  <div className="col-span-2">
-                    <Input
-                      className="h-8 text-sm"
-                      placeholder="Field Label"
-                      value={field.fieldLabel}
-                      onChange={(e) => updateField(index, { fieldLabel: e.target.value })}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Select
-                      value={field.fieldType}
-                      onValueChange={(value) => updateField(index, { fieldType: value as any })}
-                    >
-                      <SelectTrigger className="h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="text">Text</SelectItem>
-                        <SelectItem value="number">Number</SelectItem>
-                        <SelectItem value="select">Dropdown</SelectItem>
-                        <SelectItem value="multiselect">Multi-Select</SelectItem>
-                        <SelectItem value="boolean">Checkbox</SelectItem>
-                        <SelectItem value="date">Date</SelectItem>
-                        <SelectItem value="textarea">Text Area</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-2">
-                    <Input
-                      className="h-8 text-sm"
-                      placeholder="Category"
-                      value={field.category || ''}
-                      onChange={(e) => updateField(index, { category: e.target.value })}
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    {['select', 'multiselect'].includes(field.fieldType) ? (
+          {orderedCategories.map((category) => (
+            <div key={category}>
+              {/* Category Separator */}
+              <div className="bg-primary/10 px-3 py-2 border-b">
+                <span className="text-sm font-semibold text-primary">{category}</span>
+              </div>
+              
+              {groupedFields[category].map(({ field, index }) => {
+                const isExpanded = editingIndex === index;
+                const currentValue = fieldValues[field.fieldName] ?? '';
+                
+                return (
+                  <div key={index} className="border-b last:border-b-0">
+                    <div className="grid grid-cols-12 gap-2 p-2 items-center hover:bg-muted/30 transition-colors">
+                      <div className="col-span-3">
+                        <Input
+                          className="h-8 text-sm"
+                          placeholder="Field Label"
+                          value={field.fieldLabel}
+                          onChange={(e) => updateField(index, { fieldLabel: e.target.value })}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Select
+                          value={field.fieldType}
+                          onValueChange={(value) => updateField(index, { fieldType: value as any })}
+                        >
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="text">Text</SelectItem>
+                            <SelectItem value="number">Number</SelectItem>
+                            <SelectItem value="select">Dropdown</SelectItem>
+                            <SelectItem value="multiselect">Multi-Select</SelectItem>
+                            <SelectItem value="boolean">Checkbox</SelectItem>
+                            <SelectItem value="date">Date</SelectItem>
+                            <SelectItem value="textarea">Text Area</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-2">
+                        <Select
+                          value={field.category || ''}
+                          onValueChange={(value) => updateField(index, { category: value as MetadataFieldCategory })}
+                        >
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {METADATA_FIELD_CATEGORIES.map((cat) => (
+                              <SelectItem key={cat} value={cat}>
+                                {cat}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-1">
+                        {['select', 'multiselect'].includes(field.fieldType) ? (
                       <Button
                         type="button"
                         variant="ghost"
@@ -183,32 +229,26 @@ export const MetadataFieldBuilder = ({ fields, onChange, fieldValues = {}, onFie
                         value={currentValue}
                         onChange={(e) => updateFieldValue(field.fieldName, e.target.value)}
                       />
-                    )}
-                  </div>
-                  <div className="col-span-1 flex justify-center">
-                    <Checkbox
-                      checked={field.marketplaceTest || false}
-                      onCheckedChange={(checked) => updateField(index, { marketplaceTest: !!checked })}
-                    />
-                  </div>
-                  <div className="col-span-1 flex justify-center">
-                    <Checkbox
-                      checked={field.required}
-                      onCheckedChange={(checked) => updateField(index, { required: !!checked })}
-                    />
-                  </div>
-                  <div className="col-span-1 flex justify-end">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={() => removeField(index)}
-                    >
-                      <Trash2 className="h-3 w-3 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
+                        )}
+                      </div>
+                      <div className="col-span-1 flex justify-center">
+                        <Checkbox
+                          checked={field.required}
+                          onCheckedChange={(checked) => updateField(index, { required: !!checked })}
+                        />
+                      </div>
+                      <div className="col-span-1 flex justify-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => removeField(index)}
+                        >
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
 
                 {isExpanded && ['select', 'multiselect'].includes(field.fieldType) && (
                   <div className="p-3 bg-muted/20 border-t">
@@ -225,10 +265,12 @@ export const MetadataFieldBuilder = ({ fields, onChange, fieldValues = {}, onFie
                       className="text-sm"
                     />
                   </div>
-                )}
-              </div>
-            );
-          })}
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
       )}
 
