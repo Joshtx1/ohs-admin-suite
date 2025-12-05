@@ -974,9 +974,9 @@ const Services = () => {
                       <p className="text-sm text-muted-foreground">
                         Type: {field.fieldType} {field.required && '• Required'}
                       </p>
-                      {field.placeholder && (
+                      {field.category && (
                         <p className="text-xs text-muted-foreground">
-                          Placeholder: {field.placeholder}
+                          Category: {field.category}
                         </p>
                       )}
                       {field.options && field.options.length > 0 && (
