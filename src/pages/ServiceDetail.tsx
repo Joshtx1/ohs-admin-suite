@@ -24,10 +24,8 @@ interface Service {
   description?: string;
   category: string;
   service_group: string[];
-  duration_minutes: number;
   member_price: number;
   non_member_price: number;
-  valid_for_days: number;
   status: string;
   is_active: boolean;
   department?: string;
@@ -135,10 +133,8 @@ const ServiceDetail = () => {
           description: formData.description,
           category: formData.category,
           service_group: formData.service_group,
-          duration_minutes: formData.duration_minutes,
           member_price: formData.member_price,
           non_member_price: formData.non_member_price,
-          valid_for_days: formData.valid_for_days,
           status: formData.status,
           is_active: formData.is_active,
           department: formData.department,
@@ -370,36 +366,6 @@ const ServiceDetail = () => {
                 />
               ) : (
                 <span>{service.room || 'Not specified'}</span>
-              )}
-            </div>
-
-            {/* Duration */}
-            <div className="flex items-baseline">
-              <span className="font-semibold min-w-[200px]">Duration (minutes):</span>
-              {isEditing ? (
-                <Input
-                  type="number"
-                  value={formData?.duration_minutes || ''}
-                  onChange={(e) => setFormData({ ...formData!, duration_minutes: parseInt(e.target.value) })}
-                  className="flex-1 max-w-xs"
-                />
-              ) : (
-                <span>{service.duration_minutes}</span>
-              )}
-            </div>
-
-            {/* Valid For Days */}
-            <div className="flex items-baseline">
-              <span className="font-semibold min-w-[200px]">Valid For (days):</span>
-              {isEditing ? (
-                <Input
-                  type="number"
-                  value={formData?.valid_for_days || ''}
-                  onChange={(e) => setFormData({ ...formData!, valid_for_days: parseInt(e.target.value) })}
-                  className="flex-1 max-w-xs"
-                />
-              ) : (
-                <span>{service.valid_for_days || 'Not specified'}</span>
               )}
             </div>
 
