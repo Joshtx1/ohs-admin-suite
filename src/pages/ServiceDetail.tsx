@@ -28,6 +28,7 @@ interface Service {
   non_member_price: number;
   status: string;
   is_active: boolean;
+  marketplace_test?: boolean;
   department?: string;
   room?: string;
   service_metadata?: ServiceMetadata;
@@ -137,6 +138,7 @@ const ServiceDetail = () => {
           non_member_price: formData.non_member_price,
           status: formData.status,
           is_active: formData.is_active,
+          marketplace_test: formData.marketplace_test,
           department: formData.department,
           room: formData.room,
           service_metadata: formData.service_metadata as any
@@ -369,38 +371,58 @@ const ServiceDetail = () => {
               )}
             </div>
 
-            {/* Description - Full Width */}
-            <div className="col-span-2 flex items-start">
-              <span className="font-semibold min-w-[200px]">Description:</span>
+            {/* Marketplace Test */}
+            <div className="flex items-baseline">
+              <span className="font-semibold min-w-[200px]">Marketplace Test:</span>
               {isEditing ? (
-                <Textarea
-                  value={formData?.description || ''}
-                  onChange={(e) => setFormData({ ...formData!, description: e.target.value })}
-                  rows={3}
-                  className="flex-1 max-w-2xl"
-                />
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={formData?.marketplace_test || false}
+                    onCheckedChange={(checked) => setFormData({ ...formData!, marketplace_test: checked })}
+                  />
+                  <span className="text-sm">{formData?.marketplace_test ? 'Yes' : 'No'}</span>
+                </div>
               ) : (
-                <span className="flex-1">{service.description || 'No description'}</span>
+                <span>{service.marketplace_test ? 'Yes' : 'No'}</span>
               )}
             </div>
 
-            {/* Service Groups - Full Width */}
+            {/* Service Groups - Full Width with Multiselect */}
             <div className="col-span-2 flex items-start">
               <span className="font-semibold min-w-[200px]">Service Groups:</span>
               {isEditing ? (
-                <div className="flex-1 space-y-2">
-                  {serviceCategories.map((group) => (
-                    <div key={group} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`group-${group}`}
-                        checked={formData?.service_group?.includes(group) || false}
-                        onCheckedChange={() => toggleServiceGroup(group)}
-                      />
-                      <Label htmlFor={`group-${group}`} className="font-normal">
+                <div className="flex-1 max-w-2xl">
+                  <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[42px]">
+                    {formData?.service_group?.map((group) => (
+                      <Badge key={group} variant="secondary" className="cursor-pointer" onClick={() => toggleServiceGroup(group)}>
                         {group}
-                      </Label>
-                    </div>
-                  ))}
+                        <X className="h-3 w-3 ml-1" />
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="mt-2">
+                    <Select
+                      value=""
+                      onValueChange={(value) => {
+                        if (value && !formData?.service_group?.includes(value)) {
+                          toggleServiceGroup(value);
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Add service group..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {serviceCategories
+                          .filter(cat => !formData?.service_group?.includes(cat))
+                          .map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               ) : (
                 <div className="flex-1 flex flex-wrap gap-2">
@@ -414,6 +436,21 @@ const ServiceDetail = () => {
                     <span className="text-muted-foreground">No groups assigned</span>
                   )}
                 </div>
+              )}
+            </div>
+
+            {/* Description - Full Width */}
+            <div className="col-span-2 flex items-start">
+              <span className="font-semibold min-w-[200px]">Description:</span>
+              {isEditing ? (
+                <Textarea
+                  value={formData?.description || ''}
+                  onChange={(e) => setFormData({ ...formData!, description: e.target.value })}
+                  rows={3}
+                  className="flex-1 max-w-2xl"
+                />
+              ) : (
+                <span className="flex-1">{service.description || 'No description'}</span>
               )}
             </div>
 
